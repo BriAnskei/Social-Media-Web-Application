@@ -1,0 +1,68 @@
+src/
+│
+├── assets/                # Static assets like images, fonts, etc.
+│   ├── images/            # Profile images, logos, etc.
+│   ├── styles/            # Global CSS/SCSS styles
+│   └── theme.ts           # Theme and color definitions (optional)
+│
+├── components/            # Reusable UI components
+│   ├── Button.tsx         # Custom button component
+│   ├── Modal.tsx          # Reusable modal component
+│   ├── Navbar.tsx         # Top navigation bar
+│   └── Notification.tsx   # Real-time notification component
+│
+├── features/              # Feature-specific components and logic
+│   ├── auth/              # Authentication components and logic
+│   │   ├── Login.tsx
+│   │   ├── Register.tsx
+│   │   └── authSlice.ts   # Redux slice for authentication
+│   │
+│   ├── posts/             # Post-related components and logic
+│   │   ├── Post.tsx       # Individual post component
+│   │   ├── PostList.tsx   # Component to display a list of posts
+│   │   └── postsSlice.ts  # Redux slice for post-related state
+│   │
+│   ├── users/             # User-related components and logic
+│   │   ├── Profile.tsx    # User profile page
+│   │   ├── UserCard.tsx   # Small user profile card for followers/following
+│   │   └── usersSlice.ts  # Redux slice for user-related state
+│   │
+│   └── notifications/     # Real-time notifications
+│       ├── NotificationItem.tsx
+│       └── notificationsSlice.ts
+│
+├── hooks/                 # Custom React hooks
+│   ├── useAuth.ts         # Hook for authentication logic
+│   ├── useFetch.ts        # Hook for data fetching
+│   └── useSocket.ts       # Hook for managing Socket.io events
+│
+├── layouts/               # Layouts for the app
+│   ├── MainLayout.tsx     # Default layout for authenticated users
+│   └── AuthLayout.tsx     # Layout for login/register pages
+│
+├── pages/                 # Main pages for the app
+│   ├── Feed.tsx           # Main feed page
+│   ├── Profile.tsx        # User profile page
+│   ├── Login.tsx          # Login page
+│   ├── Register.tsx       # Register page
+│   └── NotFound.tsx       # 404 error page
+│
+├── store/                 # Redux store configuration
+│   ├── store.ts           # Store setup with middleware
+│   └── rootReducer.ts     # Combines all feature slices
+│
+├── types/                 # Global TypeScript types and interfaces
+│   ├── Post.ts            # Type definitions for posts
+│   ├── User.ts            # Type definitions for users
+│   └── Notification.ts    # Type definitions for notifications
+│
+├── utils/                 # Utility functions
+│   ├── api.ts             # Axios instance and API calls
+│   ├── formatDate.ts      # Utility for formatting dates
+│   └── validators.ts      # Validation functions (e.g., email validation)
+│
+├── App.tsx                # Root component
+├── index.tsx              # React DOM rendering
+├── react-app-env.d.ts     # TypeScript definitions for React scripts
+├── vite-env.d.ts          # Vite TypeScript environment definitions
+└── tsconfig.json          # TypeScript configuration

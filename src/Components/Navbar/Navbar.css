@@ -1,0 +1,35 @@
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    padding: 20px 0px;
+    width: 80%;
+    position: fixed;
+    top:  0;
+    overflow: hidden;
+    background-color: white;
+}
+
+
+
+.navbar-menu {
+    display: flex;
+    list-style: none;
+    gap: 20px;
+}
+
+.navbar-menu a {
+    text-decoration: none;
+    color: inherit;
+}
+
+.navbar-menu .symbols {
+    color: gray;
+}
+
+.navbar-menu li {
+     cursor: pointer;
+}
+
+Link {
+    text-decoration: none;
+}
