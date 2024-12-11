@@ -6,8 +6,8 @@
 .profile-main {
     margin-top: 1.2rem;
     display: flex;
-    justify-content: space-between;
-   gap: 30px;
+    gap: 20px;
+    margin-bottom: 1rem;
 }
 
 .profile-main img {
@@ -68,4 +68,39 @@
     width: 80px;
     height: 25px;
     cursor: pointer;
+    position: sticky;
+    left: 78%;
 }
+
+.profile-cont hr {
+    height: 1px;
+    border: none;
+    background-color: gray;
+    width: 70%;
+    margin: auto;
+}
+
+
+.uploads {
+    display: flex;
+   
+   margin: 1rem 0px 1.7rem 0px;
+}
+
+.uploads div  {
+    margin: auto;
+    border: 1px solid black;
+    padding: 2px;
+    border-radius: 5px;
+    height: 2rem;
+    width: 9.6rem;
+    text-align: center;
+  
+    
+}
+
+.uploads div span {
+    text-align: center;
+    white-space: nowrap;
+}
+

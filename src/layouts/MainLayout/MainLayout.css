@@ -66,3 +66,31 @@
 .create-post .upload, button {
     cursor: pointer;
 }
+
+
+.footer-container {
+    margin-top: 4rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 12rem;
+}
+.footer-container .follow span {
+   margin-right: 0.5rem;
+    
+}
+
+.company h4 {
+    margin-bottom: 0.9rem;
+}
+.info h4 {
+    margin-bottom: 0.9rem;
+}
+
+.follow h4 {
+    margin-bottom: 0.4rem;
+}
+
+.follow span {
+    cursor: pointer;
+}

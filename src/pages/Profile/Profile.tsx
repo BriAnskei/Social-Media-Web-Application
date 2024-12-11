@@ -1,3 +1,4 @@
+import PostList from "../../features/posts/PostList/PostList";
 import "./profile.css";
 const Profile = () => {
   return (
@@ -18,6 +19,17 @@ const Profile = () => {
         </div>
         <button>Edit Profile</button>
       </div>
+      <hr />
+      <div className="uploads">
+        <div>
+          <span>Photos</span>
+        </div>
+
+        <div>
+          <span>Vidoes</span>
+        </div>
+      </div>
+      <PostList></PostList>
     </div>
   );
 };
