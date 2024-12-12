@@ -2,7 +2,11 @@ import Navbar from "../../Components/Navbar/Navbr";
 import "./MainLayout.css";
 
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faGithub, faFacebook } from "@fortawesome/free-brands-svg-icons";
+import {
+  faGithub,
+  faFacebook,
+  faInstagram,
+} from "@fortawesome/free-brands-svg-icons";
 
 import { Outlet } from "react-router";
 
@@ -34,7 +38,6 @@ const MainLayout = () => {
             <span>Careers</span>
             <br />
             <span>Contact us</span>
-            <br />
           </div>
           <div className="info">
             <h4>Further information</h4>
@@ -50,6 +53,9 @@ const MainLayout = () => {
             </span>
             <span>
               <FontAwesomeIcon icon={faFacebook} />
+            </span>
+            <span>
+              <FontAwesomeIcon icon={faInstagram} />
             </span>
           </div>
         </div>

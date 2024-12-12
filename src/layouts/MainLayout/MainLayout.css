@@ -10,7 +10,7 @@
     padding: 6px;
      
     height: 3.6rem;
-    width: 60%;
+    width: 80%;
     margin: auto;
 }
 
@@ -75,16 +75,28 @@
     align-items: center;
     gap: 12rem;
 }
+.footer-container span {
+    font-size: 0.9rem;
+}
+
 .footer-container .follow span {
    margin-right: 0.5rem;
     
 }
 
+.company {
+    width: 5rem;
+
+}
 .company h4 {
-    margin-bottom: 0.9rem;
+    margin-bottom: 0.3rem;
 }
 .info h4 {
-    margin-bottom: 0.9rem;
+    margin-bottom: 0.3rem;
+}
+
+.follow {
+    margin-bottom: 1.2rem;
 }
 
 .follow h4 {
