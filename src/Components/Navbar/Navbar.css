@@ -1,7 +1,7 @@
 .navbar {
     display: flex;
     justify-content: space-between;
-    padding: 20px 0px;
+    padding: 12px 0px;
     width: 80%;
     position: fixed;
     top:  0;
@@ -10,6 +10,22 @@
     z-index: 1;
 }
 
+.navbar .logo {
+    display: flex;
+    gap: 0.4rem;
+
+}
+
+.logo span, input {
+    height: 2.3rem;
+}
+
+.logo input {
+  border: 1px solid #c5c5c5;
+  border-radius: 12px;
+  padding: 12px;
+   
+}
 
 
 .navbar-menu {
@@ -33,4 +49,59 @@
 
 Link {
     text-decoration: none;
+}
+
+.navbar-menu .notif {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Poppins', sans-serif;
+    text-decoration: none;
+  
+    font-size: 20px;
+    position: relative;
+}
+
+
+
+
+.navbar-menu .notifs .count {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    
+    position: absolute;
+    top: 10px;
+  right: 2.4rem;
+    width: 20px;
+    height: 20px;
+    background: red;
+    border-radius: 50%;
+    color: white;
+    border: 2px solid white;
+    font-weight: 700;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.navbar-menu .chat .count {
+    top: 10px;
+    right: 5.1rem;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    background: red;
+    border-radius: 50%;
+    color: white;
+    border: 2px solid white;
+    font-weight: 700;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }

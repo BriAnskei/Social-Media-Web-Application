@@ -1,13 +1,21 @@
 import "./Post.css";
-import { PostProp } from "../PostList/PostList";
+import { PostType } from "../../../types/PostType";
 import { useDispatch } from "react-redux";
 import { toggle } from "../postSlice";
-interface PostProps {
-  post: PostProp;
+import { useState } from "react";
+
+interface Post {
+  post: PostType;
 }
 
-const Post = ({ post }: PostProps) => {
+const Post = ({ post }: Post) => {
+  const [showComment, setShowComment] = useState(false);
+
   const dispatch = useDispatch();
+
+  const toggleComments = () => {
+    setShowComment(!showComment);
+  };
 
   return (
     <>
@@ -18,7 +26,10 @@ const Post = ({ post }: PostProps) => {
               src="https://images.pexels.com/photos/771742/pexels-photo-771742.jpeg"
               alt=""
             />
-            <h3>{post.user}</h3>
+            <div className="name-date">
+              <h3>{post.user}</h3>
+              <span>{new Date(post.createdAt).toLocaleString()}</span>
+            </div>
           </div>
 
           <div className="post-info-act">
@@ -32,14 +43,55 @@ const Post = ({ post }: PostProps) => {
         <div className="image-post">
           <img src={post.image} alt="" />
         </div>
+        <div className="post-counter">
+          <span>1 Likes</span>
+          {post.comments.length > 0 && (
+            <span>{`${post.comments.length} Comment${
+              post.comments.length > 1 ? "s" : ""
+            }`}</span>
+          )}
+        </div>
         <div className="post-action-cont">
-          <span
-            className="material-symbols-outlined"
-            onClick={() => dispatch(toggle())}
-          >
-            thumb_up
-          </span>
-          <span className="material-symbols-outlined">comment</span>
+          <div className="like-cont">
+            <span
+              className="material-symbols-outlined"
+              onClick={() => dispatch(toggle())}
+            >
+              thumb_up
+            </span>
+            <span>Like</span>
+          </div>
+
+          <div className="comment-act-cont" onClick={toggleComments}>
+            <span className="material-symbols-outlined">comment</span>
+            <span>Comment</span>
+          </div>
+        </div>
+
+        <div
+          className={
+            showComment && post.comments.length > 0
+              ? "commentlist-cont"
+              : "no-display"
+          }
+        >
+          {post.comments.map((comment, index) => (
+            <div className="comment-cont" key={index}>
+              <img
+                src="https://wallpapers.com/images/hd/meme-profile-picture-erj8324r4q9rbnlx.jpg"
+                alt=""
+              />
+              <div className="comment-content">
+                <div className="info-content">
+                  <h5>Brian Ebhrai</h5>
+                  <span>{comment.content}</span>
+                </div>
+                <span id="comment-date">
+                  {new Date(comment.createdAt).toLocaleString()}
+                </span>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </>

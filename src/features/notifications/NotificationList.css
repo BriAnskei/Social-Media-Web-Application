@@ -1,0 +1,20 @@
+.notif-container .notif-content{
+    display: flex;
+    gap: 1rem;
+}
+
+
+
+.notif-container .notif-content .type-logo span {
+    font-size: 3.4rem;
+}
+
+
+.notif-container .notif-message {
+    width: 16.5rem;
+}
+
+
+.notif-container .notif-data  span{
+    font-size: 0.8rem;
+}

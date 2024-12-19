@@ -1,0 +1,35 @@
+.chat-header {
+   justify-content: space-between;
+   border-bottom: none;
+}
+
+.chat-header .chat-logo {
+    display: flex;
+    gap: 0.4rem;
+}
+
+.chat-logo input {
+    padding: 0.2rem;
+    border-radius: 8px;
+    border: 1px solid gray;
+    height: 1.6rem;
+}
+
+.chat-header .chatt-close span {
+    cursor: pointer;
+}
+
+
+.modal-post {
+margin-right: 13vw;
+top: 20px;
+
+}
+
+.content {
+    height: 100%;
+}
+
+.body {
+    padding: 0 !important;
+}

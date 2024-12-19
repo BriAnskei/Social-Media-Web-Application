@@ -5,10 +5,10 @@
 
 .create-post {
     display: flex;
+    justify-content: center;
     align-items: center;
     gap: 20px;
     padding: 6px;
-     
     height: 3.6rem;
     width: 80%;
     margin: auto;
@@ -70,39 +70,30 @@
 
 .footer-container {
     margin-top: 4rem;
+    
+    padding: 20px 8vw;
+    padding-top: 3.4rem;
+}
+
+.footer-content {
     display: flex;
     justify-content: center;
-    align-items: center;
-    gap: 12rem;
+    gap: 13rem;
+  
 }
-.footer-container span {
+ .footer-container span {
     font-size: 0.9rem;
 }
 
-.footer-container .follow span {
-   margin-right: 0.5rem;
-    
-}
 
-.company {
+
+ .company {
     width: 5rem;
 
 }
-.company h4 {
-    margin-bottom: 0.3rem;
-}
-.info h4 {
-    margin-bottom: 0.3rem;
-}
 
-.follow {
-    margin-bottom: 1.2rem;
-}
 
-.follow h4 {
-    margin-bottom: 0.4rem;
-}
-
-.follow span {
+.follow span { 
+    margin-right: 0.5rem;
     cursor: pointer;
-}
+} 

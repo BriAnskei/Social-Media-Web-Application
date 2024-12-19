@@ -1,0 +1,45 @@
+
+.chat-container {
+    padding: 0.3rem;
+    margin: 3px 2px 4px 2px;
+    cursor: pointer;
+}
+
+
+.chat-info {
+    display: flex;
+    justify-content: space-between;
+    padding: 5px;
+}
+
+.info-picc {
+    display: flex;
+    gap: 5px;
+}
+
+.info-picc img {
+    width: 1.9rem;
+    border-radius: 100%;
+    display: block;
+    margin: 0;
+    padding: 0;
+    object-fit: cover;
+    box-sizing: border-box;
+}
+
+.chat-info .info-picc h4 {
+    font-size: 1rem;
+    font-weight: normal;
+}
+
+
+
+.chat-info span {
+    font-size: 0.8rem;
+}
+
+
+
+.chat-container .chat-content {
+    margin-left: 1.6vw;
+}

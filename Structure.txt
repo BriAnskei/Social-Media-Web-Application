@@ -27,14 +27,22 @@ src/
 │   │   ├── UserCard.tsx   # Small user profile card for followers/following
 │   │   └── usersSlice.ts  # Redux slice for user-related state
 │   │
-│   └── notifications/     # Real-time notifications
-│       ├── NotificationItem.tsx
-│       └── notificationsSlice.ts
+│   ├── notifications/     # Real-time notifications
+│   │   ├── NotificationItem.tsx
+│   │   └── notificationsSlice.ts
+│   │
+│   └── messenger/         # Messenger/chat components and logic
+│       ├── ChatWindow.tsx        # Main chat interface
+│       ├── MessageItem.tsx       # Individual message bubble component
+│       ├── ChatList.tsx          # List of conversations
+│       ├── NewMessageForm.tsx    # Form to send new messages
+│       └── messengerSlice.ts     # Redux slice for chat-related state
 │
 ├── hooks/                 # Custom React hooks
 │   ├── useAuth.ts         # Hook for authentication logic
 │   ├── useFetch.ts        # Hook for data fetching
-│   └── useSocket.ts       # Hook for managing Socket.io events
+│   ├── useSocket.ts       # Hook for managing Socket.io events
+│   └── useMessenger.ts    # Hook for handling chat-specific logic
 │
 ├── layouts/               # Layouts for the app
 │   ├── MainLayout.tsx     # Default layout for authenticated users
@@ -44,7 +52,8 @@ src/
 │   ├── Feed.tsx           # Main feed page
 │   ├── Profile.tsx        # User profile page
 │   ├── Login.tsx          # Login page
-│   ├── Register.tsx       # Register page
+│   ├── Register.tsx       # Register 
+│   ├── Messenger.tsx      # Messenger page
 │   └── NotFound.tsx       # 404 error page
 │
 ├── store/                 # Redux store configuration
@@ -54,11 +63,13 @@ src/
 ├── types/                 # Global TypeScript types and interfaces
 │   ├── Post.ts            # Type definitions for posts
 │   ├── User.ts            # Type definitions for users
-│   └── Notification.ts    # Type definitions for notifications
+│   ├── Notification.ts    # Type definitions for notifications
+│   └── Message.ts         # Type definitions for chat messages
 │
 ├── utils/                 # Utility functions
 │   ├── api.ts             # Axios instance and API calls
 │   ├── formatDate.ts      # Utility for formatting dates
+│   ├── formatMessage.ts   # Utility for formatting chat messages
 │   └── validators.ts      # Validation functions (e.g., email validation)
 │
 ├── App.tsx                # Root component

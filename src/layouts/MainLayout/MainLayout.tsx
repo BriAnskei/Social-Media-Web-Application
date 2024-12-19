@@ -26,37 +26,39 @@ const MainLayout = () => {
               <span className="material-symbols-outlined">add_a_photo</span>
               <span id="text">Photo/Video</span>
             </div>
-            <button>POST</button>
+            <button>CREATE</button>
           </div>
           <Outlet />
         </div>
       </main>
       <footer>
         <div className="footer-container">
-          <div className="company">
-            <h4>Company</h4>
-            <span>Careers</span>
-            <br />
-            <span>Contact us</span>
-          </div>
-          <div className="info">
-            <h4>Further information</h4>
-            <span>Teams & Condition</span>
-            <br />
-            <span>Privacy Policy</span>
-            <br />
-          </div>
-          <div className="follow">
-            <h4>Follow me</h4>
-            <span>
-              <FontAwesomeIcon icon={faGithub} />
-            </span>
-            <span>
-              <FontAwesomeIcon icon={faFacebook} />
-            </span>
-            <span>
-              <FontAwesomeIcon icon={faInstagram} />
-            </span>
+          <div className="footer-content">
+            <div className="company">
+              <h4>Company</h4>
+              <span>Careers</span>
+              <br />
+              <span>Contact us</span>
+            </div>
+            <div className="info">
+              <h4>Further information</h4>
+              <span>Teams & Condition</span>
+              <br />
+              <span>Privacy Policy</span>
+              <br />
+            </div>
+            <div className="follow">
+              <h4>Follow me</h4>
+              <span>
+                <FontAwesomeIcon icon={faGithub} />
+              </span>
+              <span>
+                <FontAwesomeIcon icon={faFacebook} />
+              </span>
+              <span>
+                <FontAwesomeIcon icon={faInstagram} />
+              </span>
+            </div>
           </div>
         </div>
       </footer>

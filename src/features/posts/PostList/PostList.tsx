@@ -2,6 +2,9 @@ import { useEffect, useState } from "react";
 
 import "./PostList.css";
 import Post from "../Post/Post";
+import { AppDispatch, RootState } from "../../../store/store";
+import { useDispatch, useSelector } from "react-redux";
+import { getPosts } from "../postSlice";
 
 export interface PostProp {
   _id: string;
@@ -18,55 +21,21 @@ export interface PostProp {
 }
 
 const PostList = () => {
-  const [post, setPost] = useState<PostProp[]>([]);
-  useEffect(() => {
-    const examplePost: PostProp[] = [
-      {
-        _id: "post1",
-        user: "user1",
-        content:
-          "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
-        image:
-          "https://www.autodeal.com.ph/custom/car-model-photo/original/mitsubishi-xforce-primary-6685042dec84e.jpg",
-        likes: ["user2", "user3"],
-        comments: [
-          {
-            user: "user2",
-            content: "Great post!",
-            createdAt: "2023-11-23T12:34:56Z",
-          },
-        ],
-        createdAt: "2023-11-22T10:00:00Z",
-      },
-      {
-        _id: "post2",
-        user: "user3",
-        content: "This is toshe second post.",
-        likes: ["user1"],
-        comments: [
-          {
-            user: "user1",
-            content: "Nice one!",
-            createdAt: "2023-11-23T13:00:00Z",
-          },
-          {
-            user: "user2",
-            content: "I agree.",
-            createdAt: "2023-11-23T13:30:00Z",
-          },
-        ],
-        createdAt: "2023-11-22T11:00:00Z",
-      },
-    ];
+  const dispatch: AppDispatch = useDispatch();
+  const posts = useSelector((state: RootState) => state.posts.posts);
+  const isLoading = useSelector((state: RootState) => state.posts.loading);
 
-    setPost(examplePost);
+  useEffect(() => {
+    dispatch(getPosts());
   }, []);
 
   return (
     <>
       <div className="postlist-container">
-        {post.map((post) => (
-          <Post key={post._id} post={post} />
+        {posts.map((post, index) => (
+          <div key={index}>
+            {isLoading ? <>Loading...</> : <Post post={post} />}
+          </div>
         ))}
       </div>
     </>

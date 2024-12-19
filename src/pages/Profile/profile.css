@@ -1,5 +1,5 @@
 .profile-cont {
-    width: 90%;
+  
     margin: auto;
 }
 
@@ -7,7 +7,7 @@
     margin-top: 1.2rem;
     display: flex;
     gap: 20px;
-    margin-bottom: 1rem;
+    margin: 0.7rem auto 0.2rem auto;
 }
 
 .profile-main img {

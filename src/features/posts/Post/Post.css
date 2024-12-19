@@ -4,6 +4,7 @@
      box-shadow: rgba(0, 0, 0, 0.24) 0px 3px 8px;
     border-radius: 6px;
     margin-bottom: 13px;
+ 
 }
 
 .post-info {
@@ -36,10 +37,9 @@
     border-radius: 12px; 
 }
 
-.profile-name h3 {
+.profile-name .name-date  h3 {
     font-family: 'Poppins', sans-serif;
     user-select: none;
-
     margin: 0;
     padding: 0;
     outline: 0;
@@ -49,6 +49,17 @@
     font-weight: 600;
     font-size: 1.2rem;
             
+}
+
+.name-date {
+    display: flex;
+    flex-direction: column;
+    text-align: left;
+}
+
+
+.name-date span {
+    font-size: 0.7rem;
 }
 
 
@@ -62,20 +73,31 @@
     margin-bottom: 0.3rem;
 }
 
-.image-post img{
- width: 90%;
+.image-post  img{
+ width: 50rem;
+ border-radius: 8px;
 }
 
 .post-action-cont {
     display: flex;
-  justify-content: space-between;
+    justify-content: space-between;
+    border-top: 1px solid gray;
+    margin: 0 auto 0.2rem auto;
+    gap: 6px;
+    width: 50rem;
 }
 
-.post-action-cont span {
-    padding: 0px 25px;
+.post-action-cont div {
     cursor: pointer;
 }
 
+.post-action-cont .like-cont, .comment-act-cont {
+    width: 50%;
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-top: 0.4rem;
+}
 
 
 .post-info-act {
@@ -96,3 +118,85 @@
         cursor: pointer;	    
       
 }
+
+
+.post-counter {
+    margin: auto;
+    display: flex;
+    justify-content: space-between;
+    height: 1rem;
+   width: 50rem;
+}
+
+.post-counter span {
+    font-size: 0.8rem;
+}
+
+.commentlist-cont {
+    margin-top: 0.5rem;
+    padding: 0.3rem;
+    background-color: #f1f1f1;
+
+}
+
+.no-display {
+    display: none;
+}
+
+
+
+.comment-cont {
+    display: flex;
+  padding: 6px;
+  gap: 0.5rem;
+    margin: 12px;
+    width: auto;
+  border-radius: 18px;
+}
+
+.comment-cont img {
+    height: 1.9rem;
+    box-sizing: border-box;
+    display: block;
+    cursor: pointer;
+     width: 1.9rem;
+    border-radius: 100%;
+     margin: 0.3rem 0 0 0;
+    padding: 0;
+    object-fit: cover;
+}
+
+.comment-content {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+}
+
+.comment-content #comment-date {
+    font-size: 0.4rem;
+    text-align: left;
+    margin-left: 0.4rem;
+}
+
+
+
+.comment-cont .info-content {
+    display: flex;
+    flex-direction: column;
+    background-color: white;
+    text-align: left;
+    padding: 0.3rem;
+    border-radius: 12px;
+
+}
+
+.info-content h5 {
+    margin: 0;
+    font-weight: normal;
+    font-size: 1rem;
+}
+
+.info-content span {
+    font-size: 0.7rem;
+}
+

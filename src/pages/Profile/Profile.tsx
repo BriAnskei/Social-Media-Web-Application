@@ -29,7 +29,7 @@ const Profile = () => {
           <span>Vidoes</span>
         </div>
       </div>
-      <PostList></PostList>
+      <PostList />
     </div>
   );
 };
