@@ -16,6 +16,9 @@ app.use(cors());
 // connect Database
 connectDb();
 
+// Static images
+app.use("/images/posts", express.static(`${process.env.UPLOAD_PATH}/posts`));
+
 // api endpoit(Routes)
 app.use("/api/users", userRouter);
 app.use("/api/posts", postRouter);

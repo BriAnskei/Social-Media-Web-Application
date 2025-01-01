@@ -1,20 +1,39 @@
 import axios from "axios";
+import { LoginInputs } from "../types/AuthTypes";
 
-import { posts } from "../assets/assets";
+const api = axios.create({
+  baseURL: "http://localhost:4000",
+  headers: {
+    "Content-Type": "application/json",
+  },
+});
 
-const API_BASE_URL = "https://your-api-url.com/api";
-
-
-
+// fetch all user's post
 export const fetchPost = async () => {
-  await new Promise((resolve) => setTimeout(resolve, 1000));
-  const Posts = posts.map((posts) => ({
-    ...posts, createdAt: posts.createdAt.toISOString(),
-   comments: posts.comments.map((comment) => ({
-    ...comment, createdAt: comment.createdAt.toISOString()
-   }))
+  const response = await api.get(`/api/posts/postlist`);
 
-  }))
+  return response.data.data;
+};
 
-  return Posts;
+// Login Requests
+interface LoginResponse {
+  success: boolean;
+  token?: string;
+  message?: string;
+  // Optional for token and message
+}
+
+export const authApi = {
+  login: async (data: LoginInputs): Promise<LoginResponse> => {
+    try {
+      const response = await api.post("/api/users/login", data);
+
+      return response.data;
+    } catch (error) {
+      return {
+        success: false,
+        message: "Network Error Occured",
+      };
+    }
+  },
 };

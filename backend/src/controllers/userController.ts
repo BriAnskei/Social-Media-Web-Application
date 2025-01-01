@@ -4,19 +4,6 @@ import validator from "validator";
 import UserModel, { IUser } from "../models/userModel";
 import jwt from "jsonwebtoken";
 
-// Interface for request body
-interface RegisterRequest {
-  username: string;
-  fullName: string;
-  email: string;
-  password: string;
-}
-
-interface LoginRequest {
-  email: string;
-  password: string;
-}
-
 const createToken = (userId: string) => {
   if (!process.env.JWT_SECRET) {
     throw new Error("JWT_SECRET must be defined");
@@ -30,6 +17,7 @@ const createToken = (userId: string) => {
 export const register = async (req: Request, res: Response): Promise<any> => {
   const { username, fullName, email, password, profilePicture, bio } = req.body;
   try {
+    // mongoose query using "or" operator for email, usernames
     const existingUser = await UserModel.findOne({
       $or: [{ email }, { username }],
     });

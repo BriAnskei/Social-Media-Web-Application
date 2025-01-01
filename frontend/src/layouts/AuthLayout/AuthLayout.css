@@ -1,0 +1,23 @@
+.auth-layout {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 90vh;
+}
+
+.auth-container {
+  border: 0.2rem solid black;
+  border-radius: 12px;
+  width: 65%;
+  padding: 1.5rem 1rem;
+}
+
+.logo-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.logo-text span {
+  text-align: center;
+  font-size: 1.3rem;
+}

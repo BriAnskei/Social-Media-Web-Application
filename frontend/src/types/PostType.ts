@@ -1,12 +1,13 @@
 export interface PostType {
-    createdAt: string;
+  createdAt: string;
+  user: string;
+  content: string;
+  image: string;
+  likes: string[];
+  comments: {
     user: string;
     content: string;
-    image: string;
-    likes: string[];
-    comments: {
-        user: string;
-        content: string;
-        createdAt: string;
-    }[];
+    createdAt: string;
+  }[];
 }
+

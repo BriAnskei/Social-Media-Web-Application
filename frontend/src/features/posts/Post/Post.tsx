@@ -41,7 +41,10 @@ const Post = ({ post }: Post) => {
         </div>
         <div className="post-content">{post.content}</div>
         <div className="image-post">
-          <img src={post.image} alt="" />
+          <img
+            src={`http://localhost:4000/images/posts/${post.image}`}
+            alt=""
+          />
         </div>
         <div className="post-counter">
           <span>1 Likes</span>

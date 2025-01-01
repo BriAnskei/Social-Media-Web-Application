@@ -1,0 +1,40 @@
+.login-inputs {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.login-inputs input {
+  padding: 0.3rem 0.2rem;
+  border-radius: 8px;
+  border: 1px solid gray;
+}
+
+.login-invalid {
+  border: 1px solid red;
+  width: auto;
+  color: red;
+  padding: 0.1rem 1.5rem;
+  border-radius: 5px;
+}
+
+.login-act {
+  display: flex;
+  justify-content: space-between;
+}
+
+.login-act span b {
+  font: 100;
+}
+
+.login-act span {
+  font-size: 0.9rem;
+}
+
+.login-act button {
+  background-color: inherit;
+  border: 1px solid black;
+  border-radius: 5px;
+  height: 2em;
+  width: 35%;
+}
