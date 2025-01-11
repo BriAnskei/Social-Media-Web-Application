@@ -1,0 +1,87 @@
+.registration-inputs * {
+  margin: 2px;
+}
+
+.registration-inputs input {
+  border: 1px solid gray;
+  border-radius: 8px;
+  padding: 1rem 0.7rem;
+  margin: 0.7rem 0;
+  height: 2.3rem;
+}
+
+.flex-input {
+  display: flex;
+  justify-content: space-between;
+}
+
+.flex-input #text-input {
+  width: 45%;
+}
+
+.file-upload-container #text-input {
+  margin: 1.2rem 0;
+}
+
+.file-upload {
+  display: flex;
+  flex-direction: column;
+  width: 45%;
+}
+
+.file-upload label {
+  font-size: 0.9rem;
+}
+
+.file-upload .file-upload-input {
+  all: unset;
+  border: 1px solid gray;
+  padding: 0.3rem;
+  border-radius: 8px;
+  font-size: 0.7rem;
+  width: 90%;
+  height: 1rem;
+}
+
+.registration-inputs .credintials {
+  margin-top: 0.5rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.credintials div {
+  display: flex;
+  gap: 6px;
+}
+
+.credintials div input {
+  margin: 0;
+  width: 20vw;
+}
+
+.credintials div label {
+  margin: 4px 0;
+}
+
+.credintials .password-input {
+  margin-right: 28px;
+}
+
+.registration-act {
+  margin-top: 0.4rem;
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.9rem;
+}
+
+.registration-act button {
+  background-color: inherit;
+  border: 1px solid black;
+  border-radius: 5px;
+  height: 2em;
+  width: 35%;
+  cursor: pointer;
+}

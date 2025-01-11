@@ -1,12 +1,19 @@
 import { Request, Response } from "express";
-import postModel, { IPost } from "../models/postModel";
+import postModel from "../models/postModel";
 
-export const createPost = async (req: Request, res: Response): Promise<any> => {
+interface ExtentRequest extends Request {
+  userId?: string;
+}
+
+export const createPost = async (
+  req: ExtentRequest,
+  res: Response
+): Promise<void> => {
   try {
     await postModel.create({
-      user: req.body.user,
-      content: req.body.user,
-      image: `${req.file?.filename}`,
+      user: req.userId,
+      content: req.body.content,
+      image: req.file?.filename,
     });
 
     res.json({ success: true, message: "post successfully created" });

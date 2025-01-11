@@ -1,5 +1,10 @@
 .notif-container {
-    display: flex;
-    justify-content: space-between;
-    padding: 10px;
+  display: flex;
+  justify-content: space-between;
+  padding: 10px;
+}
+
+.notif-modal-position {
+  margin-right: 17vw;
+  top: 20px;
 }

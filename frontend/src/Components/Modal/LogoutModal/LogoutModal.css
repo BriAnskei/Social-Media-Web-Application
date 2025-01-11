@@ -1,0 +1,23 @@
+.logout-modal {
+  z-index: 1050;
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+.logout-modal-position {
+  top: 8rem;
+}
+
+.logout-actions {
+  display: flex;
+  justify-content: space-between;
+}
+
+.modal-footer span {
+  cursor: pointer;
+}
+
+.modal-footer {
+  border: none;
+  display: flex;
+  justify-content: space-between;
+}

@@ -1,16 +1,18 @@
 import React, { useState } from "react";
-import { LoginInputs } from "../../../types/AuthTypes";
+import { LoginTypes } from "../../../types/AuthTypes";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "../../../store/store";
-import { loginAuth } from "../authSlice";
-import { useNavigate } from "react-router";
+import { clearError, loginAuth } from "../authSlice";
+import { useNavigate, Link } from "react-router-dom";
 import "./Login.css";
 
 const Login = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch<AppDispatch>();
-  const { loading, error } = useSelector((state: RootState) => state.auth);
-  const [data, setData] = useState<LoginInputs>({
+  const { loading, error, isAuthenticated } = useSelector(
+    (state: RootState) => state.auth
+  );
+  const [data, setData] = useState<LoginTypes>({
     email: "",
     password: "",
   });
@@ -18,7 +20,7 @@ const Login = () => {
   const [isInputInvalid, setIsInputInvalid] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
-  console.log(loading, error);
+  console.log(loading, error, isAuthenticated);
 
   const onChangeHandler = (e: any) => {
     const { name, value } = e.target;
@@ -28,6 +30,7 @@ const Login = () => {
     }));
     setIsInputInvalid(false);
     setErrorMessage("");
+    dispatch(clearError());
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -37,9 +40,10 @@ const Login = () => {
       const resultAction = await dispatch(loginAuth(data)).unwrap();
       // unwrap method, part of redux createAsyncThunk that returns the payload of the response
 
-      if (resultAction.token) {
-        console.log(resultAction);
+      if (resultAction.token && resultAction.success) {
         navigate("/");
+      } else {
+        console.error("Unexpected API response:", resultAction);
       }
     } catch (error) {
       setIsInputInvalid(true);
@@ -77,9 +81,9 @@ const Login = () => {
           )}
 
           <div className="login-act">
-            <button type="submit">Login</button>
+            <button type="submit">Sign in</button>
             <span>
-              Dont have an account? <a href="">Sign up</a>
+              Dont have an account? <Link to={"/register"}>Sign up</Link>
             </span>
           </div>
         </div>

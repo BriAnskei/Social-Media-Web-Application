@@ -2,10 +2,7 @@ import jwt from "jsonwebtoken";
 import { Request, Response, NextFunction } from "express";
 
 interface AuthRequest extends Request {
-  body: {
-    userId?: string; // Optional since it will be added after decoding
-    [key: string]: any; // Allow additional keys in the body
-  };
+  userId?: string;
 }
 
 const authMiddleware = async (
@@ -24,8 +21,9 @@ const authMiddleware = async (
     const token_decode = jwt.verify(
       token,
       process.env.JWT_SECRET as string
-    ) as { id: string };
-    req.body.userId = token_decode.id; // Attach the user's ID to the request body
+    ) as { userId: string };
+
+    req.userId = token_decode.userId; // Attach the user's ID to the request body
     next(); // Pass control to the route handler functions
   } catch (error) {
     console.error("Error decoding token:", error);

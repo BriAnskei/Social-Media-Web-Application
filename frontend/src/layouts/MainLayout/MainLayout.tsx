@@ -5,7 +5,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faGithub,
   faFacebook,
-  faInstagram,
+  faInstagram, 
 } from "@fortawesome/free-brands-svg-icons";
 
 import { Outlet } from "react-router";

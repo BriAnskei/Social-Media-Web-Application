@@ -3,6 +3,10 @@ import bcrypt from "bcrypt";
 import validator from "validator";
 import UserModel, { IUser } from "../models/userModel";
 import jwt from "jsonwebtoken";
+import path from "path";
+import fs from "fs";
+
+import { nameSuffix } from "../middleware/upload";
 
 const createToken = (userId: string) => {
   if (!process.env.JWT_SECRET) {
@@ -13,9 +17,42 @@ const createToken = (userId: string) => {
   });
 };
 
+// async function getDefaultImageBuffer(): Promise<Buffer> {
+//   // _dirname returns the head point directory of the file
+//   const defaultImagePath = path.join(
+//     __dirname,
+//     "../assets/Default_Profile.jpg"
+//   );
+//   try {
+//     return await fsValidation.readFile(defaultImagePath);
+//   } catch (error) {
+//     throw new Error("Default image not found.");
+//   }
+// }
+
+// function checkDefaultImage() {
+//   const defaultImagePath = "uploads/profile/Default_Profile.jpg";
+
+//   // Check if the file exists and if it's not empty
+//   fs.stat(defaultImagePath, (err, stats) => {
+//     if (err) {
+//       console.log("Error: File does not exist or cannot be accessed");
+//       return false;
+//     }
+
+//     if (stats.size > 0) {
+//       console.log("The default image file exists and is not empty");
+//       return true;
+//     } else {
+//       console.log("The default image file is empty");
+//       return false;
+//     }
+//   });
+// }
+
 // Properly typed request handler
 export const register = async (req: Request, res: Response): Promise<any> => {
-  const { username, fullName, email, password, profilePicture, bio } = req.body;
+  const { username, fullName, email, password } = req.body;
   try {
     // mongoose query using "or" operator for email, usernames
     const existingUser = await UserModel.findOne({
@@ -52,17 +89,28 @@ export const register = async (req: Request, res: Response): Promise<any> => {
       fullName,
       email,
       password: hashedPassword,
-      profilePicture,
-      bio,
     });
 
-    const savedUser = await newUser.save();
+    const userId = newUser._id.toString(); // Ensure userId is a string
+
+    const uploadPath = path.join("uploads", "profile", userId);
+    await fs.promises.mkdir(uploadPath, { recursive: true }); // Creates the upload path deriectory if it doesn't Exist
+
+    if (req.file) {
+      const fileName = `${nameSuffix}${req.file.originalname}`;
+
+      const filePath = path.join(uploadPath, fileName);
+      await fs.promises.writeFile(filePath, req.file.buffer); // Save the file from to memory disk
+
+      newUser.profilePicture = fileName;
+    }
+
+    await newUser.save();
 
     // Generate token
-    const token = createToken(savedUser._id.toString());
-
+    const token = createToken(userId);
     // Return response
-    res.json({ sucess: true, token });
+    res.json({ success: true, token });
   } catch (error) {
     console.error("Register error:", error);
     return res.json({ success: false, message: "Error" });
@@ -74,6 +122,7 @@ export const login = async (req: Request, res: Response): Promise<any> => {
 
   try {
     // Find user by email
+
     const user = await UserModel.findOne({ email });
 
     if (!user) {

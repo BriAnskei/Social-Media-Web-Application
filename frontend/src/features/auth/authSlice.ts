@@ -1,10 +1,10 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import { AuthState, LoginInputs, UserTypes } from "../../types/AuthTypes";
+import { AuthState, LoginTypes, RegisterTypes } from "../../types/AuthTypes";
 import { authApi } from "../../utils/api";
 
 export const loginAuth = createAsyncThunk(
   "auth/login",
-  async (credentials: LoginInputs, { rejectWithValue }) => {
+  async (credentials: LoginTypes, { rejectWithValue }) => {
     try {
       const res = await authApi.login(credentials);
 
@@ -22,10 +22,31 @@ export const loginAuth = createAsyncThunk(
   }
 );
 
+export const registerAuth = createAsyncThunk(
+  "auth/register",
+  async (data: RegisterTypes, { rejectWithValue }) => {
+    try {
+      const res = await authApi.register(data);
+
+      if (!res.success) {
+        return rejectWithValue(res.message || "Registration Failed");
+      }
+
+      if (res.token) {
+        localStorage.setItem("token", res.token);
+      }
+
+      return res;
+    } catch (error) {
+      return rejectWithValue("Registration failed");
+    }
+  }
+);
+
 const initialState: AuthState = {
   token: localStorage.getItem("token"),
   user: null,
-  isAuthenticated: !!localStorage.getItem("token"),
+  isAuthenticated: Boolean(localStorage.getItem("token")),
   //double negation
   loading: false,
   error: null,
@@ -38,6 +59,7 @@ const authSlice = createSlice({
     logout: (state) => {
       localStorage.removeItem("token");
       state.user = null;
+
       state.isAuthenticated = false;
       state.token = null;
       state.error = null;
@@ -48,6 +70,7 @@ const authSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
+      // Login cases
       .addCase(loginAuth.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -55,8 +78,23 @@ const authSlice = createSlice({
       .addCase(loginAuth.fulfilled, (state, action) => {
         state.loading = false;
         state.token = action.payload.token || null;
+        state.isAuthenticated = Boolean(state.token);
       })
       .addCase(loginAuth.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+      })
+      // Registration cases
+      .addCase(registerAuth.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(registerAuth.fulfilled, (state, action) => {
+        state.loading = false;
+        state.token = action.payload.token || null;
+        state.isAuthenticated = Boolean(action.payload.token);
+      })
+      .addCase(registerAuth.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
       });
