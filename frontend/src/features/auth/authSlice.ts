@@ -1,19 +1,23 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import { AuthState, LoginTypes, RegisterTypes } from "../../types/AuthTypes";
-import { authApi } from "../../utils/api";
+import { authApi, userApi } from "../../utils/api";
+import { getData } from "../users/userSlice";
+import { RootState } from "../../store/store";
 
 export const loginAuth = createAsyncThunk(
   "auth/login",
-  async (credentials: LoginTypes, { rejectWithValue }) => {
+  async (credentials: LoginTypes, { rejectWithValue, dispatch }) => {
     try {
       const res = await authApi.login(credentials);
+      const token = res.token;
 
       if (!res.success) {
         return rejectWithValue(res.message || "Login Failed"); // Creates a new payload to return error
       }
 
-      if (res.token) {
-        localStorage.setItem("token", res.token);
+      if (token) {
+        localStorage.setItem("token", token);
+        await dispatch(getData(token));
       }
       return res;
     } catch (error) {
@@ -24,7 +28,7 @@ export const loginAuth = createAsyncThunk(
 
 export const registerAuth = createAsyncThunk(
   "auth/register",
-  async (data: RegisterTypes, { rejectWithValue }) => {
+  async (data: RegisterTypes, { rejectWithValue, dispatch }) => {
     try {
       const res = await authApi.register(data);
 
@@ -34,6 +38,7 @@ export const registerAuth = createAsyncThunk(
 
       if (res.token) {
         localStorage.setItem("token", res.token);
+        await dispatch(getData(res.token));
       }
 
       return res;
@@ -43,11 +48,24 @@ export const registerAuth = createAsyncThunk(
   }
 );
 
+export const checkAuth = createAsyncThunk(
+  "auth/checkAuth",
+  async (_, { dispatch, rejectWithValue }) => {
+    try {
+      const token = localStorage.getItem("token");
+
+      if (!token) return rejectWithValue("No token");
+
+      await dispatch(getData(token));
+    } catch (error) {
+      return rejectWithValue("Error Fetching user data");
+    }
+  }
+);
+
 const initialState: AuthState = {
   token: localStorage.getItem("token"),
-  user: null,
   isAuthenticated: Boolean(localStorage.getItem("token")),
-  //double negation
   loading: false,
   error: null,
 };
@@ -58,7 +76,6 @@ const authSlice = createSlice({
   reducers: {
     logout: (state) => {
       localStorage.removeItem("token");
-      state.user = null;
 
       state.isAuthenticated = false;
       state.token = null;
@@ -97,9 +114,20 @@ const authSlice = createSlice({
       .addCase(registerAuth.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
+      })
+      // Fetching case
+      .addCase(checkAuth.fulfilled, (state) => {
+        state.isAuthenticated = true;
+      })
+      .addCase(checkAuth.rejected, (state, action) => {
+        state.isAuthenticated = false; // Invalid token or no token
+        state.error = action.payload as string;
       });
   },
 });
+
+// Token for Object model manipulation.
+export const userToken = (state: RootState): string | null => state.auth.token;
 
 export const { logout, clearError } = authSlice.actions;
 export default authSlice.reducer;

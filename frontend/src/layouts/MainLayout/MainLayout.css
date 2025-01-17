@@ -1,99 +1,28 @@
 .main-container {
-    margin-top: 5.5rem;
+  margin-top: 5.5rem;
 }
-
-
-.create-post {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 20px;
-    padding: 6px;
-    height: 3.6rem;
-    width: 80%;
-    margin: auto;
-}
-
-.create-post img {
-    
-    font-family: Outfit;
-    margin: 0;
-    padding: 0;
-    outline: 0;
-    border: 0;
-    width: 2.3rem;
-    height: 2.3rem;
-    box-sizing: border-box;
-   
-    object-fit: cover;
-    border-radius: 12px;
-}
-
-.create-post input {
-    height: 2.3rem;
-    width: 47%;
-    border-radius: 10px;
-    padding: 12px;
-    border: 1px solid #c5c5c5;
-    
-}
-
-.upload {
-    display: flex;
-    border: 1px solid gray;
-    height: 2.3rem;
-    padding: 3px;
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: auto;
-}
-
-.upload #text {
-    font-size: 0.8rem;
-}
-
-.create-post button {
-    height: 2.3rem;
-    width: 20%;
-    background: none;
-    border: 1px solid gray;
-    border-radius: 6px;
-    margin-left: 2px;
-}
-
-.create-post .upload, button {
-    cursor: pointer;
-}
-
 
 .footer-container {
-    margin-top: 4rem;
-    
-    padding: 20px 8vw;
-    padding-top: 3.4rem;
+  margin-top: 4rem;
+
+  padding: 20px 8vw;
+  padding-top: 3.4rem;
 }
 
 .footer-content {
-    display: flex;
-    justify-content: center;
-    gap: 13rem;
-  
+  display: flex;
+  justify-content: center;
+  gap: 13rem;
 }
- .footer-container span {
-    font-size: 0.9rem;
-}
-
-
-
- .company {
-    width: 5rem;
-
+.footer-container span {
+  font-size: 0.9rem;
 }
 
+.company {
+  width: 5rem;
+}
 
-.follow span { 
-    margin-right: 0.5rem;
-    cursor: pointer;
-} 
+.follow span {
+  margin-right: 0.5rem;
+  cursor: pointer;
+}

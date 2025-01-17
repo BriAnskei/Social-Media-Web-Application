@@ -22,7 +22,7 @@ const Register = () => {
     (state: RootState) => state.auth
   );
 
-  console.log(loading, error, isAuthenticated);
+  const [errorMessage, setErrorMessage] = useState("");
 
   const [data, setData] = useState<PropTypes>({
     username: "",
@@ -38,11 +38,12 @@ const Register = () => {
       ...prev,
       [name]: value,
     }));
+    setErrorMessage("");
   };
 
   // Return PropTypes as an RegistrationTypes, 'fullName'
   const manipulateType = (formData: PropTypes): RegisterTypes => {
-    const { firstName, lastName, ...rest } = formData; // (Spread Op)...rest: the rest of the prop
+    const { firstName, lastName, ...rest } = formData; // (Spread Op)...rest: the rest of the prop except Fname, Lname
     return {
       ...rest,
       fullName: `${firstName.trim()} ${lastName.trim()}`,
@@ -52,7 +53,6 @@ const Register = () => {
   const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target?.files;
     if (file && file.length > 0) {
-      console.log("File Selected: ", file[0]);
       setData((prev) => {
         return { ...prev, profilePicture: file[0] };
       });
@@ -72,7 +72,7 @@ const Register = () => {
         console.error("Unexpected API response:", response);
       }
     } catch (error) {
-      console.log(error);
+      setErrorMessage(error as string);
     }
   };
 
@@ -81,6 +81,7 @@ const Register = () => {
       <form className="registration-inputs" onSubmit={handleSubmit}>
         <div className="flex-input">
           <input
+            required
             id="text-input"
             type="text"
             placeholder="first name"
@@ -89,6 +90,7 @@ const Register = () => {
             name="firstName"
           />
           <input
+            required
             id="text-input"
             type="text"
             placeholder="last name"
@@ -99,6 +101,7 @@ const Register = () => {
         </div>
         <div className="flex-input file-upload-container">
           <input
+            required
             id="text-input"
             placeholder="username"
             type="text"
@@ -123,6 +126,7 @@ const Register = () => {
           <div>
             <label htmlFor="">Email</label>
             <input
+              required
               type="text"
               name="email"
               onChange={onChangeHandler}
@@ -133,6 +137,7 @@ const Register = () => {
           <div className="password-input">
             <label htmlFor="">Password</label>
             <input
+              required
               type="text"
               name="password"
               onChange={onChangeHandler}
@@ -143,10 +148,17 @@ const Register = () => {
         <div className="registration-act">
           <button type="submit">Sign in</button>
           <span>
-            Alrady have an account? <Link to={"/Login"}>Sign up</Link>
+            Alrady have an account? <Link to={"/Login"}>Sign in</Link>
           </span>
         </div>
       </form>
+
+      {errorMessage && (
+        <div className="register-invalid">
+          <b>Error: </b>
+          <span>{errorMessage}</span>
+        </div>
+      )}
     </div>
   );
 };

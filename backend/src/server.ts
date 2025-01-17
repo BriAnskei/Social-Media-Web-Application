@@ -4,6 +4,7 @@ import { connectDb } from "./config/db";
 import "dotenv/config";
 import userRouter from "./routes/userRoutes";
 import postRouter from "./routes/postRoutes";
+import path from "path";
 
 // app config
 const app = express();
@@ -18,6 +19,10 @@ connectDb();
 
 // Static images
 app.use("/images/posts", express.static(`${process.env.UPLOAD_PATH}/posts`));
+app.use(
+  "/uploads/profile",
+  express.static(`${process.env.UPLOAD_PATH}/profile`)
+);
 
 // api endpoit(Routes)
 app.use("/api/users", userRouter);

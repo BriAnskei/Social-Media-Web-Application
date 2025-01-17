@@ -4,25 +4,16 @@ import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "../../../store/store";
 import { fetchChats } from "../messengerSlice";
 
-
-
 const ChatList = () => {
   const dispatch: AppDispatch = useDispatch();
   const chats = useSelector((state: RootState) => state.chats.chats);
   const isLoading = useSelector((state: RootState) => state.chats.loading);
 
   useEffect(() => {
-    console.log("Fetching starts");
     dispatch(fetchChats());
   }, []);
 
-  if (isLoading) {
-    console.log("Fetching messages in redux");
-  } else {
-    console.log("Succesfull");
-  }
 
-  console.log(chats)
 
   return (
     <>

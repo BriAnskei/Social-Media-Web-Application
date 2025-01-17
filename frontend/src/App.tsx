@@ -5,25 +5,29 @@ import "bootstrap/dist/js/bootstrap.bundle.min.js"; // Optional for Bootstrap's 
 import Feed from "./pages/Feed/Feed";
 import { Navigate, Route, Routes } from "react-router";
 import MainLayout from "./layouts/MainLayout/MainLayout";
-import Profile from "./pages/Profile/Profile";
+
 import Login from "./features/auth/Login/Login";
 import Register from "./features/auth/Register/Register";
 import AuthLayout from "./layouts/AuthLayout/AuthLayout";
-import { useSelector } from "react-redux";
-import { RootState } from "./store/store";
+import { useDispatch, useSelector } from "react-redux";
+import { AppDispatch, RootState } from "./store/store";
+import ProfilePage from "./pages/Profile/ProfilePage";
+import { useEffect } from "react";
+import { checkAuth } from "./features/auth/authSlice";
 
 function App() {
-  const isAuthenticated = useSelector(
-    (state: RootState) => state.auth.isAuthenticated
-  );
+  const { isAuthenticated } = useSelector((state: RootState) => state.auth);
+  const dispatch = useDispatch<AppDispatch>();
 
-  console.log("authenticated", isAuthenticated);
+  useEffect(() => {
+    dispatch(checkAuth());
+  }, [dispatch]);
 
   return (
     <>
       <div className="app">
         <Routes>
-          {/* Public Routes */}z
+          {/* Public Routes */}
           <Route element={<AuthLayout />}>
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
@@ -35,7 +39,7 @@ function App() {
             }
           >
             <Route path="/" element={<Feed />} />
-            <Route path="/profile" element={<Profile />} />
+            <Route path="/profile" element={<ProfilePage />} />
           </Route>
           {/* Catch-All Route */}
           <Route

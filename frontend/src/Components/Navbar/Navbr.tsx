@@ -3,15 +3,14 @@ import "./Navbar.css";
 import { useState } from "react";
 import ChatModal from "../Modal/ChatModal/ChatModal";
 import NotifModal from "../Modal/NotificationModal/NotifModal";
-import { useDispatch, useSelector } from "react-redux";
-import { AppDispatch, RootState } from "../../store/store";
+import { useSelector } from "react-redux";
+import { RootState } from "../../store/store";
 import LogoutModal from "../Modal/LogoutModal/LogoutModal";
 
 const Navbr = () => {
   const [showMessageModal, setShowMessageModal] = useState(false);
   const [showNotifModal, setShowNotifModal] = useState(false);
   const [showLogout, setShowLogout] = useState(false);
-  const dispatch = useDispatch<AppDispatch>();
 
   const numberOfChants = useSelector(
     (state: RootState) => state.chats.chats.length

@@ -7,7 +7,7 @@ export interface IUser extends Document {
   fullName: string;
   email: string;
   password: string;
-  profilePicture: string;
+  profilePicture?: string;
   bio?: string;
   followers: Types.ObjectId[];
   following: Types.ObjectId[];

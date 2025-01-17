@@ -16,7 +16,7 @@ const createToken = (userId: string) => {
     expiresIn: "7d",
   });
 };
-
+// fOR UPLOADING DEFAULT PROFILE FUNCTION
 // async function getDefaultImageBuffer(): Promise<Buffer> {
 //   // _dirname returns the head point directory of the file
 //   const defaultImagePath = path.join(
@@ -136,6 +136,71 @@ export const login = async (req: Request, res: Response): Promise<any> => {
 
     const token = createToken(user._id.toString());
     res.json({ success: true, token });
+  } catch (error) {
+    console.log(error);
+    return res.json({ success: false, message: "Error" });
+  }
+};
+
+interface ExtendReq extends Request {
+  userId?: string; //explicitly extend the Request type from Express to include the userId property.
+}
+
+export const getData = async (req: ExtendReq, res: Response): Promise<any> => {
+  try {
+    const userData = await UserModel.findById(req.userId).exec();
+
+    res.json({ success: true, user: userData });
+  } catch (error) {
+    console.log(error);
+    return res.json({ success: false, message: "Error" });
+  }
+};
+
+export const updateProfile = async (
+  req: ExtendReq,
+  res: Response
+): Promise<any> => {
+  try {
+    const { fullName, bio } = req.body;
+
+    const updatedData: any = { fullName, bio };
+    const newProfileImage = req.file;
+
+    if (newProfileImage) {
+      const userId = req.userId;
+
+      if (!userId) return res.json({ success: false, message: "Unauthorized" });
+
+      const fileName = `${nameSuffix}${newProfileImage.originalname}`;
+      const uploadPath = path.join("uploads", "profile", userId.toString());
+
+      await fs.promises.mkdir(uploadPath, { recursive: true }); // Creates the upload path deriectory if it doesn't Exist
+
+      const filePath = path.join(uploadPath, fileName);
+
+      await fs.promises.writeFile(filePath, newProfileImage.buffer);
+
+      updatedData.profilePicture = fileName;
+    }
+
+    const updatedUser = await UserModel.findByIdAndUpdate(
+      req.userId,
+      {
+        $set: updatedData, //$set to update specific fields
+      },
+      { new: true } // return the updated document
+    );
+
+    if (!updatedUser) {
+      return res.json({ success: false, message: "user Not Found" });
+    }
+
+    res.json({
+      success: true,
+      user: updatedUser,
+      message: "User succesfully updated",
+    });
   } catch (error) {
     console.log(error);
     return res.json({ success: false, message: "Error" });

@@ -1,0 +1,24 @@
+.upload-modal-position {
+  top: 100px;
+}
+
+.createpost-modal {
+  z-index: 1050;
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+.upload-header {
+  display: flex;
+  align-items: center; /* Vertically center the items */
+  justify-content: space-between; /* Space out the elements: one at the start and the other at the end */
+}
+
+.upload-header div span {
+  cursor: pointer;
+}
+
+.upload-header .post-logo {
+  margin: 0 auto;
+  text-align: center;
+  flex: 1;
+}

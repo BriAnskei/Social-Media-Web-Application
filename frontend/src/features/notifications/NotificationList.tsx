@@ -17,12 +17,6 @@ const NotificationList = () => {
     dispatch(fetchNotifs());
   }, []);
 
-  if (isLoading) {
-    console.log("Fetching Notifs");
-  } else {
-    console.log("Succesfull");
-  }
-
   const displayLogoType = (notificationType: string) => {
     switch (notificationType) {
       case "like":
@@ -35,8 +29,6 @@ const NotificationList = () => {
         return "notification_important";
     }
   };
-
-  console.log(notifications);
 
   return (
     <div className="notif-cont">

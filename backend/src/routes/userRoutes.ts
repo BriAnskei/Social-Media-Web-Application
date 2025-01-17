@@ -1,11 +1,24 @@
 // routes/userRouter.ts
 import express, { Router } from "express";
-import { login, register } from "../controllers/userController";
+import {
+  getData,
+  login,
+  register,
+  updateProfile,
+} from "../controllers/userController";
 import upload from "../middleware/upload";
+import authMiddleware from "../middleware/auth";
 
 const userRouter: Router = express.Router();
 
 userRouter.post("/register", upload.profile.single("profilePicture"), register);
 userRouter.post("/login", login);
+userRouter.get("/me", authMiddleware, getData);
+userRouter.post(
+  "/update",
+  authMiddleware,
+  upload.profile.single("profilePicture"),
+  updateProfile
+);
 
 export default userRouter;

@@ -85,3 +85,12 @@
   width: 35%;
   cursor: pointer;
 }
+
+.register-invalid {
+  margin-top: 13px;
+  border: 1px solid red;
+  width: auto;
+  color: red;
+  padding: 0.1rem 1.5rem;
+  border-radius: 5px;
+}

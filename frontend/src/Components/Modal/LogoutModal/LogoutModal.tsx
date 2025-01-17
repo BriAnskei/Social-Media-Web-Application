@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import "./LogoutModal.css";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faXTwitter } from "@fortawesome/free-brands-svg-icons";
@@ -7,16 +7,23 @@ import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "../../../store/store";
 import { logout } from "../../../features/auth/authSlice";
 import { useNavigate } from "react-router-dom";
+import { getData } from "../../../features/users/userSlice";
 
 const LogoutModal: React.FC<ModalTypes> = ({ showModal, onClose }) => {
   const navigate = useNavigate();
   const dispatch = useDispatch<AppDispatch>();
-  const authState = useSelector((state: RootState) => state.auth);
+  const token = useSelector((state: RootState) => state.auth.token);
+  // const authState = useSelector((state: RootState) => state.auth);
 
-  console.log(authState);
+  // console.log(authState);
 
-  const onLogout = (e: any) => {
+  useEffect(() => {
+    dispatch(getData(token || "null"));
+  }, []);
+
+  const handleLogout = (e: any) => {
     e.preventDefault();
+
     dispatch(logout());
     navigate("/");
   };
@@ -38,8 +45,9 @@ const LogoutModal: React.FC<ModalTypes> = ({ showModal, onClose }) => {
               <br />
             </div>
             <div className="modal-footer">
-              <span onClick={onLogout}>Yes</span>
-              {"  "} <span onClick={() => onClose()}>No</span>
+              <span onClick={handleLogout}>Yes</span>
+              
+              <span onClick={() => onClose()}>No</span>
             </div>
           </div>
         </div>

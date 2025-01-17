@@ -1,9 +1,17 @@
 import axios from "axios";
 import { LoginTypes, RegisterTypes } from "../types/AuthTypes";
+import { NewDataType, UserTypes } from "../types/user";
 
 const api = axios.create({
   baseURL: "http://localhost:4000",
 });
+
+export interface ApiResponse {
+  success: boolean;
+  token?: string;
+  message?: string;
+  user?: UserTypes;
+}
 
 // fetch all user's post
 export const fetchPost = async () => {
@@ -16,16 +24,49 @@ export const fetchPost = async () => {
   }
 };
 
-// Login Requests
-interface AuthResponse {
-  success: boolean;
-  token?: string;
-  message?: string;
-  // Optional for token and message
-}
+export const userApi = {
+  getData: async (token: string): Promise<ApiResponse> => {
+    try {
+      const response = await api.get("/api/users/me", {
+        headers: {
+          token,
+          "Content-Type": "application/json",
+        },
+      });
+
+      return response.data;
+    } catch (error) {
+      return {
+        success: false,
+        message: "Network Error Occured",
+      };
+    }
+  },
+
+  updateProfile: async (
+    token: string,
+    data: FormData
+  ): Promise<ApiResponse> => {
+    try {
+      const response = await api.post("/api/users/update", data, {
+        headers: {
+          token,
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      return response.data;
+    } catch (error) {
+      return {
+        success: false,
+        message: "Api error response",
+      };
+    }
+  },
+};
 
 export const authApi = {
-  login: async (data: LoginTypes): Promise<AuthResponse> => {
+  login: async (data: LoginTypes): Promise<ApiResponse> => {
     try {
       const response = await api.post("/api/users/login", data, {
         headers: {
@@ -42,7 +83,7 @@ export const authApi = {
     }
   },
 
-  register: async (data: RegisterTypes): Promise<AuthResponse> => {
+  register: async (data: RegisterTypes): Promise<ApiResponse> => {
     try {
       const formData = new FormData();
 
@@ -61,8 +102,6 @@ export const authApi = {
           "Content-Type": "multipart/form-data",
         },
       });
-
-      console.log(response.data);
 
       return response.data;
     } catch (error) {
