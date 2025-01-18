@@ -1,6 +1,7 @@
 import axios from "axios";
 import { LoginTypes, RegisterTypes } from "../types/AuthTypes";
-import { NewDataType, UserTypes } from "../types/user";
+import { UserTypes } from "../types/user";
+import { FetchPostType } from "../types/PostType";
 
 const api = axios.create({
   baseURL: "http://localhost:4000",
@@ -11,17 +12,41 @@ export interface ApiResponse {
   token?: string;
   message?: string;
   user?: UserTypes;
+  posts?: FetchPostType[];
 }
 
-// fetch all user's post
-export const fetchPost = async () => {
-  try {
-    const response = await api.get(`/api/posts/postlist`);
+export const postApi = {
+  fetchPost: async (): Promise<ApiResponse> => {
+    try {
+      const response = await api.get(`/api/posts/postlist`);
 
-    return response.data.data;
-  } catch (error) {
-    console.log("Error fetching post");
-  }
+      return response.data;
+    } catch (error) {
+      return {
+        success: false,
+        message: "Network Error Occured",
+      };
+    }
+  },
+  uploadPost: async (token: string, data: FormData): Promise<ApiResponse> => {
+    try {
+      const response = await api.post(`/api/posts/upload`, data, {
+        headers: {
+          token,
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      console.log("APi responce: ", response);
+
+      return response.data;
+    } catch (error) {
+      return {
+        success: false,
+        message: "Network Error Occured",
+      };
+    }
+  },
 };
 
 export const userApi = {

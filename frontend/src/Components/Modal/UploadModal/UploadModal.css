@@ -1,5 +1,9 @@
 .upload-modal-position {
-  top: 100px;
+  top: 4.5rem;
+}
+
+.post-modal-content {
+  height: 27rem;
 }
 
 .createpost-modal {
@@ -11,6 +15,7 @@
   display: flex;
   align-items: center; /* Vertically center the items */
   justify-content: space-between; /* Space out the elements: one at the start and the other at the end */
+  height: 35px;
 }
 
 .upload-header div span {
@@ -21,4 +26,58 @@
   margin: 0 auto;
   text-align: center;
   flex: 1;
+}
+
+.user-logo {
+  display: flex;
+  gap: 8px;
+  padding: 0;
+  margin: 0;
+  border: 0;
+}
+
+.user-logo span {
+  font-size: 1rem;
+}
+
+.user-logo img {
+  height: 2.3rem;
+  width: 2.3rem;
+  border-radius: 100%;
+}
+
+.post-input {
+  padding: 2px 5px;
+  height: 18.3rem;
+}
+
+.post-input textarea {
+  padding: 10px 16px;
+  resize: none;
+  border: none;
+
+  height: 250px;
+  width: 100%;
+}
+
+.post-input textarea:focus {
+  outline: none;
+  box-shadow: none;
+}
+
+.modal-post-footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  margin-top: -22px;
+  height: 3rem;
+}
+
+.modal-post-footer button {
+  background-color: inherit;
+  border: 1px solid gray;
+  border-radius: 5px;
+  width: 80%;
+  margin: 5px;
 }

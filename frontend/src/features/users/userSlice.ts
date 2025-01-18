@@ -36,8 +36,6 @@ export const update = createAsyncThunk<
     if (!res.success)
       return rejectWithValue(res.message || "Editing profile failed");
 
-    console.log("return api res: ", res);
-
     return res;
   } catch (error) {
     return rejectWithValue("Editing profile failed");
@@ -102,7 +100,6 @@ const userSlice = createSlice({
       })
       .addCase(update.fulfilled, (state, action) => {
         state.loading = false;
-        console.log("Payload logger:", action.payload.user);
 
         state.user = action.payload.user || initialState.user;
       })

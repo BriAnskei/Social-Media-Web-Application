@@ -1,11 +1,11 @@
 import "./Post.css";
-import { PostType } from "../../../types/PostType";
 import { useDispatch } from "react-redux";
 import { toggle } from "../postSlice";
 import { useState } from "react";
+import { FetchPostType } from "../../../types/PostType";
 
 interface Post {
-  post: PostType;
+  post: FetchPostType;
 }
 
 const Post = ({ post }: Post) => {
@@ -23,7 +23,7 @@ const Post = ({ post }: Post) => {
         <div className="post-info">
           <div className="profile-name">
             <img
-              src="https://images.pexels.com/photos/771742/pexels-photo-771742.jpeg"
+              src={`http://localhost:4000/uploads/profile/${post.user}/`}
               alt=""
             />
             <div className="name-date">
@@ -42,7 +42,7 @@ const Post = ({ post }: Post) => {
         <div className="post-content">{post.content}</div>
         <div className="image-post">
           <img
-            src={`http://localhost:4000/images/posts/${post.image}`}
+            src={`http://localhost:4000/images/posts/${post.user}/${post.image}`}
             alt=""
           />
         </div>

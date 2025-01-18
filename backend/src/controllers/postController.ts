@@ -30,7 +30,7 @@ export const postsLists = async (
   try {
     const allPost = await postModel.find({});
 
-    res.json({ success: true, data: allPost });
+    res.json({ success: true, posts: allPost });
   } catch (error) {
     console.log("Fetching post Post:", error);
     res.json({ success: false, message: "Error" });
