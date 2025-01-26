@@ -12,7 +12,16 @@ export interface FetchPostType {
   createdAt: string;
 }
 
-export interface PostType {
+// Uploading posts
+export interface UploadPostTypes {
   content: string;
   image?: File;
+}
+
+// Types for normalize stated data
+export interface PostsState {
+  byId: Record<string, FetchPostType;
+  allIds: string[];
+  loading: boolean;
+  error: string | null;
 }

@@ -5,10 +5,13 @@ import Post from "../Post/Post";
 import { AppDispatch, RootState } from "../../../store/store";
 import { useDispatch, useSelector } from "react-redux";
 import { getPosts } from "../postSlice";
+import { FetchPostType } from "../../../types/PostType";
 
 const PostList = () => {
   const dispatch: AppDispatch = useDispatch();
-  const posts = useSelector((state: RootState) => state.posts.posts);
+  const posts: FetchPostType[] = useSelector(
+    (state: RootState) => state.posts.posts
+  );
   const isLoading = useSelector((state: RootState) => state.posts.loading);
 
   useEffect(() => {

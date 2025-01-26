@@ -47,7 +47,11 @@ const Post = ({ post }: Post) => {
           />
         </div>
         <div className="post-counter">
-          <span>1 Likes</span>
+          {post.likes.length > 0 && (
+            <span>{`${post.likes.length} Comment${
+              post.likes.length > 1 ? "s" : ""
+            }`}</span>
+          )}
           {post.comments.length > 0 && (
             <span>{`${post.comments.length} Comment${
               post.comments.length > 1 ? "s" : ""

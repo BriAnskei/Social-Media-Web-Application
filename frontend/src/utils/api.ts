@@ -1,6 +1,6 @@
 import axios from "axios";
 import { LoginTypes, RegisterTypes } from "../types/AuthTypes";
-import { UserTypes } from "../types/user";
+import { FetchedUserType } from "../types/user";
 import { FetchPostType } from "../types/PostType";
 
 const api = axios.create({
@@ -11,7 +11,7 @@ export interface ApiResponse {
   success: boolean;
   token?: string;
   message?: string;
-  user?: UserTypes;
+  user?: FetchPostType;
   posts?: FetchPostType[];
 }
 

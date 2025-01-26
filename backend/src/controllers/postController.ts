@@ -16,9 +16,15 @@ export const createPost = async (
       image: req.file?.filename,
     });
 
-    res.json({ success: true, message: "post successfully created" });
+    const allPost = await postModel.find({});
+
+    res.json({
+      success: true,
+      message: "post successfully created",
+      posts: allPost,
+    });
   } catch (error) {
-    console.log("Create Post:", error);
+    console.log(error);
     res.json({ success: false, message: "Error" });
   }
 };
@@ -32,7 +38,7 @@ export const postsLists = async (
 
     res.json({ success: true, posts: allPost });
   } catch (error) {
-    console.log("Fetching post Post:", error);
+    console.log(error);
     res.json({ success: false, message: "Error" });
   }
 };

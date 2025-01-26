@@ -162,23 +162,25 @@ export const updateProfile = async (
   res: Response
 ): Promise<any> => {
   try {
+    const userId = req.userId;
+    const newProfileImage = req.file;
     const { fullName, bio } = req.body;
 
-    const updatedData: any = { fullName, bio };
-    const newProfileImage = req.file;
+    const updatedData: {
+      fullName: string;
+      bio: string;
+      profilePicture?: string;
+    } = { fullName, bio };
 
+    if (!userId) return res.json({ success: false, message: "Unauthorized" });
+
+    // Check uf there is attached file, if so save to servere and set as a newProfile
     if (newProfileImage) {
-      const userId = req.userId;
-
-      if (!userId) return res.json({ success: false, message: "Unauthorized" });
-
       const fileName = `${nameSuffix}${newProfileImage.originalname}`;
       const uploadPath = path.join("uploads", "profile", userId.toString());
-
       await fs.promises.mkdir(uploadPath, { recursive: true }); // Creates the upload path deriectory if it doesn't Exist
 
       const filePath = path.join(uploadPath, fileName);
-
       await fs.promises.writeFile(filePath, newProfileImage.buffer);
 
       updatedData.profilePicture = fileName;

@@ -14,7 +14,6 @@ const Upload = () => {
   );
 
   const toggleUpload = () => {
-    console.log(showUpload);
     setShowUpload(!showUpload);
   };
 
@@ -30,7 +29,10 @@ const Upload = () => {
         <input
           onClick={toggleUpload}
           type="text"
-          placeholder="Whats on your mind, Name?"
+          placeholder={`Whats on your mind, ${userData.fullName.replace(
+            / .*/,
+            ""
+          )}?`}
         />
         <div className="upload" onClick={toggleUpload}>
           <span className="material-symbols-outlined">add_a_photo</span>

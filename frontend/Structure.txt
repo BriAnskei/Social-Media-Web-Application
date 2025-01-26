@@ -25,7 +25,8 @@ src/
 │   ├── users/             # User-related components and logic
 │   │   ├── Profile.tsx    # User profile page
 │   │   ├── UserCard.tsx   # Small user profile card for followers/following
-│   │   └── usersSlice.ts  # Redux slice for user-related state
+│   │   | usersSlice.ts  # Redux slice for user-related state
+|   |   └──selector.ts      # For fetching the current user data
 │   │
 │   ├── notifications/     # Real-time notifications
 │   │   ├── NotificationItem.tsx

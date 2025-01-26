@@ -1,7 +1,7 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 
 import { postApi } from "../../utils/api";
-import { FetchPostType } from "../../types/PostType";
+import { FetchPostType, PostsState } from "../../types/PostType";
 
 export const getPosts = createAsyncThunk(
   "posts/getPosts",
@@ -13,7 +13,18 @@ export const getPosts = createAsyncThunk(
         return rejectWithValue(response.message || "Fetching posts failed");
       }
 
-      return response;
+      // Normalize posts data
+      const postsById = response.posts?.reduce(
+        (acc: Record<string, FetchPostType>, post: FetchPostType) => {
+          acc[post._id] = post;
+          return acc;
+        },
+        {}
+      );
+
+      const allPostIds = response.posts?.map((post: FetchPostType) => post._id);
+
+      return { postsById, allPostIds };
     } catch (error: any) {
       return rejectWithValue("Fetching posts failed");
     }
@@ -22,36 +33,39 @@ export const getPosts = createAsyncThunk(
 
 export const createPost = createAsyncThunk(
   "posts/createPost",
-  async (data: FormData, { rejectWithValue, dispatch }) => {
+  async (data: FormData, { rejectWithValue }) => {
     const token = localStorage.getItem("token");
 
     if (!token) return rejectWithValue("Unauthorize ");
 
     try {
       const res = await postApi.uploadPost(token, data);
-      console.log("slice response: ", res);
 
       if (!res.success) {
         return rejectWithValue(res.message || "Error Uploading post");
       }
 
-      // if api response is succesfull call the getPost to fetch all the post(including the new post)
-      await dispatch(getPosts());
-      return res;
+      // Normalize posts data
+      const postsById = res.posts?.reduce(
+        (acc: Record<string, FetchPostType>, post: FetchPostType) => {
+          acc[post._id] = post;
+          return acc;
+        },
+        {}
+      );
+
+      const allPostIds = res.posts?.map((post: FetchPostType) => post._id);
+
+      return { postsById, allPostIds };
     } catch (error) {
       return rejectWithValue("Error Uploading post");
     }
   }
 );
 
-interface PostsState {
-  posts: FetchPostType[];
-  loading: boolean;
-  error: string | null;
-}
-
 const initialState: PostsState = {
-  posts: [],
+  byId: {},
+  allIds: [],
   loading: false,
   error: null,
 };
@@ -72,7 +86,8 @@ const postsSlice = createSlice({
         state.error = null;
       })
       .addCase(getPosts.fulfilled, (state, action) => {
-        state.posts = action.payload.posts || state.posts; // This is where the probleme is.
+        state.byId = action.payload.postsById || {};
+        state.allIds = action.payload.allPostIds || [];
         state.loading = false;
       })
 
@@ -82,7 +97,8 @@ const postsSlice = createSlice({
         state.error = null;
       })
       .addCase(createPost.fulfilled, (state, action) => {
-        state.posts = action.payload.posts || [];
+        state.byId = action.payload.postsById || {};
+        state.allIds = action.payload.allPostIds || [];
         state.loading = false;
       })
       .addCase(createPost.rejected, (state, action) => {

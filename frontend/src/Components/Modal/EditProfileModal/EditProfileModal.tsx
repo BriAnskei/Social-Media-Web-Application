@@ -5,7 +5,6 @@ import { NewDataType, UserTypes } from "../../../types/user";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "../../../store/store";
 import { update } from "../../../features/users/userSlice";
-import { useNavigate } from "react-router";
 
 interface EditProp extends ModalTypes {
   data: UserTypes;

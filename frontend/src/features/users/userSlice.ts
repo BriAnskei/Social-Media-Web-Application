@@ -1,14 +1,13 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import { UserTypes } from "../../types/user";
+import { FetchedUserType, UserState } from "../../types/user";
 import { ApiResponse, userApi } from "../../utils/api";
-import { userToken } from "../auth/authSlice";
 import { RootState } from "../../store/store";
 
-export const getData = createAsyncThunk(
+export const getUserData = createAsyncThunk(
   "user/getUser",
   async (token: string, { rejectWithValue }) => {
     try {
-      const response = await userApi.getData(token);
+      const response = await userApi.getData(token); // get user data
 
       if (!response.success) {
         return rejectWithValue(response.message || "Fetching failed");
@@ -19,6 +18,11 @@ export const getData = createAsyncThunk(
       return rejectWithValue("Fetching Failed");
     }
   }
+);
+
+export const allUserData = createAsyncThunk(
+  "user/getAllUserData",
+  async () => {}
 );
 
 export const update = createAsyncThunk<
@@ -42,24 +46,9 @@ export const update = createAsyncThunk<
   }
 });
 
-interface userState {
-  user: UserTypes;
-  loading: boolean;
-  error: string | null;
-}
-
-const initialState: userState = {
-  user: {
-    _id: "",
-    username: "",
-    fullName: "",
-    email: "",
-    profilePicture: undefined,
-    bio: undefined,
-    followers: [],
-    following: [],
-    createdAt: "",
-  },
+const initialState: UserState = {
+  byId: {},
+  allIds: [],
   loading: false,
   error: null,
 };
@@ -71,25 +60,15 @@ const userSlice = createSlice({
   extraReducers: (builder) => {
     builder
       // getData casses
-      .addCase(getData.pending, (state) => {
+      .addCase(getUserData.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
-      .addCase(getData.fulfilled, (state, action) => {
+      .addCase(getUserData.fulfilled, (state, action) => {
+        const user = action.payload.user as FetchedUserType;
         state.loading = false;
-        state.user = action.payload.user || {
-          _id: "",
-          username: "",
-          fullName: "",
-          email: "",
-          profilePicture: undefined,
-          bio: undefined,
-          followers: [],
-          following: [],
-          createdAt: "",
-        };
       })
-      .addCase(getData.rejected, (state, action) => {
+      .addCase(getUserData.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
       })

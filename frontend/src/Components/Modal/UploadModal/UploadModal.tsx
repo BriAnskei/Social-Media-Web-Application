@@ -3,7 +3,7 @@ import "./UploadModal.css";
 import { ModalTypes } from "../../../types/modalTypes";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "../../../store/store";
-import { PostType } from "../../../types/PostType";
+import { UploadPostTypes } from "../../../types/PostType";
 import { createPost } from "../../../features/posts/postSlice";
 
 const UploadModal: React.FC<ModalTypes> = ({ showModal, onClose }) => {
@@ -12,7 +12,7 @@ const UploadModal: React.FC<ModalTypes> = ({ showModal, onClose }) => {
     (state: RootState) => state.user.user
   );
 
-  const [postInputData, setPostInputData] = useState<PostType>({
+  const [postInputData, setPostInputData] = useState<UploadPostTypes>({
     content: "",
   });
   const [fontSize, setFontSize] = useState("25px");
@@ -57,6 +57,7 @@ const UploadModal: React.FC<ModalTypes> = ({ showModal, onClose }) => {
       const response = await dispatch(createPost(formData)).unwrap();
 
       if (response.success) {
+        window.location.reload();
         onClose(); // CLose the modal after posting
       }
     } catch (error) {
@@ -91,6 +92,10 @@ const UploadModal: React.FC<ModalTypes> = ({ showModal, onClose }) => {
               <div className="post-input">
                 <textarea
                   className="form-control post-input"
+                  placeholder={`Whats on your mind, ${fullName.replace(
+                    / .*/,
+                    ""
+                  )}?`}
                   rows={3}
                   ref={textAreaRef}
                   style={{ fontSize }}
