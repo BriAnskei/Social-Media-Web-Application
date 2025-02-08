@@ -4,31 +4,36 @@ import "./PostList.css";
 import Post from "../Post/Post";
 import { AppDispatch, RootState } from "../../../store/store";
 import { useDispatch, useSelector } from "react-redux";
-import { getPosts } from "../postSlice";
-import { FetchPostType } from "../../../types/PostType";
+import { fetchAllPost } from "../postSlice";
+import Spinner from "../../../Components/Spinner/Spinner";
 
 const PostList = () => {
   const dispatch: AppDispatch = useDispatch();
-  const posts: FetchPostType[] = useSelector(
-    (state: RootState) => state.posts.posts
-  );
-  const isLoading = useSelector((state: RootState) => state.posts.loading);
+  const posts = useSelector((state: RootState) => state.posts.byId);
+  const postIds = useSelector((state: RootState) => state.posts.allIds);
+  const postLoading = useSelector((state: RootState) => state.posts.loading);
+  const userLodaing = useSelector((state: RootState) => state.user.loading);
+  const user = useSelector((state: RootState) => state.user.byId);
 
   useEffect(() => {
-    dispatch(getPosts());
+    dispatch(fetchAllPost());
   }, []);
 
   return (
     <>
       <div className="postlist-container">
-        {isLoading ? (
-          <>Loading...</>
+        {postLoading || userLodaing ? (
+          <Spinner />
         ) : (
-          posts.map((post, index) => (
-            <div key={index}>
-              <Post post={post} />
-            </div>
-          ))
+          postIds.map((postId) => {
+            const post = posts[postId];
+            const postOwner = user[post.user];
+            return (
+              <div key={postId}>
+                <Post post={post} user={postOwner} />
+              </div>
+            );
+          })
         )}
       </div>
     </>

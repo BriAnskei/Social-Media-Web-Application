@@ -29,10 +29,7 @@ export const createPost = async (
   }
 };
 
-export const postsLists = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
+export const postsLists = async (_: Request, res: Response): Promise<void> => {
   try {
     const allPost = await postModel.find({});
 

@@ -12,7 +12,8 @@ export interface RegisterTypes {
 }
 
 export interface AuthState {
-  token: string | null;
+  accessToken: string | null;
+  refreshToken: string | null;
   isAuthenticated: boolean;
   loading: boolean;
   error: string | null;

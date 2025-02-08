@@ -1,16 +1,16 @@
 import React, { useRef, useState } from "react";
 import "./UploadModal.css";
 import { ModalTypes } from "../../../types/modalTypes";
-import { useDispatch, useSelector } from "react-redux";
-import { AppDispatch, RootState } from "../../../store/store";
+import { useDispatch } from "react-redux";
+import { AppDispatch } from "../../../store/store";
 import { UploadPostTypes } from "../../../types/PostType";
 import { createPost } from "../../../features/posts/postSlice";
+import { useCurrentUser } from "../../../hooks/useCorrentUser";
 
 const UploadModal: React.FC<ModalTypes> = ({ showModal, onClose }) => {
   const dispatch: AppDispatch = useDispatch();
-  const { profilePicture, _id, fullName } = useSelector(
-    (state: RootState) => state.user.user
-  );
+  const { currentUser } = useCurrentUser();
+  const { profilePicture, _id, fullName } = currentUser;
 
   const [postInputData, setPostInputData] = useState<UploadPostTypes>({
     content: "",
@@ -57,11 +57,15 @@ const UploadModal: React.FC<ModalTypes> = ({ showModal, onClose }) => {
       const response = await dispatch(createPost(formData)).unwrap();
 
       if (response.success) {
-        window.location.reload();
+        setPostInputData(() => ({
+          content: "",
+          image: undefined,
+        }));
         onClose(); // CLose the modal after posting
       }
     } catch (error) {
-      alert(error);
+      alert("dsfsdfdssdf: " + error);
+      onClose();
     }
   };
 

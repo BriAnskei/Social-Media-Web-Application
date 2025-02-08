@@ -1,8 +1,9 @@
-import { useDispatch } from "react-redux";
-import { AppDispatch } from "../store/store";
+import { useSelector } from "react-redux";
+import { selectCurrentUserPost } from "../features/posts/postSelector";
 
-const usePostOwner = (userId: string) => {
-  const dispatch: AppDispatch = useDispatch();
+export const useCurrentUserPosts = () => {
+  const result = useSelector(selectCurrentUserPost);
+  console.log(result);
+
+  return result;
 };
-
-export default usePostOwner;

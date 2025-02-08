@@ -1,8 +1,8 @@
-import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
+import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { AuthState, LoginTypes, RegisterTypes } from "../../types/AuthTypes";
-import { authApi } from "../../utils/api";
-import { getData } from "../users/userSlice";
-import { RootState } from "../../store/store";
+import { api, authApi } from "../../utils/api";
+import { fetchCurrentUser } from "../users/userSlice";
+import { AppThunk } from "../../store/store";
 
 export const loginAuth = createAsyncThunk(
   "auth/login",
@@ -15,10 +15,12 @@ export const loginAuth = createAsyncThunk(
         return rejectWithValue(res.message || "Login Failed"); // Creates a new payload to return error
       }
 
-      if (token) {
-        localStorage.setItem("token", token);
-        await dispatch(getData(token));
-      }
+      if (!token) throw new Error("No Token has been attached in reponse");
+
+      localStorage.setItem("access_token", token.accessToken);
+      localStorage.setItem("refresh_token", token.refreshToken);
+      await dispatch(fetchCurrentUser(token.accessToken));
+
       return res;
     } catch (error) {
       return rejectWithValue("Login Failed");
@@ -35,11 +37,12 @@ export const registerAuth = createAsyncThunk(
       if (!res.success) {
         return rejectWithValue(res.message || "Registration Failed");
       }
+      const token = res.token;
+      if (!token) throw new Error("No Token has been attached in reponse");
 
-      if (res.token) {
-        localStorage.setItem("token", res.token);
-        await dispatch(getData(res.token));
-      }
+      localStorage.setItem("access_token", token.accessToken);
+      localStorage.setItem("refresh_token", token.refreshToken);
+      await dispatch(fetchCurrentUser(token.accessToken));
 
       return res;
     } catch (error) {
@@ -54,9 +57,17 @@ export const checkAuth = createAsyncThunk(
     try {
       const token = localStorage.getItem("token");
 
-      if (!token) return rejectWithValue("No token");
+      if (!token) throw new Error("No access token");
 
-      await dispatch(getData(token));
+      const res = await authApi.checkAuthentication(token);
+
+      if (!res.success) {
+        localStorage.clear();
+        return rejectWithValue(res.message);
+      }
+
+      await dispatch(fetchCurrentUser(token));
+      return res;
     } catch (error) {
       return rejectWithValue("Error Fetching user data");
     }
@@ -64,8 +75,9 @@ export const checkAuth = createAsyncThunk(
 );
 
 const initialState: AuthState = {
-  token: localStorage.getItem("token"),
-  isAuthenticated: Boolean(localStorage.getItem("token")),
+  accessToken: localStorage.getItem("access_token") || null, // used for fetching data
+  refreshToken: localStorage.getItem("refresh_token") || null, // used for token reinitialize(refresh)
+  isAuthenticated: Boolean(localStorage.getItem("access_token")),
   loading: false,
   error: null,
 };
@@ -75,14 +87,17 @@ const authSlice = createSlice({
   initialState,
   reducers: {
     logout: (state) => {
-      localStorage.removeItem("token");
-
+      state.accessToken = null;
+      state.refreshToken = null;
       state.isAuthenticated = false;
-      state.token = null;
-      state.error = null;
+      localStorage.removeItem("accessToken");
+      localStorage.removeItem("refreshToken");
     },
     clearError: (state) => {
       state.error = null;
+    },
+    refreshAcessToken: (state, action: PayloadAction<string>) => {
+      state.accessToken = action.payload;
     },
   },
   extraReducers: (builder) => {
@@ -94,8 +109,7 @@ const authSlice = createSlice({
       })
       .addCase(loginAuth.fulfilled, (state, action) => {
         state.loading = false;
-        state.token = action.payload.token || null;
-        state.isAuthenticated = Boolean(state.token);
+        state.isAuthenticated = Boolean(action.payload.token);
       })
       .addCase(loginAuth.rejected, (state, action) => {
         state.loading = false;
@@ -108,7 +122,7 @@ const authSlice = createSlice({
       })
       .addCase(registerAuth.fulfilled, (state, action) => {
         state.loading = false;
-        state.token = action.payload.token || null;
+
         state.isAuthenticated = Boolean(action.payload.token);
       })
       .addCase(registerAuth.rejected, (state, action) => {
@@ -126,8 +140,32 @@ const authSlice = createSlice({
   },
 });
 
-// Token for Object model manipulation.
-export const userToken = (state: RootState): string | null => state.auth.token;
+export const refreshToken = (): AppThunk => async (dispatch, getState) => {
+  const { refreshToken } = getState().auth;
+  if (!refreshToken) {
+    dispatch(logout());
+    return;
+  }
 
-export const { logout, clearError } = authSlice.actions;
+  console.log("refresh triggered");
+
+  try {
+    const response = await api.post("/api/token/refresh", refreshToken, {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.data.sucess) {
+      throw new Error("Failed to refresh token");
+    }
+
+    const { newAccessToken } = response.data;
+    dispatch(refreshAcessToken(newAccessToken));
+  } catch (error) {
+    dispatch(logout());
+  }
+};
+
+export const { logout, clearError, refreshAcessToken } = authSlice.actions;
 export default authSlice.reducer;

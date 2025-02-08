@@ -1,54 +1,108 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import { FetchedUserType, UserState } from "../../types/user";
+import { FetchedUserType } from "../../types/user";
 import { ApiResponse, userApi } from "../../utils/api";
 import { RootState } from "../../store/store";
+import { NormalizeState } from "../../types/NormalizeType";
 
-export const getUserData = createAsyncThunk(
-  "user/getUser",
+type NormalizeResponse = {
+  byId: { [key: string]: FetchedUserType };
+  allIds: string[];
+};
+
+// Helper function that will returns an array or an object depinding on the api response
+const normalizeResponse = (
+  users: FetchedUserType[] | FetchedUserType | undefined
+): NormalizeResponse => {
+  if (!users) return { byId: {}, allIds: [] };
+
+  if (Array.isArray(users)) {
+    return {
+      byId: users.reduce((acc, user) => {
+        acc[user._id] = user;
+        return acc;
+      }, {} as { [key: string]: FetchedUserType }),
+      allIds: users.map((user) => user._id),
+    };
+  } else {
+    return {
+      byId: { [users._id]: users },
+      allIds: [users._id],
+    };
+  }
+};
+
+export const getUsersData = createAsyncThunk(
+  "user/getUsersData",
   async (token: string, { rejectWithValue }) => {
     try {
-      const response = await userApi.getData(token); // get user data
+      const res = await userApi.getAllUsers(token);
 
-      if (!response.success) {
-        return rejectWithValue(response.message || "Fetching failed");
-      }
+      if (!res.success)
+        return rejectWithValue(res.message || "Error fetching users data");
 
-      return response;
+      return res.user;
     } catch (error) {
-      return rejectWithValue("Fetching Failed");
+      console.log(error);
+      return rejectWithValue("Error fetching users data");
     }
   }
 );
 
-export const allUserData = createAsyncThunk(
-  "user/getAllUserData",
-  async () => {}
+export const fetchCurrentUser = createAsyncThunk(
+  "user/fetchCurrentUser",
+  async (token: string, { rejectWithValue, dispatch }) => {
+    if (!token) return rejectWithValue("Unauthorize ");
+    try {
+      const res = await userApi.getCurrentUser(token);
+
+      if (!res.success) {
+        return rejectWithValue(res.message || "Error fetching current user");
+      }
+
+      await dispatch(getUsersData(token));
+
+      return res.user;
+    } catch (error) {
+      console.log(error);
+      return rejectWithValue("Error fetching users data");
+    }
+  }
 );
 
-export const update = createAsyncThunk<
+export const updateCurrentUser = createAsyncThunk<
   ApiResponse,
   FormData,
   { state: RootState }
->("user/update", async (data: FormData, { rejectWithValue }) => {
-  const token = localStorage.getItem("token");
+>(
+  "user/updateData",
+  async (data: FormData, { rejectWithValue, dispatch, getState }) => {
+    const { auth } = getState() as RootState;
+    const accessToken = auth.accessToken;
 
-  if (!token) return rejectWithValue("Unauthorize ");
+    if (!accessToken) throw new Error("Access token is required");
+    try {
+      const res = await userApi.updateProfile(accessToken, data);
 
-  try {
-    const res = await userApi.updateProfile(token, data);
+      if (!res.success)
+        return rejectWithValue(res.message || "Editing profile failed");
 
-    if (!res.success)
-      return rejectWithValue(res.message || "Editing profile failed");
+      await dispatch(getUsersData(accessToken));
 
-    return res;
-  } catch (error) {
-    return rejectWithValue("Editing profile failed");
+      return res;
+    } catch (error) {
+      return rejectWithValue("Editing profile failed");
+    }
   }
-});
+);
+
+interface UserState extends NormalizeState<FetchedUserType> {
+  currentUserId: string | null;
+}
 
 const initialState: UserState = {
   byId: {},
   allIds: [],
+  currentUserId: null,
   loading: false,
   error: null,
 };
@@ -60,29 +114,55 @@ const userSlice = createSlice({
   extraReducers: (builder) => {
     builder
       // getData casses
-      .addCase(getUserData.pending, (state) => {
+      .addCase(getUsersData.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
-      .addCase(getUserData.fulfilled, (state, action) => {
-        const user = action.payload.user as FetchedUserType;
+      .addCase(getUsersData.fulfilled, (state, action) => {
         state.loading = false;
+        const normalizedData = normalizeResponse(action.payload);
+        // Reset all data, before initializing
+        state.byId = {};
+        state.allIds = [];
+        state.byId = normalizedData.byId;
+        state.allIds = normalizedData.allIds;
       })
-      .addCase(getUserData.rejected, (state, action) => {
+      .addCase(getUsersData.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
       })
       // Update cases
-      .addCase(update.pending, (state) => {
+      .addCase(updateCurrentUser.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
-      .addCase(update.fulfilled, (state, action) => {
+      .addCase(updateCurrentUser.fulfilled, (state) => {
+        state.loading = false;
+      })
+      .addCase(updateCurrentUser.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+      })
+
+      // Fetching current user cases
+      .addCase(fetchCurrentUser.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchCurrentUser.fulfilled, (state, action) => {
         state.loading = false;
 
-        state.user = action.payload.user || initialState.user;
+        // Get data
+        const normalizedData = normalizeResponse(action.payload);
+
+        state.byId = { ...state.byId, ...normalizedData.byId };
+        if (!state.allIds.includes(normalizedData.allIds[0])) {
+          state.allIds.push(normalizedData.allIds[0]);
+        }
+
+        state.currentUserId = normalizedData.allIds[0];
       })
-      .addCase(update.rejected, (state, action) => {
+      .addCase(fetchCurrentUser.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
       });

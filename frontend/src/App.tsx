@@ -3,7 +3,7 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap/dist/js/bootstrap.bundle.min.js"; // Optional for Bootstrap's JS components
 
 import Feed from "./pages/Feed/Feed";
-import { Navigate, Route, Routes } from "react-router";
+import { Navigate, Route, Routes, useNavigate } from "react-router";
 import MainLayout from "./layouts/MainLayout/MainLayout";
 
 import Login from "./features/auth/Login/Login";
@@ -13,14 +13,19 @@ import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "./store/store";
 import ProfilePage from "./pages/Profile/ProfilePage";
 import { useEffect } from "react";
-import { checkAuth } from "./features/auth/authSlice";
+import { fetchCurrentUser } from "./features/users/userSlice";
 
 function App() {
-  const { isAuthenticated } = useSelector((state: RootState) => state.auth);
   const dispatch = useDispatch<AppDispatch>();
 
+  const { isAuthenticated, accessToken } = useSelector(
+    (state: RootState) => state.auth
+  );
+
   useEffect(() => {
-    dispatch(checkAuth());
+    if (isAuthenticated) {
+      dispatch(fetchCurrentUser(accessToken!));
+    }
   }, [dispatch]);
 
   return (

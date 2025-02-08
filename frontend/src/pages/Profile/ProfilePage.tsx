@@ -1,21 +1,13 @@
 import "./ProfilePage.css";
-import PostList from "../../features/posts/PostList/PostList";
-
-import { useSelector } from "react-redux";
-import { RootState } from "../../store/store";
-import { UserTypes } from "../../types/user";
 import Profile from "../../features/users/profile/Profile";
-
+import { useCurrentUser } from "../../hooks/useCorrentUser";
+import CurrentUserPosts from "../../features/posts/CurrentUserPost/CurrentUserPost";
 const ProfilePage = () => {
-  const userData: UserTypes = useSelector(
-    (state: RootState) => state.user.user
-  );
-
-  console.log(userData);
+  const { loading, currentUser, error } = useCurrentUser();
 
   return (
     <div className="profile-cont">
-      <Profile data={userData} />
+      <Profile data={currentUser} />
       <hr />
       <div className="uploads">
         <div>
@@ -26,7 +18,7 @@ const ProfilePage = () => {
           <span>Vidoes</span>
         </div>
       </div>
-      <PostList />
+      <CurrentUserPosts />
     </div>
   );
 };

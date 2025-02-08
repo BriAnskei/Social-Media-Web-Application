@@ -3,15 +3,16 @@ import { LoginTypes, RegisterTypes } from "../types/AuthTypes";
 import { FetchedUserType } from "../types/user";
 import { FetchPostType } from "../types/PostType";
 
-const api = axios.create({
+// Axion instance
+export const api = axios.create({
   baseURL: "http://localhost:4000",
 });
 
 export interface ApiResponse {
   success: boolean;
-  token?: string;
+  token?: { refreshToken: string; accessToken: string };
   message?: string;
-  user?: FetchPostType;
+  user?: FetchedUserType[] | FetchedUserType;
   posts?: FetchPostType[];
 }
 
@@ -37,8 +38,6 @@ export const postApi = {
         },
       });
 
-      console.log("APi responce: ", response);
-
       return response.data;
     } catch (error) {
       return {
@@ -50,12 +49,11 @@ export const postApi = {
 };
 
 export const userApi = {
-  getData: async (token: string): Promise<ApiResponse> => {
+  getAllUsers: async (token: string): Promise<ApiResponse> => {
     try {
-      const response = await api.get("/api/users/me", {
+      const response = await api.get("/api/users/users", {
         headers: {
           token,
-          "Content-Type": "application/json",
         },
       });
 
@@ -73,7 +71,7 @@ export const userApi = {
     data: FormData
   ): Promise<ApiResponse> => {
     try {
-      const response = await api.post("/api/users/update", data, {
+      const response = await api.put("/api/users/update", data, {
         headers: {
           token,
           "Content-Type": "multipart/form-data",
@@ -88,9 +86,47 @@ export const userApi = {
       };
     }
   },
+
+  getCurrentUser: async (token: string): Promise<ApiResponse> => {
+    try {
+      const response = await api.get(
+        "/api/users/me",
+
+        {
+          headers: {
+            token,
+          },
+        }
+      );
+
+      return response.data;
+    } catch (error) {
+      return {
+        success: false,
+        message: "Api error response",
+      };
+    }
+  },
 };
 
 export const authApi = {
+  checkAuthentication: async (token: string): Promise<ApiResponse> => {
+    try {
+      const response = await api.get("/api/users/authentication", {
+        headers: {
+          token,
+        },
+      });
+
+      return response.data;
+    } catch (error) {
+      return {
+        success: false,
+        message: "Api error response",
+      };
+    }
+  },
+
   login: async (data: LoginTypes): Promise<ApiResponse> => {
     try {
       const response = await api.post("/api/users/login", data, {

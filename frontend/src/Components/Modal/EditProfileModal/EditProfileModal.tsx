@@ -1,18 +1,18 @@
 import "./EditProfileModal.css";
 import { ModalTypes } from "../../../types/modalTypes";
 import { useState } from "react";
-import { NewDataType, UserTypes } from "../../../types/user";
-import { useDispatch, useSelector } from "react-redux";
-import { AppDispatch, RootState } from "../../../store/store";
-import { update } from "../../../features/users/userSlice";
+import { NewDataType, FetchedUserType } from "../../../types/user";
+import { useDispatch } from "react-redux";
+import { AppDispatch } from "../../../store/store";
+import { updateCurrentUser } from "../../../features/users/userSlice";
 
 interface EditProp extends ModalTypes {
-  data: UserTypes;
+  data: FetchedUserType;
 }
 
 const EditProfileModal: React.FC<EditProp> = ({ showModal, onClose, data }) => {
   const dispatch = useDispatch<AppDispatch>();
-  const token = useSelector((state: RootState) => state.auth.token);
+
   const [updatedData, setUpdatedData] = useState<NewDataType>({
     fullName: "",
     bio: "",
@@ -45,11 +45,6 @@ const EditProfileModal: React.FC<EditProp> = ({ showModal, onClose, data }) => {
   const handleSubmit = async (e: any) => {
     e.preventDefault();
 
-    if (!token) {
-      alert("Unauthorize ");
-      return;
-    }
-
     const formData = new FormData();
 
     if (updatedData.fullName !== data.fullName && updatedData.fullName) {
@@ -65,12 +60,13 @@ const EditProfileModal: React.FC<EditProp> = ({ showModal, onClose, data }) => {
     }
 
     try {
-      const response = await dispatch(update(formData)).unwrap();
+      const response = await dispatch(updateCurrentUser(formData)).unwrap();
       if (response.success) {
         onClose();
       }
     } catch (error) {
-      alert(error);
+      console.log(error);
+      alert("Error: " + error);
     }
   };
 

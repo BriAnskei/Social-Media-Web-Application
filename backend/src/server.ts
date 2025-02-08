@@ -4,7 +4,7 @@ import { connectDb } from "./config/db";
 import "dotenv/config";
 import userRouter from "./routes/userRoutes";
 import postRouter from "./routes/postRoutes";
-import path from "path";
+import authRoutes from "./routes/authRoutes";
 
 // app config
 const app = express();
@@ -12,7 +12,11 @@ const PORT = 4000;
 
 // middleware
 app.use(express.json());
-app.use(cors());
+app.use(
+  cors({
+    origin: "http://localhost:5173",
+  })
+);
 
 // connect Database
 connectDb();
@@ -27,6 +31,7 @@ app.use(
 // api endpoit(Routes)
 app.use("/api/users", userRouter);
 app.use("/api/posts", postRouter);
+app.use("/api/token", authRoutes);
 
 app.get("/", (req: Request, res: Response) => {
   res.send("API Working");

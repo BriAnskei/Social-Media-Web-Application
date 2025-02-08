@@ -9,12 +9,18 @@ import fs from "fs";
 import { nameSuffix } from "../middleware/upload";
 
 const createToken = (userId: string) => {
-  if (!process.env.JWT_SECRET) {
-    throw new Error("JWT_SECRET must be defined");
+  if (!process.env.ACCESS_SECRET || !process.env.REFRESH_SECRET) {
+    throw new Error("token must be defined");
   }
-  return jwt.sign({ userId }, process.env.JWT_SECRET, {
+
+  const refreshToken = jwt.sign({ userId }, process.env.REFRESH_SECRET, {
     expiresIn: "7d",
   });
+
+  const accessToken = jwt.sign({ userId }, process.env.ACCESS_SECRET, {
+    expiresIn: "30min",
+  });
+  return { refreshToken, accessToken };
 };
 // fOR UPLOADING DEFAULT PROFILE FUNCTION
 // async function getDefaultImageBuffer(): Promise<Buffer> {
@@ -49,6 +55,10 @@ const createToken = (userId: string) => {
 //     }
 //   });
 // }
+
+interface ExtendReq extends Request {
+  userId?: string; //explicitly extend the Request type from Express to include the userId property.
+}
 
 // Properly typed request handler
 export const register = async (req: Request, res: Response): Promise<any> => {
@@ -117,6 +127,24 @@ export const register = async (req: Request, res: Response): Promise<any> => {
   }
 };
 
+export const fetchCurrentUser = async (
+  req: ExtendReq,
+  res: Response
+): Promise<any> => {
+  const userId = req.userId;
+
+  try {
+    if (!userId) return res.json({ success: false, message: "UnAuthorize" });
+
+    const currentUser = await UserModel.findById(userId);
+
+    res.json({ success: true, user: currentUser });
+  } catch (error) {
+    console.log(error);
+    return res.json({ success: false, message: "Error" });
+  }
+};
+
 export const login = async (req: Request, res: Response): Promise<any> => {
   const { email, password } = req.body;
 
@@ -142,15 +170,14 @@ export const login = async (req: Request, res: Response): Promise<any> => {
   }
 };
 
-interface ExtendReq extends Request {
-  userId?: string; //explicitly extend the Request type from Express to include the userId property.
-}
-
-export const getData = async (req: ExtendReq, res: Response): Promise<any> => {
+export const fetchAllUsers = async (
+  _: ExtendReq,
+  res: Response
+): Promise<any> => {
   try {
-    const userData = await UserModel.findById(req.userId).exec();
+    const allUsers = await UserModel.find({});
 
-    res.json({ success: true, user: userData });
+    res.json({ success: true, user: allUsers });
   } catch (error) {
     console.log(error);
     return res.json({ success: false, message: "Error" });
@@ -202,6 +229,29 @@ export const updateProfile = async (
       success: true,
       user: updatedUser,
       message: "User succesfully updated",
+    });
+  } catch (error) {
+    console.log(error);
+    return res.json({ success: false, message: "Error" });
+  }
+};
+
+export const authorization = async (
+  req: ExtendReq,
+  res: Response
+): Promise<any> => {
+  try {
+    const userId = req.userId;
+    if (!userId) {
+      return res.json({
+        success: false,
+        message: "Unauthorize",
+      });
+    }
+
+    res.json({
+      success: true,
+      message: "authenticated",
     });
   } catch (error) {
     console.log(error);

@@ -1,12 +1,28 @@
 {
+  // Specifies options for the TypeScript compiler
   "compilerOptions": {
+    // Sets the ECMAScript target version to ES6, determining the JavaScript version the TypeScript code will compile into
     "target": "ES6",
+
+    // Specifies the module system to use in the output files, in this case, CommonJS (used in Node.js)
     "module": "commonjs",
+
+    // Defines the directory where compiled JavaScript files will be placed (output directory)
     "outDir": "./dist",
+
+    // Specifies the root directory of your TypeScript source files, so the compiler knows where to look
     "rootDir": "./src",
+
+    // Enables strict type-checking options, improving code safety by enforcing stricter rules
     "strict": true,
+
+    // Allows default imports from modules with `export =` syntax, ensuring compatibility with CommonJS and ES modules
     "esModuleInterop": true
   },
-  "include": ["src/**/*.ts"],
-  "exclude": ["node_modules"]
+
+  // Specifies which files or patterns to include in the TypeScript compilation process
+  "include": ["src/**/*.ts"], // Includes all TypeScript files (`.ts`) in the `src` folder and its subfolders
+
+  // Specifies which files or patterns to exclude from the TypeScript compilation process
+  "exclude": ["node_modules"] // Excludes the `node_modules` directory to prevent compiling third-party dependencies
 }

@@ -1,10 +1,10 @@
 import "./Profile.css";
-import { UserTypes } from "../../../types/user";
+import { FetchedUserType } from "../../../types/user";
 import { useState } from "react";
 import EditProfileModal from "../../../Components/Modal/EditProfileModal/EditProfileModal";
 
 interface ProfileProp {
-  data: UserTypes;
+  data: FetchedUserType;
 }
 
 const Profile: React.FC<ProfileProp> = ({ data }) => {

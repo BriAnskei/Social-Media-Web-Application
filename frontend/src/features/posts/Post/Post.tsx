@@ -3,18 +3,33 @@ import { useDispatch } from "react-redux";
 import { toggle } from "../postSlice";
 import { useState } from "react";
 import { FetchPostType } from "../../../types/PostType";
+import { FetchedUserType } from "../../../types/user";
+import { useCurrentUser } from "../../../hooks/useCorrentUser";
 
 interface Post {
   post: FetchPostType;
+  user: FetchedUserType;
 }
 
-const Post = ({ post }: Post) => {
-  const [showComment, setShowComment] = useState(false);
-
+const Post = ({ post, user }: Post) => {
+  const { currentUser } = useCurrentUser();
   const dispatch = useDispatch();
+
+  const [showComment, setShowComment] = useState(false);
+  const [liked, setLiked] = useState(false);
 
   const toggleComments = () => {
     setShowComment(!showComment);
+  };
+
+  const handleLike = () => {
+    setLiked(!liked);
+    dispatch(
+      toggle({
+        userId: currentUser._id,
+        postId: post._id,
+      })
+    );
   };
 
   return (
@@ -23,11 +38,11 @@ const Post = ({ post }: Post) => {
         <div className="post-info">
           <div className="profile-name">
             <img
-              src={`http://localhost:4000/uploads/profile/${post.user}/`}
+              src={`http://localhost:4000/uploads/profile/${user._id}/${user.profilePicture}`}
               alt=""
             />
             <div className="name-date">
-              <h3>{post.user}</h3>
+              <h3>{user.fullName}</h3>
               <span>{new Date(post.createdAt).toLocaleString()}</span>
             </div>
           </div>
@@ -40,13 +55,17 @@ const Post = ({ post }: Post) => {
           </div>
         </div>
         <div className="post-content">{post.content}</div>
-        <div className="image-post">
-          <img
-            src={`http://localhost:4000/images/posts/${post.user}/${post.image}`}
-            alt=""
-          />
-        </div>
+        {post.image && (
+          <div className="image-post">
+            <img
+              src={`http://localhost:4000/images/posts/${post.user}/${post.image}`}
+              alt=""
+            />
+          </div>
+        )}
+        {/* // Make the word plural if there more than one like/comment */}
         <div className="post-counter">
+          {/* // Only Display if there is atleast 1 like/comment */}
           {post.likes.length > 0 && (
             <span>{`${post.likes.length} Comment${
               post.likes.length > 1 ? "s" : ""
@@ -59,14 +78,23 @@ const Post = ({ post }: Post) => {
           )}
         </div>
         <div className="post-action-cont">
-          <div className="like-cont">
+          <div
+            className="like-cont"
+            role="button"
+            tabIndex={0}
+            aria-pressed={liked}
+            onClick={handleLike}
+          >
             <span
-              className="material-symbols-outlined"
-              onClick={() => dispatch(toggle())}
+              className={`material-symbols-outlined   ${
+                liked ? "filled-icon" : ""
+              }`}
             >
               thumb_up
             </span>
-            <span>Like</span>
+            <span id={`${liked ? "like-text" : ""}`}>{`Like${
+              liked ? "d" : ""
+            }`}</span>
           </div>
 
           <div className="comment-act-cont" onClick={toggleComments}>
@@ -74,7 +102,6 @@ const Post = ({ post }: Post) => {
             <span>Comment</span>
           </div>
         </div>
-
         <div
           className={
             showComment && post.comments.length > 0
