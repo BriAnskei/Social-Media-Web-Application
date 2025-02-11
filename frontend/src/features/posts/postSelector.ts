@@ -15,20 +15,7 @@ export const selectCurrentUserPost = createSelector(
       .map((id) => postById[id]);
 
     return {
-      currentUserPosts:
-        currentUsersPost.length > 0
-          ? currentUsersPost
-          : [
-              {
-                _id: "",
-                user: "",
-                content: "",
-                image: "",
-                likes: [],
-                comments: [],
-                createdAt: "",
-              },
-            ],
+      currentUserPosts: currentUsersPost.length > 0 ? currentUsersPost : null,
       loading: postLoading || userLoading,
     };
   }

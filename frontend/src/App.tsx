@@ -3,7 +3,7 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap/dist/js/bootstrap.bundle.min.js"; // Optional for Bootstrap's JS components
 
 import Feed from "./pages/Feed/Feed";
-import { Navigate, Route, Routes, useNavigate } from "react-router";
+import { Navigate, Route, Routes } from "react-router";
 import MainLayout from "./layouts/MainLayout/MainLayout";
 
 import Login from "./features/auth/Login/Login";
@@ -26,7 +26,7 @@ function App() {
     if (isAuthenticated) {
       dispatch(fetchCurrentUser(accessToken!));
     }
-  }, [dispatch]);
+  }, [dispatch, isAuthenticated]);
 
   return (
     <>

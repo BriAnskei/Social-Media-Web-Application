@@ -1,7 +1,7 @@
 import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { AuthState, LoginTypes, RegisterTypes } from "../../types/AuthTypes";
 import { api, authApi } from "../../utils/api";
-import { fetchCurrentUser } from "../users/userSlice";
+import { fetchCurrentUser, clearData } from "../users/userSlice";
 import { AppThunk } from "../../store/store";
 
 export const loginAuth = createAsyncThunk(
@@ -51,29 +51,6 @@ export const registerAuth = createAsyncThunk(
   }
 );
 
-export const checkAuth = createAsyncThunk(
-  "auth/checkAuth",
-  async (_, { dispatch, rejectWithValue }) => {
-    try {
-      const token = localStorage.getItem("token");
-
-      if (!token) throw new Error("No access token");
-
-      const res = await authApi.checkAuthentication(token);
-
-      if (!res.success) {
-        localStorage.clear();
-        return rejectWithValue(res.message);
-      }
-
-      await dispatch(fetchCurrentUser(token));
-      return res;
-    } catch (error) {
-      return rejectWithValue("Error Fetching user data");
-    }
-  }
-);
-
 const initialState: AuthState = {
   accessToken: localStorage.getItem("access_token") || null, // used for fetching data
   refreshToken: localStorage.getItem("refresh_token") || null, // used for token reinitialize(refresh)
@@ -93,6 +70,7 @@ const authSlice = createSlice({
       localStorage.removeItem("accessToken");
       localStorage.removeItem("refreshToken");
     },
+
     clearError: (state) => {
       state.error = null;
     },
@@ -122,19 +100,10 @@ const authSlice = createSlice({
       })
       .addCase(registerAuth.fulfilled, (state, action) => {
         state.loading = false;
-
         state.isAuthenticated = Boolean(action.payload.token);
       })
       .addCase(registerAuth.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.payload as string;
-      })
-      // Fetching case
-      .addCase(checkAuth.fulfilled, (state) => {
-        state.isAuthenticated = true;
-      })
-      .addCase(checkAuth.rejected, (state, action) => {
-        state.isAuthenticated = false; // Invalid token or no token
         state.error = action.payload as string;
       });
   },
@@ -143,11 +112,11 @@ const authSlice = createSlice({
 export const refreshToken = (): AppThunk => async (dispatch, getState) => {
   const { refreshToken } = getState().auth;
   if (!refreshToken) {
+    dispatch(clearData());
     dispatch(logout());
+
     return;
   }
-
-  console.log("refresh triggered");
 
   try {
     const response = await api.post("/api/token/refresh", refreshToken, {
@@ -163,6 +132,7 @@ export const refreshToken = (): AppThunk => async (dispatch, getState) => {
     const { newAccessToken } = response.data;
     dispatch(refreshAcessToken(newAccessToken));
   } catch (error) {
+    dispatch(clearData());
     dispatch(logout());
   }
 };

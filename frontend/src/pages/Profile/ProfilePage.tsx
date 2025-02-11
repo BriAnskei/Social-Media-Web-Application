@@ -3,7 +3,7 @@ import Profile from "../../features/users/profile/Profile";
 import { useCurrentUser } from "../../hooks/useCorrentUser";
 import CurrentUserPosts from "../../features/posts/CurrentUserPost/CurrentUserPost";
 const ProfilePage = () => {
-  const { loading, currentUser, error } = useCurrentUser();
+  const { currentUser } = useCurrentUser();
 
   return (
     <div className="profile-cont">

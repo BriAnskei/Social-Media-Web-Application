@@ -1,10 +1,10 @@
 import "./Post.css";
-import { useDispatch } from "react-redux";
-import { toggle } from "../postSlice";
-import { useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { toggleLike } from "../postSlice";
+import { useEffect, useState } from "react";
 import { FetchPostType } from "../../../types/PostType";
 import { FetchedUserType } from "../../../types/user";
-import { useCurrentUser } from "../../../hooks/useCorrentUser";
+import { AppDispatch, RootState } from "../../../store/store";
 
 interface Post {
   post: FetchPostType;
@@ -12,24 +12,33 @@ interface Post {
 }
 
 const Post = ({ post, user }: Post) => {
-  const { currentUser } = useCurrentUser();
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
+  const currentUser = useSelector(
+    (state: RootState) => state.user.currentUserId
+  );
 
   const [showComment, setShowComment] = useState(false);
   const [liked, setLiked] = useState(false);
+
+  useEffect(() => {
+    const isLiked = post.likes.includes(currentUser!);
+    setLiked(isLiked);
+    console.log(post, isLiked, currentUser); // this is where the output
+  }, [post, currentUser]);
 
   const toggleComments = () => {
     setShowComment(!showComment);
   };
 
-  const handleLike = () => {
+  const handleLike = async () => {
     setLiked(!liked);
-    dispatch(
-      toggle({
-        userId: currentUser._id,
-        postId: post._id,
-      })
-    );
+
+    try {
+      await dispatch(toggleLike(post._id));
+      console.log("like togglw");
+    } catch (error) {
+      console.error(error);
+    }
   };
 
   return (
@@ -47,12 +56,14 @@ const Post = ({ post, user }: Post) => {
             </div>
           </div>
 
-          <div className="post-info-act">
-            <button id="follow-button">+ Follow</button>
-            <span className="material-symbols-outlined more-icon">
-              more_horiz
-            </span>
-          </div>
+          {post.user !== currentUser && (
+            <div className="post-info-act">
+              <button id="follow-button">+ Follow</button>
+              <span className="material-symbols-outlined more-icon">
+                more_horiz
+              </span>
+            </div>
+          )}
         </div>
         <div className="post-content">{post.content}</div>
         {post.image && (
@@ -67,7 +78,7 @@ const Post = ({ post, user }: Post) => {
         <div className="post-counter">
           {/* // Only Display if there is atleast 1 like/comment */}
           {post.likes.length > 0 && (
-            <span>{`${post.likes.length} Comment${
+            <span>{`${post.likes.length} Like${
               post.likes.length > 1 ? "s" : ""
             }`}</span>
           )}

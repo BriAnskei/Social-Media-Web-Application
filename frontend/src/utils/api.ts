@@ -46,6 +46,27 @@ export const postApi = {
       };
     }
   },
+
+  toggleLike: async (token: string, postId: string) => {
+    try {
+      const response = await api.post(
+        "/api/posts/like-toggle",
+        { postId },
+        {
+          headers: {
+            token,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      response.data;
+    } catch (error) {
+      return {
+        success: false,
+        message: "Network Error Occured",
+      };
+    }
+  },
 };
 
 export const userApi = {

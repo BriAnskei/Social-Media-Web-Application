@@ -15,6 +15,8 @@ const PostList = () => {
   const userLodaing = useSelector((state: RootState) => state.user.loading);
   const user = useSelector((state: RootState) => state.user.byId);
 
+  console.log(posts);
+
   useEffect(() => {
     dispatch(fetchAllPost());
   }, []);

@@ -16,7 +16,6 @@ const authMiddleware = async (
     res.json({ success: false, message: "Not Authorized, Login Again" });
     return;
   }
-  console.log(token);
 
   try {
     const token_decode = jwt.verify(

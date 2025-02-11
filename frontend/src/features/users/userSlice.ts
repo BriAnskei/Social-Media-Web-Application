@@ -110,7 +110,13 @@ const initialState: UserState = {
 const userSlice = createSlice({
   name: "user",
   initialState,
-  reducers: {},
+  reducers: {
+    clearData: (state) => {
+      state.byId = {};
+      state.allIds = [];
+      state.currentUserId = null;
+    },
+  },
   extraReducers: (builder) => {
     builder
       // getData casses
@@ -161,6 +167,7 @@ const userSlice = createSlice({
         }
 
         state.currentUserId = normalizedData.allIds[0];
+        console.log(state.currentUserId);
       })
       .addCase(fetchCurrentUser.rejected, (state, action) => {
         state.loading = false;
@@ -169,4 +176,5 @@ const userSlice = createSlice({
   },
 });
 
+export const { clearData } = userSlice.actions;
 export default userSlice.reducer;

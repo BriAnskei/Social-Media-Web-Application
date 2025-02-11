@@ -1,19 +1,17 @@
 import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { Store } from "@reduxjs/toolkit";
+
 import { postApi } from "../../utils/api";
 import { FetchPostType } from "../../types/PostType";
 import { NormalizeState } from "../../types/NormalizeType";
 import { RootState } from "../../store/store";
 
-interface Poststate extends NormalizeState<FetchPostType> {
-  currentUserPost: string[];
-}
+interface Poststate extends NormalizeState<FetchPostType> {}
 
 // Create the initial state using the adapter
 const initialState: Poststate = {
   byId: {},
   allIds: [],
-  currentUserPost: [],
+
   loading: false,
   error: null,
 };
@@ -53,6 +51,29 @@ export const createPost = createAsyncThunk(
       await dispatch(fetchAllPost());
 
       return res;
+    } catch (error) {
+      return rejectWithValue("Error Uploading post");
+    }
+  }
+);
+
+export const toggleLike = createAsyncThunk(
+  "posts/toggle-like",
+  async (postId: string, { rejectWithValue, getState }) => {
+    const { auth, user } = getState() as RootState;
+
+    const accessToken = auth.accessToken;
+    const userId = user.currentUserId;
+    if (!postId) throw new Error("No Post Id attached");
+
+    if (!accessToken) throw new Error("Unauthorize");
+
+    try {
+      const res = await postApi.toggleLike(accessToken, postId);
+
+      if (!res?.success) rejectWithValue(res?.message);
+
+      return { postId, userId };
     } catch (error) {
       return rejectWithValue("Error Uploading post");
     }
@@ -102,6 +123,33 @@ const postsSlice = createSlice({
         state.loading = false;
       })
       .addCase(createPost.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+      })
+
+      // toggle Post Cases
+      .addCase(toggleLike.fulfilled, (state, action) => {
+        state.loading = false;
+        const { postId, userId } = action.payload;
+
+        const isLiked = state.byId[action.payload.postId].likes.some(
+          (like) => like === userId
+        );
+        console.log(
+          isLiked,
+          JSON.parse(JSON.stringify(state.byId[action.payload.postId].likes))
+        );
+
+        if (!isLiked) {
+          state.byId[postId].likes.push(userId!);
+        } else {
+          state.byId[postId].likes = state.byId[postId].likes.filter(
+            (like) => like !== userId
+          );
+        }
+        console.log(JSON.parse(JSON.stringify(state.byId[postId].likes)));
+      })
+      .addCase(toggleLike.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
       });

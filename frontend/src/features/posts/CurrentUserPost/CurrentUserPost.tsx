@@ -17,19 +17,21 @@ const CurrentUserPosts = () => {
     dispatch(fetchAllPost());
   }, [dispatch]);
 
+  console.log(currentUserPosts);
+
   return (
     <>
       <div className="postlist-container">
         {loading ? (
           <Spinner />
+        ) : currentUserPosts ? (
+          currentUserPosts.map((post) => (
+            <div key={post._id}>
+              <Post post={post} user={currentUser} />
+            </div>
+          ))
         ) : (
-          currentUserPosts.map((post) => {
-            return (
-              <div key={post._id}>
-                <Post post={post} user={currentUser} />
-              </div>
-            );
-          })
+          <div>Write a post</div>
         )}
       </div>
     </>

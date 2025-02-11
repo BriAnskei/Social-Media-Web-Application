@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { LoginTypes } from "../../../types/AuthTypes";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "../../../store/store";
@@ -9,9 +9,7 @@ import "./Login.css";
 const Login = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch<AppDispatch>();
-  const { loading, error, isAuthenticated } = useSelector(
-    (state: RootState) => state.auth
-  );
+
   const [data, setData] = useState<LoginTypes>({
     email: "",
     password: "",
@@ -19,8 +17,6 @@ const Login = () => {
 
   const [isInputInvalid, setIsInputInvalid] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
-
-  console.log(loading, error, isAuthenticated);
 
   const onChangeHandler = (e: any) => {
     const { name, value } = e.target;

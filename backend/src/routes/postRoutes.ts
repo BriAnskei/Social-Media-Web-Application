@@ -1,5 +1,9 @@
 import express from "express";
-import { createPost, postsLists } from "../controllers/postController";
+import {
+  createPost,
+  likeToggled,
+  postsLists,
+} from "../controllers/postController";
 import upload from "../middleware/upload";
 import authMiddleware from "../middleware/auth";
 
@@ -12,5 +16,6 @@ postRouter.post(
   upload.post.single("image"),
   createPost
 );
+postRouter.post("/like-toggle", authMiddleware, likeToggled);
 
 export default postRouter;
