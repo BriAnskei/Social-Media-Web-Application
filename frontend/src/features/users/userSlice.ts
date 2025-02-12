@@ -161,6 +161,8 @@ const userSlice = createSlice({
         // Get data
         const normalizedData = normalizeResponse(action.payload);
 
+        console.log("current user: ", normalizedData);
+
         state.byId = { ...state.byId, ...normalizedData.byId };
         if (!state.allIds.includes(normalizedData.allIds[0])) {
           state.allIds.push(normalizedData.allIds[0]);

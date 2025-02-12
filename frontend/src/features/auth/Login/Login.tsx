@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { LoginTypes } from "../../../types/AuthTypes";
-import { useDispatch, useSelector } from "react-redux";
-import { AppDispatch, RootState } from "../../../store/store";
+import { useDispatch } from "react-redux";
+import { AppDispatch } from "../../../store/store";
 import { clearError, loginAuth } from "../authSlice";
 import { useNavigate, Link } from "react-router-dom";
 import "./Login.css";

@@ -7,6 +7,7 @@ import { useDispatch } from "react-redux";
 import { AppDispatch } from "../../../store/store";
 import { logout } from "../../../features/auth/authSlice";
 import { useNavigate } from "react-router-dom";
+import { clearData } from "../../../features/users/userSlice";
 
 const LogoutModal: React.FC<ModalTypes> = ({ showModal, onClose }) => {
   const navigate = useNavigate();
@@ -15,7 +16,7 @@ const LogoutModal: React.FC<ModalTypes> = ({ showModal, onClose }) => {
   const handleLogout = (e: any) => {
     e.preventDefault();
 
-    dispatch(logout());
+    dispatch(logout(), clearData());
     navigate("/");
   };
 

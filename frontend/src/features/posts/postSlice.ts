@@ -61,6 +61,7 @@ export const toggleLike = createAsyncThunk(
   "posts/toggle-like",
   async (postId: string, { rejectWithValue, getState }) => {
     const { auth, user } = getState() as RootState;
+    console.log("slice like toogle", auth, user);
 
     const accessToken = auth.accessToken;
     const userId = user.currentUserId;

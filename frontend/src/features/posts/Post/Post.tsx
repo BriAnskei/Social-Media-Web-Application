@@ -21,9 +21,11 @@ const Post = ({ post, user }: Post) => {
   const [liked, setLiked] = useState(false);
 
   useEffect(() => {
+    console.log(currentUser);
+
+    // if current user is included in the like(current user liked this post)
     const isLiked = post.likes.includes(currentUser!);
     setLiked(isLiked);
-    console.log(post, isLiked, currentUser); // this is where the output
   }, [post, currentUser]);
 
   const toggleComments = () => {
@@ -35,7 +37,7 @@ const Post = ({ post, user }: Post) => {
 
     try {
       await dispatch(toggleLike(post._id));
-      console.log("like togglw");
+      console.log("component like");
     } catch (error) {
       console.error(error);
     }
@@ -56,14 +58,14 @@ const Post = ({ post, user }: Post) => {
             </div>
           </div>
 
-          {post.user !== currentUser && (
-            <div className="post-info-act">
+          <div className="post-info-act">
+            {post.user !== currentUser && (
               <button id="follow-button">+ Follow</button>
-              <span className="material-symbols-outlined more-icon">
-                more_horiz
-              </span>
-            </div>
-          )}
+            )}
+            <span className="material-symbols-outlined more-icon">
+              more_horiz
+            </span>
+          </div>
         </div>
         <div className="post-content">{post.content}</div>
         {post.image && (

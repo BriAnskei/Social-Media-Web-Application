@@ -1,7 +1,7 @@
 import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { AuthState, LoginTypes, RegisterTypes } from "../../types/AuthTypes";
 import { api, authApi } from "../../utils/api";
-import { fetchCurrentUser, clearData } from "../users/userSlice";
+import { clearData } from "../users/userSlice";
 import { AppThunk } from "../../store/store";
 
 export const loginAuth = createAsyncThunk(
@@ -9,18 +9,19 @@ export const loginAuth = createAsyncThunk(
   async (credentials: LoginTypes, { rejectWithValue, dispatch }) => {
     try {
       const res = await authApi.login(credentials);
-      const token = res.token;
 
       if (!res.success) {
         return rejectWithValue(res.message || "Login Failed"); // Creates a new payload to return error
       }
 
+      const token = res.token;
+
       if (!token) throw new Error("No Token has been attached in reponse");
 
       localStorage.setItem("access_token", token.accessToken);
       localStorage.setItem("refresh_token", token.refreshToken);
-      await dispatch(fetchCurrentUser(token.accessToken));
 
+      dispatch(getToken());
       return res;
     } catch (error) {
       return rejectWithValue("Login Failed");
@@ -42,8 +43,8 @@ export const registerAuth = createAsyncThunk(
 
       localStorage.setItem("access_token", token.accessToken);
       localStorage.setItem("refresh_token", token.refreshToken);
-      await dispatch(fetchCurrentUser(token.accessToken));
 
+      dispatch(getToken());
       return res;
     } catch (error) {
       return rejectWithValue("Registration failed");
@@ -67,10 +68,19 @@ const authSlice = createSlice({
       state.accessToken = null;
       state.refreshToken = null;
       state.isAuthenticated = false;
-      localStorage.removeItem("accessToken");
-      localStorage.removeItem("refreshToken");
+      localStorage.removeItem("access_token");
+      localStorage.removeItem("refresh_token");
     },
+    getToken: (state) => {
+      // function to get the cuurent usr token
 
+      // reset first
+      state.accessToken = null;
+      state.refreshToken = null;
+
+      state.accessToken = localStorage.getItem("access_token");
+      state.refreshToken = localStorage.getItem("refresh_token");
+    },
     clearError: (state) => {
       state.error = null;
     },
@@ -137,5 +147,6 @@ export const refreshToken = (): AppThunk => async (dispatch, getState) => {
   }
 };
 
-export const { logout, clearError, refreshAcessToken } = authSlice.actions;
+export const { logout, clearError, refreshAcessToken, getToken } =
+  authSlice.actions;
 export default authSlice.reducer;

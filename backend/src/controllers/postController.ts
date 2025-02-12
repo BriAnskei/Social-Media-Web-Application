@@ -47,6 +47,7 @@ export const postsLists = async (_: Request, res: Response): Promise<void> => {
 };
 
 export const likeToggled = async (req: ExtentRequest, res: Response) => {
+  // wrong emplementation, need to use socket for real time notification: https://claude.ai/chat/b63d9f5a-fd30-4494-84bc-0dee3c31e8b7
   try {
     const { postId } = req.body;
     const userId = req.userId;

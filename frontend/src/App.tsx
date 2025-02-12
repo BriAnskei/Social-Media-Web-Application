@@ -24,6 +24,8 @@ function App() {
 
   useEffect(() => {
     if (isAuthenticated) {
+      console.log(accessToken);
+
       dispatch(fetchCurrentUser(accessToken!));
     }
   }, [dispatch, isAuthenticated]);
