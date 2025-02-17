@@ -14,6 +14,7 @@ import { AppDispatch, RootState } from "./store/store";
 import ProfilePage from "./pages/Profile/ProfilePage";
 import { useEffect } from "react";
 import { fetchCurrentUser } from "./features/users/userSlice";
+import { useSocket } from "./hooks/socket/useSocket";
 
 function App() {
   const dispatch = useDispatch<AppDispatch>();
@@ -22,10 +23,11 @@ function App() {
     (state: RootState) => state.auth
   );
 
+  // connect to socket
+  useSocket();
+
   useEffect(() => {
     if (isAuthenticated) {
-      console.log(accessToken);
-
       dispatch(fetchCurrentUser(accessToken!));
     }
   }, [dispatch, isAuthenticated]);

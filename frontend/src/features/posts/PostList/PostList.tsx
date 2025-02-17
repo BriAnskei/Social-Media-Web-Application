@@ -14,11 +14,18 @@ const PostList = () => {
   const postLoading = useSelector((state: RootState) => state.posts.loading);
   const userLodaing = useSelector((state: RootState) => state.user.loading);
   const user = useSelector((state: RootState) => state.user.byId);
-
-  console.log(posts);
+  const { accessToken, isAuthenticated } = useSelector(
+    (state: RootState) => state.auth
+  );
 
   useEffect(() => {
-    dispatch(fetchAllPost());
+    const fetchData = async () => {
+      await dispatch(fetchAllPost());
+    };
+
+    if (accessToken && isAuthenticated) {
+      fetchData();
+    }
   }, []);
 
   return (
@@ -32,7 +39,7 @@ const PostList = () => {
             const postOwner = user[post.user];
             return (
               <div key={postId}>
-                <Post post={post} user={postOwner} />
+                <Post post={post} user={postOwner} accessToken={accessToken!} />
               </div>
             );
           })

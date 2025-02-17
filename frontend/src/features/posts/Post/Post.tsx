@@ -5,24 +5,26 @@ import { useEffect, useState } from "react";
 import { FetchPostType } from "../../../types/PostType";
 import { FetchedUserType } from "../../../types/user";
 import { AppDispatch, RootState } from "../../../store/store";
+import { useSocket } from "../../../hooks/socket/useSocket";
 
 interface Post {
   post: FetchPostType;
   user: FetchedUserType;
+  accessToken: string;
 }
 
 const Post = ({ post, user }: Post) => {
-  const dispatch = useDispatch<AppDispatch>();
   const currentUser = useSelector(
     (state: RootState) => state.user.currentUserId
   );
+
+  const socket = useSocket();
+  const dispatch = useDispatch<AppDispatch>();
 
   const [showComment, setShowComment] = useState(false);
   const [liked, setLiked] = useState(false);
 
   useEffect(() => {
-    console.log(currentUser);
-
     // if current user is included in the like(current user liked this post)
     const isLiked = post.likes.includes(currentUser!);
     setLiked(isLiked);
@@ -36,8 +38,16 @@ const Post = ({ post, user }: Post) => {
     setLiked(!liked);
 
     try {
-      await dispatch(toggleLike(post._id));
-      console.log("component like");
+      const res = await dispatch(toggleLike(post._id)).unwrap();
+
+      // wont emit if the liker is the post Owner
+      if (res.userId !== user._id) {
+        socket?.emit("likePost", {
+          postId: post._id,
+          postOwnerId: user._id,
+          userId: currentUser,
+        });
+      }
     } catch (error) {
       console.error(error);
     }

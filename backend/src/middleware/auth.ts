@@ -33,4 +33,19 @@ const authMiddleware = async (
   }
 };
 
+const verifyToken = async (token: string) => {
+  if (!token) throw new Error("Token is requied");
+  try {
+    const token_decode = jwt.verify(
+      token,
+      process.env.ACCESS_SECRET as string
+    ) as { userId: string };
+
+    return token_decode;
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+export { verifyToken };
 export default authMiddleware;

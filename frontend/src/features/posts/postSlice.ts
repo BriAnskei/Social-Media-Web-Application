@@ -11,7 +11,6 @@ interface Poststate extends NormalizeState<FetchPostType> {}
 const initialState: Poststate = {
   byId: {},
   allIds: [],
-
   loading: false,
   error: null,
 };
@@ -91,6 +90,29 @@ const postsSlice = createSlice({
     ): void => {
       console.log(action.payload);
     },
+    postLiked: (
+      state,
+      action: PayloadAction<{
+        postId: string;
+        userId: string;
+        username: string;
+      }>
+    ): void => {
+      const { postId, userId } = action.payload;
+
+      // check if the user is included in the likes array prop of post
+      const isliked = state.byId[postId].likes.some(
+        (likesId) => likesId === userId
+      );
+
+      if (!isliked) {
+        state.byId[postId].likes.push(userId);
+      } else {
+        state.byId[postId].likes = state.byId[postId].likes.filter(
+          (likeId) => likeId !== userId
+        );
+      }
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -136,10 +158,6 @@ const postsSlice = createSlice({
         const isLiked = state.byId[action.payload.postId].likes.some(
           (like) => like === userId
         );
-        console.log(
-          isLiked,
-          JSON.parse(JSON.stringify(state.byId[action.payload.postId].likes))
-        );
 
         if (!isLiked) {
           state.byId[postId].likes.push(userId!);
@@ -157,5 +175,5 @@ const postsSlice = createSlice({
   },
 });
 
-export const { toggle } = postsSlice.actions;
+export const { toggle, postLiked } = postsSlice.actions;
 export default postsSlice.reducer;

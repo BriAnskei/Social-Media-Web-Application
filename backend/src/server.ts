@@ -5,6 +5,8 @@ import "dotenv/config";
 import userRouter from "./routes/userRoutes";
 import postRouter from "./routes/postRoutes";
 import authRoutes from "./routes/authRoutes";
+import { createServer } from "http";
+import { SocketServer } from "./socket/socketServer";
 
 // app config
 const app = express();
@@ -20,6 +22,10 @@ app.use(
 
 // connect Database
 connectDb();
+
+// calling the socket connection
+const httpServer = createServer(app);
+new SocketServer(httpServer);
 
 // Static images
 app.use("/images/posts", express.static(`${process.env.UPLOAD_PATH}/posts`));
@@ -37,7 +43,8 @@ app.get("/", (req: Request, res: Response) => {
   res.send("API Working");
 });
 
-app.listen(PORT, () => {
+// wrap the express app in the httpServer
+httpServer.listen(PORT, () => {
   console.log(process.env.MONGO_URI);
   console.log(`Server running on port http://localhost:${PORT}`);
 });
