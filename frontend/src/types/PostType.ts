@@ -17,3 +17,10 @@ export interface UploadPostTypes {
   content: string;
   image?: File;
 }
+
+export interface LikeHandlerTypes {
+  postId: string;
+  postOwnerId: string;
+  userId: string;
+  username: string;
+}

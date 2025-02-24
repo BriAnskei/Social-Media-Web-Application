@@ -1,7 +1,7 @@
 import "./Post.css";
 import { useDispatch, useSelector } from "react-redux";
 import { toggleLike } from "../postSlice";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { FetchPostType } from "../../../types/PostType";
 import { FetchedUserType } from "../../../types/user";
 import { AppDispatch, RootState } from "../../../store/store";
@@ -18,7 +18,7 @@ const Post = ({ post, user }: Post) => {
     (state: RootState) => state.user.currentUserId
   );
 
-  const socket = useSocket();
+  const { emitLike, isConnected } = useSocket();
   const dispatch = useDispatch<AppDispatch>();
 
   const [showComment, setShowComment] = useState(false);
@@ -37,17 +37,18 @@ const Post = ({ post, user }: Post) => {
   const handleLike = async () => {
     setLiked(!liked);
 
-    try {
-      const res = await dispatch(toggleLike(post._id)).unwrap();
+    console.log("like function triggered");
 
-      // wont emit if the liker is the post Owner
-      if (res.userId !== user._id) {
-        socket?.emit("likePost", {
-          postId: post._id,
-          postOwnerId: user._id,
-          userId: currentUser,
-        });
-      }
+    try {
+      await dispatch(toggleLike(post._id)).unwrap();
+
+      const data = {
+        postId: post._id,
+        postOwnerId: user._id,
+        userId: currentUser!,
+      };
+
+      emitLike(data);
     } catch (error) {
       console.error(error);
     }

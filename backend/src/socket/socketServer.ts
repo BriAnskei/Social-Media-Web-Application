@@ -1,22 +1,32 @@
 import { Server } from "socket.io"; // Socket.io server class, which manages WebSocket connections.
 import { Server as HttpServer } from "http"; // http server module from node.js
 import { verifyToken } from "../middleware/auth";
+import { error } from "console";
 
-interface ConnectedUserTypes {
+interface ConnectedUser {
   userId: string;
   socketId: string;
+  username?: string;
 }
 
-interface LikeHandlerTypes {
+interface LikeEventPayload {
   postId: string;
   postOwnerId: string;
   userId: string;
   username: string;
 }
 
+// Define events
+const SOCKET_EVENTS = {
+  // Like Events
+  LIKE_POST: "likePost",
+  POST_LIKED: "postLiked",
+  LIKE_NOTIFY: "likeNotify",
+};
+
 export class SocketServer {
   private io: Server;
-  private connectedUser: ConnectedUserTypes[] = []; // tracks of connected users
+  private connectedUSers: Map<string, ConnectedUser> = new Map();
 
   // .on(event, callback)	Listens for a specific event from the client.
   // .to(socketId).emit(event, data)	Sends an event only to a specific client using their socketId.
@@ -25,24 +35,41 @@ export class SocketServer {
     this.io = new Server(httpServer, {
       // Create the server instance bound to node.js server module
       cors: {
-        origin: process.env.CLIENT_URL || "http://localhost:5173",
+        origin: "http://localhost:5173",
         methods: ["GET", "POST"], // allowed methods
       },
+
+      pingTimeout: 60000, // Close connection if client doesn't respond to ping within 60s
+      pingInterval: 25000, // Send ping every 25s
     });
 
-    this.setUpMiddleware(); // method to authenticate users. Verify first
-    this.setupEventHandlers(); // handle socket events
+    this.initializeServer();
   }
 
-  private setUpMiddleware() {
+  private async initializeServer(): Promise<void> {
+    try {
+      await this.setUpMiddleware();
+      this.setupEventHandlers();
+    } catch (error) {
+      console.log("Failed to initialize socket server: ", error);
+    }
+  }
+
+  private async setUpMiddleware() {
     this.io.use(async (socket, next) => {
       try {
         // this asyncfuntion will run before the clients connects
         const token = socket.handshake.auth.accessToken; // extracts the token from the initial(handshake) req from the client
+        console.log(token);
 
         if (!token) return next(new Error("No Token provided"));
 
         const decoded = await verifyToken(token);
+
+        if (!decoded?.userId) {
+          return next(new Error("Invalid Token"));
+        }
+
         socket.data.userId = decoded?.userId; // stores the token in the socketData
         next();
       } catch (error) {
@@ -53,45 +80,92 @@ export class SocketServer {
 
   private setupEventHandlers() {
     this.io.on("connection", (socket) => {
-      // this function runs when a new users connect
-      console.log(`User connected: ${socket.data.userId}`);
+      this.handleConnection(socket); // register the user as connected(online)
 
-      // Stores the connected user
-      this.connectedUser.push({
-        userId: socket.data.userId,
-        socketId: socket.id,
-      });
+      socket.on("disconnect", () => this.handleDisconnection(socket));
+      socket.on(SOCKET_EVENTS.LIKE_POST, (data: LikeEventPayload) =>
+        this.handleLikePost(socket, data)
+      );
 
-      console.log(this.connectedUser);
-
-      // handle disconnection
-      socket.on("disconnect", () => {
-        this.connectedUser = this.connectedUser.filter(
-          (user) => user.socketId !== socket.id
-        );
-        console.log(`user disconnected: ${socket.data.userId}`);
-      });
-
-      // handling post likes
-      socket.on("likePost", async (data: LikeHandlerTypes) => {
-        console.log(data);
-
-        // Checks if the post owner is online
-        const targetSocket = this.connectedUser.find(
-          (user) => user.userId === data.postOwnerId
-        );
-
-        if (targetSocket) {
-          // if online, send event to the specific post owner
-          this.io.to(targetSocket.socketId).emit("postLiked", {
-            postId: data.postId,
-            userId: data.userId,
-            username: data.username,
-          });
-        } else {
-          console.log("owner is  not online");
-        }
+      // Handle Error
+      socket.on("error", (error) => {
+        console.error("Socket Server Error", error);
+        socket.emit("error", "An error occured");
       });
     });
+  }
+
+  private handleConnection(socket: any): void {
+    try {
+      const user: ConnectedUser = {
+        userId: socket.data.userId,
+        socketId: socket.id,
+      };
+
+      this.connectedUSers.set(socket.data.userId, user);
+      console.log(`user Connected: ${socket.data.userId}:`);
+      console.log(JSON.stringify(Object.fromEntries(this.connectedUSers)));
+    } catch (error) {
+      console.error("Error handling connection: ", error);
+    }
+  }
+
+  private handleDisconnection(socket: any): void {
+    try {
+      this.connectedUSers.delete(socket.data.userId);
+      console.log(`User Disconnected: ${socket.data.userId}`);
+
+      this.broadcastOnlineUsers();
+    } catch (error) {
+      console.log("Error handling disconnection");
+    }
+  }
+
+  private async handleLikePost(
+    socket: any,
+    data: LikeEventPayload
+  ): Promise<void> {
+    const { userId, postOwnerId, postId } = data;
+    try {
+      console.log(
+        "like event triggered: ",
+        data.postId,
+        postOwnerId,
+        postId,
+        data
+      );
+
+      // boadcast to all except the post owwner or like event sender
+      if (userId !== postOwnerId) {
+        // boadcast to all except the sender
+        console.log("boadcasting like event");
+        socket.broadcast.emit("postLiked", {
+          userId,
+          postOwnerId,
+          postId,
+        });
+
+        // Notify owner if online
+        const ownerSocket = this.connectedUSers.get(postOwnerId);
+        if (ownerSocket) {
+          this.io.to(ownerSocket.socketId).emit(SOCKET_EVENTS.LIKE_NOTIFY, {
+            postId,
+            userId,
+          });
+        }
+      } else {
+        console.log("liker is the post owner");
+      }
+    } catch (error) {
+      console.error("Error handling post like:", error);
+      socket.emit("error", "Failed to process like action");
+    }
+  }
+
+  private broadcastOnlineUsers(): void {
+    const onlineUsers = Array.from(this.connectedUSers.values()).map(
+      (userId) => ({ userId: userId.userId })
+    );
+    this.io.emit("onlineUsers", onlineUsers);
   }
 }

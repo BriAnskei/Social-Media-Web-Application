@@ -1,9 +1,4 @@
-import {
-  Action,
-  AnyAction,
-  configureStore,
-  ThunkAction,
-} from "@reduxjs/toolkit";
+import { Action, configureStore, ThunkAction } from "@reduxjs/toolkit";
 import rootReducer from "./rootReducer";
 
 const store = configureStore({

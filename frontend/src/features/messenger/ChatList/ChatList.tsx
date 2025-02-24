@@ -13,8 +13,6 @@ const ChatList = () => {
     dispatch(fetchChats());
   }, []);
 
-
-
   return (
     <>
       <div className="chatlist-cont">

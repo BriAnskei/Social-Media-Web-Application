@@ -1,7 +1,7 @@
 import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
 
 import { postApi } from "../../utils/api";
-import { FetchPostType } from "../../types/PostType";
+import { FetchPostType, LikeHandlerTypes } from "../../types/PostType";
 import { NormalizeState } from "../../types/NormalizeType";
 import { RootState } from "../../store/store";
 
@@ -91,19 +91,17 @@ const postsSlice = createSlice({
       console.log(action.payload);
     },
     postLiked: (
+      // global funtion
       state,
-      action: PayloadAction<{
-        postId: string;
-        userId: string;
-        username: string;
-      }>
+      action: PayloadAction<LikeHandlerTypes>
     ): void => {
       const { postId, userId } = action.payload;
 
       // check if the user is included in the likes array prop of post
       const isliked = state.byId[postId].likes.some(
-        (likesId) => likesId === userId
+        (likerId) => likerId === userId
       );
+      console.log("postSlice liked funtcion, user liked post?: ", isliked);
 
       if (!isliked) {
         state.byId[postId].likes.push(userId);
