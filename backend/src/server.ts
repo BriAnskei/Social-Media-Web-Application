@@ -5,6 +5,7 @@ import "dotenv/config";
 import userRouter from "./routes/userRoutes";
 import postRouter from "./routes/postRoutes";
 import authRoutes from "./routes/authRoutes";
+import notifRouter from "./routes/notifRoutes";
 import { createServer } from "http";
 import { SocketServer } from "./socket/socketServer";
 
@@ -34,7 +35,8 @@ app.use(
   express.static(`${process.env.UPLOAD_PATH}/profile`)
 );
 
-// api endpoit(Routes)
+// api endpoint(Routes)
+app.use("/api/notify", notifRouter);
 app.use("/api/users", userRouter);
 app.use("/api/posts", postRouter);
 app.use("/api/token", authRoutes);

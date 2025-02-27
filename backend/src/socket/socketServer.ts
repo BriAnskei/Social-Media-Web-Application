@@ -2,6 +2,7 @@ import { Server } from "socket.io"; // Socket.io server class, which manages Web
 import { Server as HttpServer } from "http"; // http server module from node.js
 import { verifyToken } from "../middleware/auth";
 import { error } from "console";
+import { saveNotification } from "../controllers/notifController";
 
 interface ConnectedUser {
   userId: string;
@@ -67,7 +68,8 @@ export class SocketServer {
         const decoded = await verifyToken(token);
 
         if (!decoded?.userId) {
-          return next(new Error("Invalid Token"));
+          return next(new Error("Invalid Token")); // if token is invalid,  the connection process is halted.
+          //The error is sent back to the client, which will receive an "error" event on its end.connect_error
         }
 
         socket.data.userId = decoded?.userId; // stores the token in the socketData
@@ -127,40 +129,41 @@ export class SocketServer {
   ): Promise<void> {
     const { userId, postOwnerId, postId } = data;
     try {
-      console.log(
-        "like event triggered: ",
-        data.postId,
+      // boadcast to all except the sender
+      socket.broadcast.emit("postLiked", {
+        userId,
         postOwnerId,
         postId,
-        data
-      );
+      });
 
-      // boadcast to all except the post owwner or like event sender
+      // send and persist notification of the liker is not the post owner
       if (userId !== postOwnerId) {
-        // boadcast to all except the sender
-        console.log("boadcasting like event");
-        socket.broadcast.emit("postLiked", {
-          userId,
-          postOwnerId,
-          postId,
-        });
+        const data = {
+          sender: userId,
+          receiver: postOwnerId,
+          message: "Liked you post",
+          type: "like",
+        };
+
+        await saveNotification(data); // save to DB
 
         // Notify owner if online
         const ownerSocket = this.connectedUSers.get(postOwnerId);
         if (ownerSocket) {
-          this.io.to(ownerSocket.socketId).emit(SOCKET_EVENTS.LIKE_NOTIFY, {
-            postId,
-            userId,
-          });
+          this.io
+            .to(ownerSocket.socketId)
+            .emit(SOCKET_EVENTS.LIKE_NOTIFY, data);
         }
-      } else {
-        console.log("liker is the post owner");
       }
     } catch (error) {
       console.error("Error handling post like:", error);
       socket.emit("error", "Failed to process like action");
     }
   }
+
+  // private handlePostUpload(): Promise<void> {
+
+  // }
 
   private broadcastOnlineUsers(): void {
     const onlineUsers = Array.from(this.connectedUSers.values()).map(

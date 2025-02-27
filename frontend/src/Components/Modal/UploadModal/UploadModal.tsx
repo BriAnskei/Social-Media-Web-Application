@@ -29,7 +29,7 @@ const UploadModal: React.FC<ModalTypes> = ({ showModal, onClose }) => {
 
   const onChangeHandler = (e: any) => {
     const { name, value } = e.target;
-    // Texterea inout size
+    // Texterea input size
     const textArea = textAreaRef.current;
     if (textArea) {
       const newFontSize = textArea.value.length <= 30 ? "25px" : "15px";

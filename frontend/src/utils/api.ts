@@ -14,6 +14,7 @@ export interface ApiResponse {
   message?: string;
   user?: FetchedUserType[] | FetchedUserType;
   posts?: FetchPostType[];
+  notification?: any[];
 }
 
 export const postApi = {
@@ -187,6 +188,26 @@ export const authApi = {
 
       return response.data;
     } catch (error) {
+      return {
+        success: false,
+        message: "Network Error Occured",
+      };
+    }
+  },
+};
+
+export const notificationApi = {
+  addNotif: async (data: any): Promise<ApiResponse> => {
+    try {
+      const response = await api.post("api/notify/add", data, {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      return response.data;
+    } catch (error) {
+      console.log(error);
       return {
         success: false,
         message: "Network Error Occured",

@@ -60,7 +60,6 @@ export const toggleLike = createAsyncThunk(
   "posts/toggle-like",
   async (postId: string, { rejectWithValue, getState }) => {
     const { auth, user } = getState() as RootState;
-    console.log("slice like toogle", auth, user);
 
     const accessToken = auth.accessToken;
     const userId = user.currentUserId;
@@ -101,7 +100,6 @@ const postsSlice = createSlice({
       const isliked = state.byId[postId].likes.some(
         (likerId) => likerId === userId
       );
-      console.log("postSlice liked funtcion, user liked post?: ", isliked);
 
       if (!isliked) {
         state.byId[postId].likes.push(userId);
@@ -164,7 +162,6 @@ const postsSlice = createSlice({
             (like) => like !== userId
           );
         }
-        console.log(JSON.parse(JSON.stringify(state.byId[postId].likes)));
       })
       .addCase(toggleLike.rejected, (state, action) => {
         state.loading = false;

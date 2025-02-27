@@ -3,7 +3,5 @@ import { selectCurrentUserPost } from "../features/posts/postSelector";
 
 export const useCurrentUserPosts = () => {
   const result = useSelector(selectCurrentUserPost);
-  console.log(result);
-
   return result;
 };

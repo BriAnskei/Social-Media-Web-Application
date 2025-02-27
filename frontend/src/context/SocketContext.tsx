@@ -46,7 +46,7 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
     // Create socket instance only if it doesn't exist
     if (!socket) {
       const newSocket = io(SOCKET_URL, {
-        autoConnect: false,
+        autoConnect: false, // do not auto connect, handle in useSocket hook
         transports: ["websocket"],
         reconnection: true,
         reconnectionAttempts: 5,

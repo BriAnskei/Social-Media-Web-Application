@@ -1,56 +1,45 @@
-import { createAsyncThunk, createSlice } from "@reduxjs/toolkit"
-import { exampleNotifications } from "../../assets/assets"
+import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { exampleNotifications } from "../../assets/assets";
+import { notificationApi } from "../../utils/api";
+import { NormalizeState } from "../../types/NormalizeType";
+import normalizeResponse from "../../utils/normalizeResponse";
 
-interface NotifProps {
-    receiver: string,
-     sender: string,
-     type: string,
-     post?: string,
-     message: string,
-     read: boolean,
-     createdAt: string
+export interface NotifData {
+  _id: string;
+  receiver: string;
+  sender: string;
+  post: string;
+  message: string;
+  type: string;
+  read: boolean;
+  createdAt: string;
 }
 
+interface NotificationState extends NormalizeState<NotifData> {}
 
-
-const initialState = {
-    notification:[]as NotifProps [],
-    loading: false,
-    error: null as string | null,
-
-}
-
-
-export const fetchNotifs = createAsyncThunk(
-    "notification/fetch",
-    async () => {
-        await new Promise((resolve) => setTimeout(resolve, 1000))
-
-        const notifications = exampleNotifications.map((notification) => ({
-            ...notification, createdAt: notification.createdAt.toISOString(),
-        }))
-        return notifications
-    }
-)
-
-
+const initialState: NotificationState = {
+  byId: {},
+  allIds: [],
+  loading: false,
+  error: null,
+};
 
 const notificationSlice = createSlice({
-    name: 'notification',
-    initialState,
-    reducers: {},
-    extraReducers: (builder) => {
-        builder
-        .addCase(fetchNotifs.pending,(state) => {
-            console.log("Fetching notif Data")
-            state.loading = true;
-        })
-        .addCase(fetchNotifs.fulfilled, (state, action) => {
-            state.notification = action.payload
-            state.loading = false;
-        })
-    }
-})
+  name: "notification",
+  initialState,
+  reducers: {
+    addNotification: (state, action: PayloadAction<NotifData>): void => {
+      const data = normalizeResponse(action.payload);
 
+      state.byId = { ...state.byId, ...data.byId };
+      if (!state.allIds.includes(data.allIds[0])) {
+        state.allIds.push(data.allIds[0]);
+      }
+    },
+  },
+  extraReducers: (builder) => {
+    builder;
+  },
+});
 
-export default notificationSlice.reducer
+export default notificationSlice.reducer;

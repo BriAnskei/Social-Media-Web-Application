@@ -21,7 +21,7 @@
   },
 
   // Specifies which files or patterns to include in the TypeScript compilation process
-  "include": ["src/**/*.ts", "src/socket/socketServer.tss"], // Includes all TypeScript files (`.ts`) in the `src` folder and its subfolders
+  "include": ["src/**/*.ts", "src/socket/socketServer.tss", "src/socket/socketServer.tsx"], // Includes all TypeScript files (`.ts`) in the `src` folder and its subfolders
 
   // Specifies which files or patterns to exclude from the TypeScript compilation process
   "exclude": ["node_modules"] // Excludes the `node_modules` directory to prevent compiling third-party dependencies

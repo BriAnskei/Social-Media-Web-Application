@@ -14,7 +14,7 @@ export const createPost = async (
     const userId = req.userId;
     if (!userId) throw new Error("User Id is required");
 
-    const userObjectId = mongoose.Types.ObjectId.createFromHexString(userId);
+    const userObjectId = mongoose.Types.ObjectId.createFromHexString(userId); //hexadecimal string into a valid ObjectId instance.
 
     await postModel.create({
       user: userObjectId,

@@ -3,33 +3,7 @@ import { FetchedUserType } from "../../types/user";
 import { ApiResponse, userApi } from "../../utils/api";
 import { RootState } from "../../store/store";
 import { NormalizeState } from "../../types/NormalizeType";
-
-type NormalizeResponse = {
-  byId: { [key: string]: FetchedUserType };
-  allIds: string[];
-};
-
-// Helper function that will returns an array or an object depinding on the api response
-const normalizeResponse = (
-  users: FetchedUserType[] | FetchedUserType | undefined
-): NormalizeResponse => {
-  if (!users) return { byId: {}, allIds: [] };
-
-  if (Array.isArray(users)) {
-    return {
-      byId: users.reduce((acc, user) => {
-        acc[user._id] = user;
-        return acc;
-      }, {} as { [key: string]: FetchedUserType }),
-      allIds: users.map((user) => user._id),
-    };
-  } else {
-    return {
-      byId: { [users._id]: users },
-      allIds: [users._id],
-    };
-  }
-};
+import normalizeResponse from "../../utils/normalizeResponse";
 
 export const getUsersData = createAsyncThunk(
   "user/getUsersData",
@@ -161,15 +135,12 @@ const userSlice = createSlice({
         // Get data
         const normalizedData = normalizeResponse(action.payload);
 
-        console.log("current user: ", normalizedData);
-
         state.byId = { ...state.byId, ...normalizedData.byId };
         if (!state.allIds.includes(normalizedData.allIds[0])) {
           state.allIds.push(normalizedData.allIds[0]);
         }
 
         state.currentUserId = normalizedData.allIds[0];
-        console.log(state.currentUserId);
       })
       .addCase(fetchCurrentUser.rejected, (state, action) => {
         state.loading = false;

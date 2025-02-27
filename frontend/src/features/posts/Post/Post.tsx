@@ -40,15 +40,17 @@ const Post = ({ post, user }: Post) => {
     console.log("like function triggered");
 
     try {
-      await dispatch(toggleLike(post._id)).unwrap();
+      const res = await dispatch(toggleLike(post._id)).unwrap();
+      // emit after succesfully saved itto DB
+      if (res) {
+        const data = {
+          postId: post._id,
+          postOwnerId: user._id,
+          userId: currentUser!,
+        };
 
-      const data = {
-        postId: post._id,
-        postOwnerId: user._id,
-        userId: currentUser!,
-      };
-
-      emitLike(data);
+        emitLike(data);
+      }
     } catch (error) {
       console.error(error);
     }

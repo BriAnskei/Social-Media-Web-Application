@@ -23,7 +23,6 @@ userRouter.put(
   upload.profile.single("profilePicture"),
   updateProfile
 );
-
 userRouter.get("/authentication", authMiddleware, authorization);
 
 export default userRouter;
