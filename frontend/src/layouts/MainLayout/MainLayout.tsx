@@ -9,8 +9,23 @@ import {
   faInstagram,
 } from "@fortawesome/free-brands-svg-icons";
 import Upload from "../../Components/Upload/Upload";
+import { useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { AppDispatch, RootState } from "../../store/store";
+import { fetchAllNotifs } from "../../features/notifications/notificationsSlice";
 
 const MainLayout = () => {
+  const dispatch = useDispatch<AppDispatch>();
+  const { isAuthenticated } = useSelector((state: RootState) => state.auth);
+
+  console.log("Render mainlayout");
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      dispatch(fetchAllNotifs());
+    }
+  }, []);
+
   return (
     <div>
       <Navbar />

@@ -5,14 +5,24 @@ import { getToken } from "../../features/auth/authSlice";
 import { RootState } from "../../store/store";
 import { LikeHandlerTypes } from "../../types/PostType";
 import { postLiked } from "../../features/posts/postSlice";
+import { addNotification } from "../../features/notifications/notificationsSlice";
 
 // types/socket.types.ts
 
-export interface NotificationType {
-  postId: string;
-  userId: string;
-  type: "like" | "comment" | "follow";
+interface NotificationType {
+  _id: string;
+  receiver: string;
+  sender: string;
+  post: string;
   message: string;
+  type: string;
+  read: boolean;
+  createdAt: Date;
+}
+
+export interface DataOutput {
+  isExist: boolean;
+  data: NotificationType;
 }
 
 export const useSocket = () => {
@@ -28,9 +38,9 @@ export const useSocket = () => {
     [dispatch]
   );
 
-  const handleNotification = useCallback((data: NotificationType) => {
+  const handleNotification = useCallback((data: DataOutput) => {
     console.log("Notification received:", data);
-    // Handle notification (e.g., show toast, update notifications state)
+    dispatch(addNotification(data));
   }, []);
 
   useEffect(() => {

@@ -4,10 +4,10 @@ import { AppDispatch, RootState } from "../../store/store";
 import { useEffect } from "react";
 
 const NotificationList = () => {
-  const dispatch: AppDispatch = useDispatch();
-  const { allIds, byId } = useSelector(
+  const { allIds, byId, loading } = useSelector(
     (state: RootState) => state.notification
   );
+  const userById = useSelector((state: RootState) => state.user.byId);
 
   const displayLogoType = (notificationType: string): string => {
     switch (notificationType) {
@@ -24,21 +24,33 @@ const NotificationList = () => {
 
   return (
     <div className="notif-cont">
-      {allIds.map((id, index) => (
-        <div className="notif-container" key={index}>
-          <div className="notif-content">
-            <div className="type-logo">
-              <span className="material-symbols-outlined">
-                {displayLogoType(byId[id].type)}
-              </span>
+      {loading ? (
+        <>Loading</>
+      ) : (
+        allIds.map((id, index) => {
+          const senderId = byId[id].sender;
+
+          const senderData = userById[senderId];
+
+          return (
+            <div className="notif-container" key={index}>
+              <div className="notif-content">
+                <div className="type-logo">
+                  <span className="material-symbols-outlined">
+                    {displayLogoType(byId[id].type)}
+                  </span>
+                </div>
+                <div className="notif-message">{`${
+                  senderData ? senderData.username : "unknown user"
+                } ${byId[id].message}`}</div>
+              </div>
+              <div className="notif-data">
+                <span>{new Date(byId[id].createdAt).toLocaleString()}</span>
+              </div>
             </div>
-            <div className="notif-message">{byId[id].message}</div>
-          </div>
-          <div className="notif-data">
-            <span>{new Date(byId[id].createdAt).toLocaleString()}</span>
-          </div>
-        </div>
-      ))}
+          );
+        })
+      )}
     </div>
   );
 };

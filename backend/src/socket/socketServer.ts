@@ -2,7 +2,7 @@ import { Server } from "socket.io"; // Socket.io server class, which manages Web
 import { Server as HttpServer } from "http"; // http server module from node.js
 import { verifyToken } from "../middleware/auth";
 import { error } from "console";
-import { saveNotification } from "../controllers/notifController";
+import { NotifData, saveNotification } from "../controllers/notifController";
 
 interface ConnectedUser {
   userId: string;
@@ -138,21 +138,22 @@ export class SocketServer {
 
       // send and persist notification of the liker is not the post owner
       if (userId !== postOwnerId) {
-        const data = {
-          sender: userId,
+        const data: NotifData = {
           receiver: postOwnerId,
-          message: "Liked you post",
+          sender: userId,
+          post: postId,
+          message: "liked your post",
           type: "like",
         };
 
-        await saveNotification(data); // save to DB
+        const notifdata = await saveNotification(data); // save to DB
 
         // Notify owner if online
         const ownerSocket = this.connectedUSers.get(postOwnerId);
         if (ownerSocket) {
           this.io
             .to(ownerSocket.socketId)
-            .emit(SOCKET_EVENTS.LIKE_NOTIFY, data);
+            .emit(SOCKET_EVENTS.LIKE_NOTIFY, notifdata);
         }
       }
     } catch (error) {
@@ -160,10 +161,6 @@ export class SocketServer {
       socket.emit("error", "Failed to process like action");
     }
   }
-
-  // private handlePostUpload(): Promise<void> {
-
-  // }
 
   private broadcastOnlineUsers(): void {
     const onlineUsers = Array.from(this.connectedUSers.values()).map(

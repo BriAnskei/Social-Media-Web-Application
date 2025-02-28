@@ -1,9 +1,14 @@
-import React from "react";
+import React, { useEffect } from "react";
 import "./NotifModal.css";
 import NotificationList from "../../../features/notifications/NotificationList";
 import { ModalTypes } from "../../../types/modalTypes";
+import { fetchAllNotifs } from "../../../features/notifications/notificationsSlice";
+import { useDispatch, useSelector } from "react-redux";
+import { AppDispatch, RootState } from "../../../store/store";
 
 const NotifModal: React.FC<ModalTypes> = ({ showModal, onClose }) => {
+  const { loading } = useSelector((state: RootState) => state.notification);
+
   return (
     <>
       <div
@@ -19,7 +24,7 @@ const NotifModal: React.FC<ModalTypes> = ({ showModal, onClose }) => {
               </div>
             </div>
             <div className="modal-body body">
-              <NotificationList />
+              {!loading && <NotificationList />}
             </div>
           </div>
         </div>

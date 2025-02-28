@@ -15,9 +15,7 @@ const Navbr = () => {
   const numberOfChants = useSelector(
     (state: RootState) => state.chats.chats.length
   );
-  const numberOfNotif = useSelector(
-    (state: RootState) => state.notification.notification.length
-  );
+  const numberOfNotif = 1;
 
   const toggleChat = () => {
     setShowMessageModal(!showMessageModal);

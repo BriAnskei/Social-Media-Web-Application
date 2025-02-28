@@ -1,24 +1,3 @@
-// types/socket.types.ts
-export interface LikeHandlerTypes {
-  postId: string;
-  userId: string;
-  // Add other relevant fields
-}
-
-export interface NotificationType {
-  postId: string;
-  userId: string;
-  type: "like" | "comment" | "follow";
-  message: string;
-}
-
-export interface SocketEvents {
-  postLiked: (data: LikeHandlerTypes) => void;
-  likeNotify: (data: NotificationType) => void;
-  error: (error: Error) => void;
-}
-
-// context/SocketContext.tsx
 import React, { createContext, ReactNode, useEffect, useState } from "react";
 import { io, Socket } from "socket.io-client";
 

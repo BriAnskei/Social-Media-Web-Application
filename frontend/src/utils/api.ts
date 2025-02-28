@@ -2,6 +2,7 @@ import axios from "axios";
 import { LoginTypes, RegisterTypes } from "../types/AuthTypes";
 import { FetchedUserType } from "../types/user";
 import { FetchPostType } from "../types/PostType";
+import { NotificationType } from "../types/NotificationTypes";
 
 // Axion instance
 export const api = axios.create({
@@ -14,7 +15,7 @@ export interface ApiResponse {
   message?: string;
   user?: FetchedUserType[] | FetchedUserType;
   posts?: FetchPostType[];
-  notification?: any[];
+  notifications?: NotificationType[] | NotificationType;
 }
 
 export const postApi = {
@@ -208,6 +209,22 @@ export const notificationApi = {
       return response.data;
     } catch (error) {
       console.log(error);
+      return {
+        success: false,
+        message: "Network Error Occured",
+      };
+    }
+  },
+
+  fetchAllNotif: async (token: string): Promise<ApiResponse> => {
+    try {
+      const response = await api.get("api/notify/get", {
+        headers: {
+          token,
+        },
+      });
+      return response.data;
+    } catch (error) {
       return {
         success: false,
         message: "Network Error Occured",
