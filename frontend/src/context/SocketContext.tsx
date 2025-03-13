@@ -32,7 +32,6 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
         reconnectionDelay: 1000,
         timeout: 10000,
       });
-
       // Connection status handlers
       const handleConnect = () => {
         console.log("Socket connected");

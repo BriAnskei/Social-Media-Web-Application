@@ -1,8 +1,8 @@
 import "./CurrentUserPost.css";
 import Post from "../Post/Post";
 import Spinner from "../../../Components/Spinner/Spinner";
-import { useCurrentUserPosts } from "../../../hooks/usePostOwner";
-import { useCurrentUser } from "../../../hooks/useCorrentUser";
+import { useCurrentUserPosts } from "../../../hooks/usePost";
+import { useCurrentUser } from "../../../hooks/useUsers";
 import { useEffect } from "react";
 import { useDispatch } from "react-redux";
 import { fetchAllPost } from "../postSlice";

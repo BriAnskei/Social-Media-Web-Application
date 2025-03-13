@@ -37,7 +37,7 @@ const Login = () => {
       // unwrap method, part of redux createAsyncThunk that returns the payload of the response
 
       if (resultAction.token && resultAction.success) {
-        navigate("/");
+        navigate("/"); // navigate to home page
       } else {
         console.error("Unexpected API response:", resultAction);
       }

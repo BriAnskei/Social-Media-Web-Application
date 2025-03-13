@@ -8,7 +8,7 @@ src/
 │
 ├── components/            # Reusable UI components
 │   ├── Button.tsx         # Custom button component
-│   ├── Modal.tsx          # Reusable modal component
+│   ├── Modal──────this is a folder and all of my model like notif model is here
 │   ├── Navbar.tsx         # Top navigation bar
 │   └── Notification.tsx   # Real-time notification component
 │

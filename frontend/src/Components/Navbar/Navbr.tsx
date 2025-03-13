@@ -3,25 +3,33 @@ import "./Navbar.css";
 import { useState } from "react";
 import ChatModal from "../Modal/ChatModal/ChatModal";
 import NotifModal from "../Modal/NotificationModal/NotifModal";
-import { useSelector } from "react-redux";
-import { RootState } from "../../store/store";
+import { useDispatch, useSelector } from "react-redux";
+import { AppDispatch, RootState } from "../../store/store";
 import LogoutModal from "../Modal/LogoutModal/LogoutModal";
+import { useUnreadNotif } from "../../hooks/useUnreadNotif";
+import { markAllRead } from "../../features/notifications/notificationsSlice";
 
 const Navbr = () => {
+  const dispatch = useDispatch<AppDispatch>();
   const [showMessageModal, setShowMessageModal] = useState(false);
   const [showNotifModal, setShowNotifModal] = useState(false);
   const [showLogout, setShowLogout] = useState(false);
 
+  const { numberOfUnread } = useUnreadNotif(); // unread notification
+
   const numberOfChants = useSelector(
     (state: RootState) => state.chats.chats.length
   );
-  const numberOfNotif = 1;
 
   const toggleChat = () => {
     setShowMessageModal(!showMessageModal);
   };
 
   const toggleNotif = () => {
+    if (showNotifModal) {
+      // trigger dispatch only if the model is being closed
+      dispatch(markAllRead());
+    }
     setShowNotifModal(!showNotifModal);
   };
 
@@ -49,7 +57,9 @@ const Navbr = () => {
               <span className="material-symbols-outlined .symbols">
                 notifications
               </span>
-              <span className="count">{numberOfNotif}</span>
+              {numberOfUnread !== 0 && (
+                <span className="count">{numberOfUnread}</span>
+              )}
             </li>
             <Link to={"/profile"}>
               <span className="material-symbols-outlined .symbols">person</span>

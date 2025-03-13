@@ -18,9 +18,6 @@ interface PropTypes {
 const Register = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch<AppDispatch>();
-  const { loading, error, isAuthenticated } = useSelector(
-    (state: RootState) => state.auth
-  );
 
   const [errorMessage, setErrorMessage] = useState("");
 

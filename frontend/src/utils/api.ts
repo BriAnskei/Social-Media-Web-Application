@@ -1,7 +1,7 @@
 import axios from "axios";
 import { LoginTypes, RegisterTypes } from "../types/AuthTypes";
 import { FetchedUserType } from "../types/user";
-import { FetchPostType } from "../types/PostType";
+import { CommentType, FetchPostType } from "../types/PostType";
 import { NotificationType } from "../types/NotificationTypes";
 
 // Axion instance
@@ -63,6 +63,29 @@ export const postApi = {
       );
       response.data;
     } catch (error) {
+      return {
+        success: false,
+        message: "Network Error Occured",
+      };
+    }
+  },
+
+  uploadComment: async (data: CommentType): Promise<ApiResponse> => {
+    try {
+      const res = await api.post(
+        "/api/posts/add-comment",
+        {
+          data,
+        },
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      return res.data;
+    } catch (error) {
+      console.error(error);
       return {
         success: false,
         message: "Network Error Occured",
@@ -225,6 +248,36 @@ export const notificationApi = {
       });
       return response.data;
     } catch (error) {
+      return {
+        success: false,
+        message: "Network Error Occured",
+      };
+    }
+  },
+
+  setReadNotif: async (
+    token: string,
+    allIds: String[]
+  ): Promise<ApiResponse> => {
+    try {
+      if (!token) throw new Error("No token, cannot process");
+
+      console.log(allIds);
+
+      const response = await api.post(
+        "api/notify/set-read",
+        { allIds },
+        {
+          headers: {
+            token,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      return response.data;
+    } catch (error) {
+      console.error(error);
       return {
         success: false,
         message: "Network Error Occured",

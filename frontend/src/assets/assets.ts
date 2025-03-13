@@ -1,45 +1,42 @@
-  export const messages = [
-      {
-        sender: "64cb8ae5c7e9e3d04d7321a1", // Replace with valid ObjectId
-        receiver: "64cb8ae5c7e9e3d04d7321a2", // Replace with valid ObjectId
-        content: "Hey, how are you?",
-        isRead: false,
-        createdAt: new Date("2024-12-12T09:30:00Z"),
-      },
-      {
-        sender: "64cb8ae5c7e9e3d04d7321a2",
-        receiver: "64cb8ae5c7e9e3d04d7321a1",
-        content: "I'm good! How about you?",
-        isRead: false,
-        createdAt: new Date("2024-12-12T09:32:00Z"),
-      },
-      {
-        sender: "64cb8ae5c7e9e3d04d7321a3",
-        receiver: "64cb8ae5c7e9e3d04d7321a1",
-        content: "Are you coming to the meeting later?",
-        isRead: true,
-        createdAt: new Date("2024-12-13T11:00:00Z"),
-      },
-      {
-        sender: "64cb8ae5c7e9e3d04d7321a1",
-        receiver: "64cb8ae5c7e9e3d04d7321a3",
-        content: "Yes, I'll be there at 2 PM.",
-        isRead: true,
-        createdAt: new Date("2024-12-13T11:05:00Z"),
-      },
-      {
-        sender: "64cb8ae5c7e9e3d04d7321a4",
-        receiver: "64cb8ae5c7e9e3d04d7321a2",
-        content: "Happy Birthday! 🎉",
-        isRead: false,
-        createdAt: new Date("2024-12-14T07:00:00Z"),
-      },
-    ];
-    
+export const messages = [
+  {
+    sender: "64cb8ae5c7e9e3d04d7321a1", // Replace with valid ObjectId
+    receiver: "64cb8ae5c7e9e3d04d7321a2", // Replace with valid ObjectId
+    content: "Hey, how are you?",
+    isRead: false,
+    createdAt: new Date("2024-12-12T09:30:00Z"),
+  },
+  {
+    sender: "64cb8ae5c7e9e3d04d7321a2",
+    receiver: "64cb8ae5c7e9e3d04d7321a1",
+    content: "I'm good! How about you?",
+    isRead: false,
+    createdAt: new Date("2024-12-12T09:32:00Z"),
+  },
+  {
+    sender: "64cb8ae5c7e9e3d04d7321a3",
+    receiver: "64cb8ae5c7e9e3d04d7321a1",
+    content: "Are you coming to the meeting later?",
+    isRead: true,
+    createdAt: new Date("2024-12-13T11:00:00Z"),
+  },
+  {
+    sender: "64cb8ae5c7e9e3d04d7321a1",
+    receiver: "64cb8ae5c7e9e3d04d7321a3",
+    content: "Yes, I'll be there at 2 PM.",
+    isRead: true,
+    createdAt: new Date("2024-12-13T11:05:00Z"),
+  },
+  {
+    sender: "64cb8ae5c7e9e3d04d7321a4",
+    receiver: "64cb8ae5c7e9e3d04d7321a2",
+    content: "Happy Birthday! 🎉",
+    isRead: false,
+    createdAt: new Date("2024-12-14T07:00:00Z"),
+  },
+];
 
-    
-
-  // Example data for the notificationSchema
+// Example data for the notificationSchema
 export const exampleNotifications = [
   {
     receiver: "63df4b5e4e3interc4b4567d89f10", // User ID of the recipient
@@ -78,15 +75,36 @@ export const exampleNotifications = [
   },
 ];
 
-
-
 export const posts = [
   {
+    _id: "64e3f1b9c6b2e1f4a1b67892",
     user: "Brian Ebrahim", // Replace with valid ObjectId
     content: "This is my first post! Excited to share my thoughts.",
-    image: "https://www.tomorrowsworldtoday.com/wp-content/uploads/2022/02/Nature-Enthusiast-Travel-Tips-Outdoors.jpg",
+    image:
+      "https://www.tomorrowsworldtoday.com/wp-content/uploads/2022/02/Nature-Enthusiast-Travel-Tips-Outdoors.jpg",
     likes: ["64e3f1b9c6b2e1f4a1b67890", "64e3f1b9c6b2e1f4a1b67891"],
     comments: [
+      {
+        user: "64e3f1b9c6b2e1f4a1b67892",
+        content: "Congrats on your first post!",
+        createdAt: new Date("2024-08-01T10:00:00"),
+      },
+      {
+        user: "64e3f1b9c6b2e1f4a1b67893",
+        content:
+          "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Exc.",
+        createdAt: new Date("2024-08-01T12:00:00"),
+      },
+      {
+        user: "64e3f1b9c6b2e1f4a1b67892",
+        content: "Congrats on your first post!",
+        createdAt: new Date("2024-08-01T10:00:00"),
+      },
+      {
+        user: "64e3f1b9c6b2e1f4a1b67893",
+        content: "Nice post! Keep it up.",
+        createdAt: new Date("2024-08-01T12:00:00"),
+      },
       {
         user: "64e3f1b9c6b2e1f4a1b67892",
         content: "Congrats on your first post!",
@@ -103,8 +121,13 @@ export const posts = [
   {
     user: "64e3f1b9c6b2e1f4a1b67894",
     content: "Loving the weather today! ☀️🌳",
-    image: "https://bsd.uk.com/wp-content/uploads/2014/10/Web-pics-81014-001-1.jpg",
-    likes: ["64e3f1b9c6b2e1f4a1b67895", "64e3f1b9c6b2e1f4a1b67896", "64e3f1b9c6b2e1f4a1b67897"],
+    image:
+      "https://bsd.uk.com/wp-content/uploads/2014/10/Web-pics-81014-001-1.jpg",
+    likes: [
+      "64e3f1b9c6b2e1f4a1b67895",
+      "64e3f1b9c6b2e1f4a1b67896",
+      "64e3f1b9c6b2e1f4a1b67897",
+    ],
     comments: [
       {
         user: "64e3f1b9c6b2e1f4a1b67898",

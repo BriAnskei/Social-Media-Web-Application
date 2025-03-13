@@ -39,7 +39,7 @@ const PostList = () => {
             const postOwner = user[post.user];
             return (
               <div key={postId}>
-                <Post post={post} user={postOwner} accessToken={accessToken!} />
+                <Post post={post} user={postOwner} />
               </div>
             );
           })

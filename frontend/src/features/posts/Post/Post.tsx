@@ -1,27 +1,28 @@
 import "./Post.css";
 import { useDispatch, useSelector } from "react-redux";
 import { toggleLike } from "../postSlice";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { FetchPostType } from "../../../types/PostType";
 import { FetchedUserType } from "../../../types/user";
 import { AppDispatch, RootState } from "../../../store/store";
 import { useSocket } from "../../../hooks/socket/useSocket";
+import { useModal } from "../../../hooks/useModal";
 
 interface Post {
   post: FetchPostType;
   user: FetchedUserType;
-  accessToken: string;
 }
 
 const Post = ({ post, user }: Post) => {
   const currentUser = useSelector(
     (state: RootState) => state.user.currentUserId
   );
+  const { postModal } = useModal();
+  const { openPostModal } = postModal;
 
   const { emitLike, isConnected } = useSocket();
   const dispatch = useDispatch<AppDispatch>();
 
-  const [showComment, setShowComment] = useState(false);
   const [liked, setLiked] = useState(false);
 
   useEffect(() => {
@@ -31,14 +32,11 @@ const Post = ({ post, user }: Post) => {
   }, [post, currentUser]);
 
   const toggleComments = () => {
-    setShowComment(!showComment);
+    openPostModal(post);
   };
 
   const handleLike = async () => {
     setLiked(!liked);
-
-    console.log("like function triggered");
-
     try {
       const res = await dispatch(toggleLike(post._id)).unwrap();
       // emit after succesfully saved itto DB
@@ -82,7 +80,7 @@ const Post = ({ post, user }: Post) => {
         </div>
         <div className="post-content">{post.content}</div>
         {post.image && (
-          <div className="image-post">
+          <div className="image-container">
             <img
               src={`http://localhost:4000/images/posts/${post.user}/${post.image}`}
               alt=""
@@ -127,31 +125,6 @@ const Post = ({ post, user }: Post) => {
             <span className="material-symbols-outlined">comment</span>
             <span>Comment</span>
           </div>
-        </div>
-        <div
-          className={
-            showComment && post.comments.length > 0
-              ? "commentlist-cont"
-              : "no-display"
-          }
-        >
-          {post.comments.map((comment, index) => (
-            <div className="comment-cont" key={index}>
-              <img
-                src="https://wallpapers.com/images/hd/meme-profile-picture-erj8324r4q9rbnlx.jpg"
-                alt=""
-              />
-              <div className="comment-content">
-                <div className="info-content">
-                  <h5>Brian Ebhrai</h5>
-                  <span>{comment.content}</span>
-                </div>
-                <span id="comment-date">
-                  {new Date(comment.createdAt).toLocaleString()}
-                </span>
-              </div>
-            </div>
-          ))}
         </div>
       </div>
     </>

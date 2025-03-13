@@ -1,10 +1,9 @@
-import React, { useEffect } from "react";
+import React from "react";
 import "./NotifModal.css";
 import NotificationList from "../../../features/notifications/NotificationList";
 import { ModalTypes } from "../../../types/modalTypes";
-import { fetchAllNotifs } from "../../../features/notifications/notificationsSlice";
-import { useDispatch, useSelector } from "react-redux";
-import { AppDispatch, RootState } from "../../../store/store";
+import { useSelector } from "react-redux";
+import { RootState } from "../../../store/store";
 
 const NotifModal: React.FC<ModalTypes> = ({ showModal, onClose }) => {
   const { loading } = useSelector((state: RootState) => state.notification);

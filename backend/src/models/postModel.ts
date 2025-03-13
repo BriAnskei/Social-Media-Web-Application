@@ -21,11 +21,16 @@ const postSchema = new Schema<IPost>({
   image: { type: String, default: "" },
   likes: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
   comments: [
-    {
-      user: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
-      content: { type: String, required: true },
-      createdAt: { type: Date, default: Date.now },
-    },
+    new mongoose.Schema(
+      {
+        user: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+        content: { type: String, required: true },
+        createdAt: { type: Date, default: Date.now },
+      },
+      {
+        _id: false, // disable _id prop when saving
+      }
+    ),
   ],
   createdAt: { type: Date, default: Date.now },
 });

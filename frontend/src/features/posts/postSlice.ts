@@ -1,7 +1,11 @@
 import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
 
-import { postApi } from "../../utils/api";
-import { FetchPostType, LikeHandlerTypes } from "../../types/PostType";
+import { ApiResponse, postApi } from "../../utils/api";
+import {
+  CommentType,
+  FetchPostType,
+  LikeHandlerTypes,
+} from "../../types/PostType";
 import { NormalizeState } from "../../types/NormalizeType";
 import { RootState } from "../../store/store";
 
@@ -47,7 +51,7 @@ export const createPost = createAsyncThunk(
         return rejectWithValue(res.message || "Error Uploading post");
       }
 
-      await dispatch(fetchAllPost());
+      await dispatch(fetchAllPost()); // wrong emplementation
 
       return res;
     } catch (error) {
@@ -70,11 +74,34 @@ export const toggleLike = createAsyncThunk(
     try {
       const res = await postApi.toggleLike(accessToken, postId);
 
-      if (!res?.success) rejectWithValue(res?.message);
+      if (!res?.success)
+        rejectWithValue(
+          res?.message || "Faild to persist like data into POST object"
+        );
 
       return { postId, userId };
     } catch (error) {
       return rejectWithValue("Error Uploading post");
+    }
+  }
+);
+
+// extend the comment object for returned comment data.
+interface commentRes extends ApiResponse {
+  commentData?: {
+    user: string;
+    content: string;
+    createdAt: Date;
+  };
+}
+export const addComment = createAsyncThunk(
+  "posts/add-comment",
+  async (data: CommentType, { rejectWithValue }) => {
+    try {
+      const res: commentRes = await postApi.uploadComment(data);
+      return res;
+    } catch (error) {
+      return rejectWithValue("Error adding comment: " + error);
     }
   }
 );
@@ -109,6 +136,7 @@ const postsSlice = createSlice({
         );
       }
     },
+    commentOnPost: (state, action): void => {},
   },
   extraReducers: (builder) => {
     builder
@@ -146,7 +174,7 @@ const postsSlice = createSlice({
         state.error = action.payload as string;
       })
 
-      // toggle Post Cases
+      // toggle Post Cases(Likes)
       .addCase(toggleLike.fulfilled, (state, action) => {
         state.loading = false;
         const { postId, userId } = action.payload;
@@ -164,6 +192,20 @@ const postsSlice = createSlice({
         }
       })
       .addCase(toggleLike.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+      })
+
+      // add-comment
+      .addCase(addComment.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(addComment.fulfilled, (state) => {
+        state.loading = false;
+        state.error = null;
+      })
+      .addCase(addComment.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
       });

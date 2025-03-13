@@ -1,5 +1,6 @@
 import express from "express";
 import {
+  addComment,
   createPost,
   likeToggled,
   postsLists,
@@ -17,5 +18,6 @@ postRouter.post(
   createPost
 );
 postRouter.post("/like-toggle", authMiddleware, likeToggled);
+postRouter.post("/add-comment", addComment);
 
 export default postRouter;

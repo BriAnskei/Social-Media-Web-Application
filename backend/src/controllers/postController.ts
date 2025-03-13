@@ -47,7 +47,6 @@ export const postsLists = async (_: Request, res: Response): Promise<void> => {
 };
 
 export const likeToggled = async (req: ExtentRequest, res: Response) => {
-  // wrong emplementation, need to use socket for real time notification: https://claude.ai/chat/b63d9f5a-fd30-4494-84bc-0dee3c31e8b7
   try {
     const { postId } = req.body;
     const userId = req.userId;
@@ -69,6 +68,34 @@ export const likeToggled = async (req: ExtentRequest, res: Response) => {
 
     await post.save();
     res.json({ success: true, message: "like toggled" });
+  } catch (error) {
+    console.log(error);
+    res.json({ success: false, message: "Error" });
+  }
+};
+
+export const addComment = async (req: Request, res: Response): Promise<any> => {
+  try {
+    const { data } = req.body;
+
+    if (!data.postId || !data.data) throw new Error("Invalid data recieved");
+
+    const postData = await postModel.findById(data.postId);
+
+    if (!postData) {
+      return res.json({ success: false, message: "Post not found" });
+    }
+
+    postData.comments.push(data.data);
+
+    const commentData = postData.comments[postData.comments.length - 1];
+
+    await postData.save();
+    res.json({
+      success: true,
+      message: "Comment succesfully added",
+      commentData,
+    });
   } catch (error) {
     console.log(error);
     res.json({ success: false, message: "Error" });

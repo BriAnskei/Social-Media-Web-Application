@@ -21,7 +21,7 @@ const initialState: NotificationState = {
 
 export const fetchAllNotifs = createAsyncThunk(
   "notification/get",
-  async function name(_: void, { getState }) {
+  async (_: void, { getState }) => {
     const { auth } = getState() as RootState;
     const accessToken = auth.accessToken;
 
@@ -31,8 +31,6 @@ export const fetchAllNotifs = createAsyncThunk(
 
     try {
       const res = await notificationApi.fetchAllNotif(accessToken);
-
-      console.log(res);
 
       if (!res.success) {
         console.error("Notif fetching error: ", res.message);
@@ -46,17 +44,38 @@ export const fetchAllNotifs = createAsyncThunk(
   }
 );
 
+export const markAllRead = createAsyncThunk(
+  "notification/set-read",
+  async (_: void, { getState }) => {
+    try {
+      const { auth, notification } = getState() as RootState;
+
+      const accessToken = auth.accessToken;
+      const allIds = notification.allIds;
+
+      if (!accessToken) throw new Error("Access token is required");
+      const res = await notificationApi.setReadNotif(accessToken, allIds);
+
+      if (!res.success) {
+        console.error("Faild to set-read notif: ", res.message);
+        return;
+      }
+    } catch (error) {
+      console.error("Notif setRead error: ", error);
+    }
+  }
+);
+
 const notificationSlice = createSlice({
   name: "notification",
   initialState,
   reducers: {
-    addNotification: (state, action: PayloadAction<NotifData>): void => {
+    addLikeNotif: (state, action: PayloadAction<NotifData>): void => {
+      // used in socket
       const { isExist, data } = action.payload;
       const { byId, allIds } = normalizeResponse(data);
-      console.log("recieved data: ", byId, allIds);
 
-      console.log("State before: ", { ...state.byId }, [...state.allIds]);
-
+      // if data exist, remove. Otherwise add the data to state
       if (!isExist) {
         if (!state.allIds.includes(allIds[0])) {
           state.allIds.push(allIds[0]);
@@ -66,7 +85,6 @@ const notificationSlice = createSlice({
         state.allIds = [...state.allIds.filter((id) => id !== allIds[0])];
         delete state.byId[allIds[0]];
       }
-      console.log("State after: ", { ...state.byId }, [...state.allIds]);
     },
   },
   extraReducers: (builder) => {
@@ -81,19 +99,35 @@ const notificationSlice = createSlice({
         // reset first
         state.allIds = [];
         state.byId = {};
+
         state.allIds = NotifData.allIds;
         state.byId = NotifData.byId;
         state.error = null;
         state.loading = false;
-
-        console.log("Fetchet notifs: ", state.allIds, state.byId);
       })
       .addCase(fetchAllNotifs.rejected, (state, action) => {
+        state.error = action.payload as string;
+        state.loading = false;
+      })
+
+      // Set-read
+      .addCase(markAllRead.pending, (state) => {
+        state.error = null;
+        state.loading = true;
+      })
+      .addCase(markAllRead.fulfilled, (state) => {
+        state.error = null;
+        state.loading = false;
+        state.allIds.forEach((id) => {
+          state.byId[id].read = true;
+        });
+      })
+      .addCase(markAllRead.rejected, (state, action) => {
         state.error = action.payload as string;
         state.loading = false;
       });
   },
 });
 
-export const { addNotification } = notificationSlice.actions;
+export const { addLikeNotif } = notificationSlice.actions;
 export default notificationSlice.reducer;

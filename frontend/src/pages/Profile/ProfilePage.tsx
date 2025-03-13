@@ -1,6 +1,6 @@
 import "./ProfilePage.css";
 import Profile from "../../features/users/profile/Profile";
-import { useCurrentUser } from "../../hooks/useCorrentUser";
+import { useCurrentUser } from "../../hooks/useUsers";
 import CurrentUserPosts from "../../features/posts/CurrentUserPost/CurrentUserPost";
 const ProfilePage = () => {
   const { currentUser } = useCurrentUser();

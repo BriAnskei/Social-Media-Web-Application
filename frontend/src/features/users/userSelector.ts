@@ -1,5 +1,6 @@
 import { createSelector } from "@reduxjs/toolkit";
 import { RootState } from "../../store/store";
+import { FetchedUserType } from "../../types/user";
 const byId = (state: RootState) => state.user.byId;
 const currentUserId = (state: RootState) => state.user.currentUserId;
 const loading = (state: RootState) => state.user.loading;
@@ -29,4 +30,18 @@ export const selectCurrentUser = createSelector(
       error: isError,
     };
   }
+);
+
+export const selectUserById = createSelector(
+  [byId, (_state: RootState, userId: string) => userId],
+  (userIds, id) => userIds[id]
+);
+
+export const selectUsersByIds = createSelector(
+  [byId, (_, ids: string[]) => ids],
+  (users, ids) =>
+    ids.reduce((acc, id) => {
+      acc[id] = users[id]; // Assuming users are stored as an object with userId as keys
+      return acc;
+    }, {} as { [key: string]: FetchedUserType })
 );

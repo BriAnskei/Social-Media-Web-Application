@@ -1,20 +1,30 @@
-.notif-container .notif-content{
-    display: flex;
-    gap: 1rem;
+.notif-container {
+  margin-bottom: 0.2rem;
 }
 
+.notif-container .notif-content {
+  display: flex;
+  gap: 1rem;
+}
 
+.unread-backgroud {
+  background-color: rgb(245, 239, 239);
+}
 
 .notif-container .notif-content .type-logo span {
-    font-size: 3.4rem;
+  font-size: 3.4rem;
 }
-
 
 .notif-container .notif-message {
-    width: 16.5rem;
+  width: 16.5rem;
 }
 
+.unread-message {
+  text-shadow: 1px 0 #888;
+  letter-spacing: 0.2px;
+  font-weight: bold;
+}
 
-.notif-container .notif-data  span{
-    font-size: 0.8rem;
+.notif-container .notif-data span {
+  font-size: 0.8rem;
 }

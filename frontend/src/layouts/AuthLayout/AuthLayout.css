@@ -12,13 +12,14 @@
   padding: 1.5rem 1rem;
 }
 
-.logo-text div {
+.logo-text-container {
   display: flex;
-  flex-direction: column;
-  margin: 6% 0;
+  justify-content: center;
+  align-items: center;
 }
 
-.logo-text div span {
+.logo-text-container .logo-text {
+  display: flex;
+  flex-direction: column;
   text-align: center;
-  font-size: 1.3rem;
 }

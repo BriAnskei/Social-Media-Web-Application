@@ -21,6 +21,25 @@ export interface UploadPostTypes {
 export interface LikeHandlerTypes {
   postId: string;
   postOwnerId: string;
-  userId: string;
+  userId: string; // sender
   username: string;
+}
+
+// for commenting post
+export interface CommentType {
+  postId: string;
+  data: {
+    user: string;
+    content: string;
+  };
+}
+
+export interface CommentEventPayload {
+  postId: string;
+  postOwnerId: string;
+  data: {
+    user: string;
+    content: string;
+    createdAt: Date;
+  };
 }

@@ -1,8 +1,12 @@
 import { Server } from "socket.io"; // Socket.io server class, which manages WebSocket connections.
 import { Server as HttpServer } from "http"; // http server module from node.js
 import { verifyToken } from "../middleware/auth";
-import { error } from "console";
-import { NotifData, saveNotification } from "../controllers/notifController";
+
+import {
+  NotifData,
+  saveCommentNotif,
+  saveLikeNotification,
+} from "../controllers/notifController";
 
 interface ConnectedUser {
   userId: string;
@@ -17,18 +21,38 @@ interface LikeEventPayload {
   username: string;
 }
 
+interface CommentEventPayload {
+  postId: string;
+  postOwnerId: string;
+  data: {
+    user: string;
+    content: string;
+    createdAt: Date;
+  };
+}
+
 // Define events
 const SOCKET_EVENTS = {
-  // Like Events
-  LIKE_POST: "likePost",
-  POST_LIKED: "postLiked",
-  LIKE_NOTIFY: "likeNotify",
+  posts: {
+    // Like Events
+    LIKE_POST: "likePost", // sends by the client
+    // sends both by server
+    POST_LIKED: "postLiked",
+    LIKE_NOTIFY: "likeNotify",
+
+    // comment events
+    COMMENT_POST: "commentPost",
+    // server
+    POST_COMMENTED: "postCommented",
+    COMMENT_NOTIF: "commentNotify",
+  },
 };
 
 export class SocketServer {
   private io: Server;
   private connectedUSers: Map<string, ConnectedUser> = new Map();
 
+  // https://chatgpt.com/c/67cd8457-6eb0-8012-a2a5-c81d87368d1f
   // .on(event, callback)	Listens for a specific event from the client.
   // .to(socketId).emit(event, data)	Sends an event only to a specific client using their socketId.
 
@@ -36,7 +60,7 @@ export class SocketServer {
     this.io = new Server(httpServer, {
       // Create the server instance bound to node.js server module
       cors: {
-        origin: "http://localhost:5173",
+        origin: "http://localhost:5174",
         methods: ["GET", "POST"], // allowed methods
       },
 
@@ -69,7 +93,7 @@ export class SocketServer {
 
         if (!decoded?.userId) {
           return next(new Error("Invalid Token")); // if token is invalid,  the connection process is halted.
-          //The error is sent back to the client, which will receive an "error" event on its end.connect_error
+          //The error is sent back to the client, which will receive an "error" event on its end(which hold the connect_error event).
         }
 
         socket.data.userId = decoded?.userId; // stores the token in the socketData
@@ -81,12 +105,21 @@ export class SocketServer {
   }
 
   private setupEventHandlers() {
+    // emplmenting events of tha users that are in the connection room
     this.io.on("connection", (socket) => {
-      this.handleConnection(socket); // register the user as connected(online)
+      this.handleConnection(socket); // register the user as connected(online) first
 
       socket.on("disconnect", () => this.handleDisconnection(socket));
-      socket.on(SOCKET_EVENTS.LIKE_POST, (data: LikeEventPayload) =>
+
+      socket.on(SOCKET_EVENTS.posts.LIKE_POST, (data: LikeEventPayload) =>
         this.handleLikePost(socket, data)
+      );
+
+      socket.on(
+        SOCKET_EVENTS.posts.COMMENT_POST,
+        (data: CommentEventPayload) => {
+          this.handleCommentEvent(socket, data);
+        }
       );
 
       // Handle Error
@@ -129,14 +162,17 @@ export class SocketServer {
   ): Promise<void> {
     const { userId, postOwnerId, postId } = data;
     try {
-      // boadcast to all except the sender
-      socket.broadcast.emit("postLiked", {
+      // boadcast to all users (that is in the room in cluding the owner) except the sender
+      socket.broadcast.emit(SOCKET_EVENTS.posts.POST_LIKED, {
+        // this will only increase the # of likes in the ui of other online users using reducer function in slice
         userId,
         postOwnerId,
         postId,
       });
 
-      // send and persist notification of the liker is not the post owner
+      console.log("like handle triggered: ", data);
+
+      // send and persist notification of the liker(userId) if its not the post owner
       if (userId !== postOwnerId) {
         const data: NotifData = {
           receiver: postOwnerId,
@@ -146,19 +182,64 @@ export class SocketServer {
           type: "like",
         };
 
-        const notifdata = await saveNotification(data); // save to DB
+        const notifdata = await saveLikeNotification(data); // persist notification of the owner
 
         // Notify owner if online
         const ownerSocket = this.connectedUSers.get(postOwnerId);
         if (ownerSocket) {
           this.io
             .to(ownerSocket.socketId)
-            .emit(SOCKET_EVENTS.LIKE_NOTIFY, notifdata);
+            .emit(SOCKET_EVENTS.posts.LIKE_NOTIFY, notifdata);
         }
       }
     } catch (error) {
       console.error("Error handling post like:", error);
       socket.emit("error", "Failed to process like action");
+    }
+  }
+
+  private async handleCommentEvent(
+    socket: any,
+    data: CommentEventPayload
+  ): Promise<void> {
+    try {
+      if (!data) {
+        socket.emit(
+          "error",
+          "Failed to process comment action, no data inputted"
+        );
+        return;
+      }
+
+      console.log("Funtion triggered: ", data);
+
+      // boeadcast commend data to all users in the room
+      socket.broadcast.emit(SOCKET_EVENTS.posts.POST_COMMENTED, data);
+
+      const commentEventData: NotifData = {
+        receiver: data.postOwnerId,
+        sender: data.data.user,
+        post: data.postId,
+        message: "commented on your post",
+        type: "comment",
+        createdAt: data.data.createdAt,
+      };
+
+      // only persist if the user(commenter) is not the postOwwner
+      if (data.postOwnerId !== data.data.user) {
+        await saveCommentNotif(commentEventData);
+      }
+
+      // notify owner if online
+      const ownerSocket = this.connectedUSers.get(commentEventData.receiver);
+      if (ownerSocket) {
+        this.io
+          .to(ownerSocket.socketId)
+          .emit(SOCKET_EVENTS.posts.COMMENT_NOTIF, commentEventData);
+      }
+    } catch (error) {
+      console.error("Error handling post comment:", error);
+      socket.emit("error", "Failed to process comment action");
     }
   }
 

@@ -5,7 +5,7 @@ import { useDispatch } from "react-redux";
 import { AppDispatch } from "../../../store/store";
 import { UploadPostTypes } from "../../../types/PostType";
 import { createPost } from "../../../features/posts/postSlice";
-import { useCurrentUser } from "../../../hooks/useCorrentUser";
+import { useCurrentUser } from "../../../hooks/useUsers";
 
 const UploadModal: React.FC<ModalTypes> = ({ showModal, onClose }) => {
   const dispatch: AppDispatch = useDispatch();

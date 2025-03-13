@@ -2,7 +2,7 @@ import "./Upload.css";
 import { useState } from "react";
 import UploadModal from "../Modal/UploadModal/UploadModal";
 import { useNavigate } from "react-router";
-import { useCurrentUser } from "../../hooks/useCorrentUser";
+import { useCurrentUser } from "../../hooks/useUsers";
 
 const Upload = () => {
   const navigate = useNavigate();

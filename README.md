@@ -1,1 +1,3 @@
-Orayt
+if(gwwapoKo) {
+log(tahnktchu)
+}
