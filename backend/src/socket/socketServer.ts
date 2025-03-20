@@ -211,12 +211,10 @@ export class SocketServer {
         return;
       }
 
-      console.log("Funtion triggered: ", data);
-
-      // boeadcast commend data to all users in the room
+      // boeadcast commend data to all users in the room(except to sender)
       socket.broadcast.emit(SOCKET_EVENTS.posts.POST_COMMENTED, data);
 
-      const commentEventData: NotifData = {
+      let commentEventData: NotifData = {
         receiver: data.postOwnerId,
         sender: data.data.user,
         post: data.postId,
@@ -227,15 +225,29 @@ export class SocketServer {
 
       // only persist if the user(commenter) is not the postOwwner
       if (data.postOwnerId !== data.data.user) {
-        await saveCommentNotif(commentEventData);
+        commentEventData = await saveCommentNotif(commentEventData);
       }
+      console.log("Funtion triggered: ", commentEventData);
+
+      const notifEmitData = {
+        isExist: false,
+        data: commentEventData,
+      };
 
       // notify owner if online
-      const ownerSocket = this.connectedUSers.get(commentEventData.receiver);
+      const ownerSocket = this.connectedUSers.get(
+        commentEventData.receiver.toString()
+      );
       if (ownerSocket) {
         this.io
           .to(ownerSocket.socketId)
-          .emit(SOCKET_EVENTS.posts.COMMENT_NOTIF, commentEventData);
+          .emit(SOCKET_EVENTS.posts.COMMENT_NOTIF, notifEmitData);
+      } else {
+        console.log(
+          "OWNER IS NOT ONLINE",
+          commentEventData.receiver,
+          this.connectedUSers
+        );
       }
     } catch (error) {
       console.error("Error handling post comment:", error);

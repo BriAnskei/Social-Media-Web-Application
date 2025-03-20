@@ -1,8 +1,8 @@
 import "./Post.css";
 import { useDispatch, useSelector } from "react-redux";
-import { toggleLike } from "../postSlice";
+import { addComment, toggleLike } from "../postSlice";
 import { useEffect, useState } from "react";
-import { FetchPostType } from "../../../types/PostType";
+import { CommentEventPayload, FetchPostType } from "../../../types/PostType";
 import { FetchedUserType } from "../../../types/user";
 import { AppDispatch, RootState } from "../../../store/store";
 import { useSocket } from "../../../hooks/socket/useSocket";
@@ -20,7 +20,7 @@ const Post = ({ post, user }: Post) => {
   const { postModal } = useModal();
   const { openPostModal } = postModal;
 
-  const { emitLike, isConnected } = useSocket();
+  const { emitLike, emitComment } = useSocket();
   const dispatch = useDispatch<AppDispatch>();
 
   const [liked, setLiked] = useState(false);
@@ -32,7 +32,7 @@ const Post = ({ post, user }: Post) => {
   }, [post, currentUser]);
 
   const toggleComments = () => {
-    openPostModal(post);
+    openPostModal(post._id);
   };
 
   const handleLike = async () => {
@@ -51,6 +51,27 @@ const Post = ({ post, user }: Post) => {
       }
     } catch (error) {
       console.error(error);
+    }
+  };
+
+  const submitPostComment = async (
+    e: React.FormEvent,
+    data: CommentEventPayload
+  ) => {
+    e.preventDefault();
+    try {
+      const res = await dispatch(addComment(data)).unwrap();
+
+      if (res.success) {
+        const dataEventPayload: CommentEventPayload = {
+          ...data,
+          data: res.commentData!,
+        };
+        console.log(dataEventPayload);
+        emitComment(dataEventPayload);
+      }
+    } catch (error) {
+      console.log("Submitting comment Error: ", error);
     }
   };
 

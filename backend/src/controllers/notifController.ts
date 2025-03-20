@@ -7,6 +7,7 @@ interface initialReq extends Request {
 }
 
 export interface NotifData {
+  _id?: string;
   receiver: string;
   sender: string;
   post: string;
@@ -20,14 +21,22 @@ export const saveLikeNotification = async (data: NotifData): Promise<any> => {
     if (!data) throw new Error("No Data");
 
     const isNotifExist = await notificationModel.findOne({
-      $and: [{ sender: { $eq: data.sender } }, { post: { $eq: data.post } }],
+      $and: [
+        { sender: { $eq: data.sender } },
+        { post: { $eq: data.post } },
+        { type: { $eq: "like" } },
+      ], // only trace  the like type notif
     });
+
+    console.log("Notif exist found: ", isNotifExist);
+
     if (isNotifExist) {
       await notificationModel.deleteOne({
         $and: [
           { _id: isNotifExist._id },
           { sender: { $eq: isNotifExist.sender } },
           { post: { $eq: isNotifExist.post } },
+          { type: { $eq: isNotifExist.type } },
         ],
       });
       console.log("notif data deleted", isNotifExist._id);
@@ -51,6 +60,8 @@ export const saveLikeNotification = async (data: NotifData): Promise<any> => {
 
 export const saveCommentNotif = async (data: NotifData): Promise<any> => {
   try {
+    console.log("Comment notif recieve: ", data);
+
     const notifdata = await notificationModel.create({
       receiver: mongoose.Types.ObjectId.createFromHexString(data.receiver),
       sender: mongoose.Types.ObjectId.createFromHexString(data.sender),

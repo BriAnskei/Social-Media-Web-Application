@@ -70,7 +70,7 @@ const notificationSlice = createSlice({
   name: "notification",
   initialState,
   reducers: {
-    addLikeNotif: (state, action: PayloadAction<NotifData>): void => {
+    addNotification: (state, action: PayloadAction<NotifData>): void => {
       // used in socket
       const { isExist, data } = action.payload;
       const { byId, allIds } = normalizeResponse(data);
@@ -129,5 +129,5 @@ const notificationSlice = createSlice({
   },
 });
 
-export const { addLikeNotif } = notificationSlice.actions;
+export const { addNotification } = notificationSlice.actions;
 export default notificationSlice.reducer;

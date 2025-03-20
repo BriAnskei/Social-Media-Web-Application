@@ -5,7 +5,7 @@ import {
   selectUsersByIds,
 } from "../features/users/userSelector";
 import { RootState } from "../store/store";
-import { FetchedUserType } from "../types/user";
+
 export const useCurrentUser = () => {
   const result = useSelector(selectCurrentUser);
   return result;

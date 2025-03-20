@@ -34,7 +34,7 @@ export const selectCurrentUser = createSelector(
 
 export const selectUserById = createSelector(
   [byId, (_state: RootState, userId: string) => userId],
-  (userIds, id) => userIds[id]
+  (userIds, id) => userIds[id] || ({} as FetchedUserType)
 );
 
 export const selectUsersByIds = createSelector(

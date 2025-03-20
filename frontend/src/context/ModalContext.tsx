@@ -1,11 +1,16 @@
-import { Children, createContext, ReactNode, useState } from "react";
-import { FetchPostType } from "../types/PostType";
+import React, { Children, createContext, ReactNode, useState } from "react";
+import { CommentEventPayload, CommentType } from "../types/PostType";
+import { useDispatch } from "react-redux";
+import { AppDispatch } from "../store/store";
+import { addComment } from "../features/posts/postSlice";
+import { useSocket } from "../hooks/socket/useSocket";
 
 interface PostModalTypes {
-  postData: FetchPostType;
+  postId?: string;
   showPostModal: boolean;
-  openPostModal: (data: FetchPostType) => void;
+  openPostModal: (postId: string) => void;
   onClosePostModal: () => void;
+  submitPostComment: (e: React.FormEvent, data: CommentEventPayload) => void;
 }
 
 interface ModalContextValue {
@@ -20,32 +25,24 @@ export const ModalContext = createContext<ModalContextValue | undefined>(
   undefined
 );
 
-const postDefault: FetchPostType = {
-  _id: "",
-  user: "",
-  content: "",
-  image: undefined,
-  likes: [],
-  comments: [],
-  createdAt: "",
-};
-
 export const ModalProvider: React.FC<ModalProviderProps> = ({ children }) => {
+  const dispatch = useDispatch<AppDispatch>();
+  const { emitComment } = useSocket();
   const [postModalData, setPostModalData] = useState<{
     showModal: boolean;
-    data: FetchPostType;
+    postId: string;
   }>({
     showModal: false,
-    data: postDefault,
+    postId: "",
   });
 
   // SHoww post Modal
-  const openPostModal = (data: FetchPostType) => {
+  const openPostModal = (postId: string) => {
     setPostModalData((prev) => {
       return {
         ...prev,
-        showModal: !prev.showModal,
-        data: data,
+        showModal: true,
+        postId: postId,
       };
     });
   };
@@ -53,18 +50,41 @@ export const ModalProvider: React.FC<ModalProviderProps> = ({ children }) => {
     setPostModalData((prev) => {
       return {
         ...prev,
-        showModal: !prev.showModal,
-        data: postDefault,
+        showModal: false,
       };
     });
   };
 
+  const submitPostComment = async (
+    e: React.FormEvent,
+    data: CommentEventPayload
+  ) => {
+    e.preventDefault();
+
+    console.log("data: ", data);
+    try {
+      const res = await dispatch(addComment(data)).unwrap();
+
+      if (res.success) {
+        const dataEventPayload: CommentEventPayload = {
+          ...data,
+          data: res.commentData!,
+        };
+        console.log(dataEventPayload);
+        emitComment(dataEventPayload);
+      }
+    } catch (error) {
+      console.log("Submitting comment Error: ", error);
+    }
+  };
+
   const modalContextValue: ModalContextValue = {
     postModal: {
-      postData: postModalData.data,
+      postId: postModalData.postId,
       showPostModal: postModalData.showModal,
       openPostModal,
       onClosePostModal,
+      submitPostComment,
     },
   };
 

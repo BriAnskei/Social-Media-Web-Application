@@ -15,7 +15,7 @@ const Navbr = () => {
   const [showNotifModal, setShowNotifModal] = useState(false);
   const [showLogout, setShowLogout] = useState(false);
 
-  const { numberOfUnread } = useUnreadNotif(); // unread notification
+  const { unreadNotifLength } = useUnreadNotif(); // unread notification
 
   const numberOfChants = useSelector(
     (state: RootState) => state.chats.chats.length
@@ -57,8 +57,8 @@ const Navbr = () => {
               <span className="material-symbols-outlined .symbols">
                 notifications
               </span>
-              {numberOfUnread !== 0 && (
-                <span className="count">{numberOfUnread}</span>
+              {unreadNotifLength !== 0 && (
+                <span className="count">{unreadNotifLength}</span>
               )}
             </li>
             <Link to={"/profile"}>

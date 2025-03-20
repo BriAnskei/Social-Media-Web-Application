@@ -18,6 +18,7 @@ export interface UploadPostTypes {
   image?: File;
 }
 
+// Payload for like event(socket)
 export interface LikeHandlerTypes {
   postId: string;
   postOwnerId: string;
@@ -34,12 +35,23 @@ export interface CommentType {
   };
 }
 
+// Comment event payload
+// Client side
 export interface CommentEventPayload {
   postId: string;
-  postOwnerId: string;
+  postOwnerId?: string;
   data: {
     user: string;
     content: string;
-    createdAt: Date;
+    createdAt?: string;
   };
+}
+// Server Side
+export interface CommentEventRes {
+  receiver: string;
+  sender: string;
+  post: string;
+  message: string;
+  type: string;
+  createdAt?: string;
 }

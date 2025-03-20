@@ -1,11 +1,7 @@
 import React, { useMemo, useState } from "react";
 import "./ViewPostModal.css";
 import { ModalTypes } from "../../../types/modalTypes";
-import {
-  CommentEventPayload,
-  CommentType,
-  FetchPostType,
-} from "../../../types/PostType";
+import { CommentEventPayload, CommentType } from "../../../types/PostType";
 import {
   useCurrentUser,
   useUserById,
@@ -14,24 +10,29 @@ import {
 import { useDispatch } from "react-redux";
 import { AppDispatch } from "../../../store/store";
 import { addComment } from "../../../features/posts/postSlice";
-import { useSocket } from "../../../hooks/socket/useSocket";
+
 import AutoResizeTextarea from "../../../utils/AutoResizeTextaria";
+import { usePostById } from "../../../hooks/usePost";
+import { useSocket } from "../../../hooks/socket/useSocket";
 
 interface PostModal extends Omit<ModalTypes, "onClose"> {
   onClose: () => void;
-  post: FetchPostType;
+  postId: string;
+  submitPostComment: (e: React.FormEvent, data: CommentEventPayload) => void;
 }
 
-const ViewPostModal: React.FC<PostModal> = ({ showModal, onClose, post }) => {
+const ViewPostModal: React.FC<PostModal> = ({ showModal, onClose, postId }) => {
   const dispatch = useDispatch<AppDispatch>();
-  const { emitComment, isConnected } = useSocket();
+  const { emitComment } = useSocket();
   const { currentUser } = useCurrentUser(); // ccurrent user data
-  const postOwnerData = useUserById(post.user);
+  const postData = usePostById(postId);
+  const postOwnerData = useUserById(postData.user);
 
   // get all user id's in the post comment, after that get the users data per comment
-  const commentUserIds = useMemo(
-    () => post.comments.map((comment) => comment.user),
-    [post.comments]
+  const commentUserIds: string[] = useMemo(
+    () =>
+      postData.comments ? postData.comments.map((comment) => comment.user) : [],
+    [postData.comments]
   );
   const commentUsersData = useUsersById(commentUserIds);
 
@@ -39,7 +40,6 @@ const ViewPostModal: React.FC<PostModal> = ({ showModal, onClose, post }) => {
 
   const ToggleClose = () => {
     setCommentInput("");
-
     onClose();
   };
 
@@ -48,13 +48,15 @@ const ViewPostModal: React.FC<PostModal> = ({ showModal, onClose, post }) => {
 
     setCommentInput(inputValue);
   };
-
-  const submitComment = async (e: any) => {
+  // In your ViewPostModal component
+  const submitComment = async (e: React.FormEvent) => {
     e.preventDefault();
+    // Check if comment is empty
+    if (!commentInput.trim()) return;
+
     try {
       let data: CommentType = {
-        postId: post._id,
-
+        postId: postData._id,
         data: {
           user: currentUser._id,
           content: commentInput,
@@ -63,17 +65,16 @@ const ViewPostModal: React.FC<PostModal> = ({ showModal, onClose, post }) => {
 
       const res = await dispatch(addComment(data)).unwrap();
 
-      console.log("commnet data after commenting: ", res);
-
       if (res.success) {
         const eventCommentData: CommentEventPayload = {
-          postId: post._id,
-          postOwnerId: postOwnerData._id,
+          postId: postData._id,
+          postOwnerId: postOwnerData!._id,
           data: res.commentData!,
         };
 
         emitComment(eventCommentData);
       }
+      setCommentInput("");
     } catch (error) {
       console.log(error);
     }
@@ -81,141 +82,154 @@ const ViewPostModal: React.FC<PostModal> = ({ showModal, onClose, post }) => {
 
   return (
     <>
-      <div
-        className={`modal fade ${
-          showModal ? "show d-block" : ""
-        } view-post-modal`}
-        tabIndex={-1}
-      >
-        <div className="modal-dialog   modal-lg view-post-modal-dialog">
-          <div className="modal-content view-post-modal-content">
-            <div className="modal-header view-post-modal-header">
-              {postOwnerData ? (
-                <h5>{postOwnerData.fullName}</h5>
-              ) : (
-                <h5>Loading....</h5>
-              )}
-              <button
-                type="button"
-                className="btn-close"
-                aria-label="Close"
-                onClick={ToggleClose}
-              />
-            </div>
-            <div className="modal-body  view-post-modal-body">
-              <div className="view-post-modal-data">
-                <div className="post-modal-content-data">
-                  <div className="post-modal-profile-data">
-                    <img
-                      src={`http://localhost:4000/uploads/profile/${postOwnerData?._id}/${postOwnerData?.profilePicture}`}
-                      alt=""
-                    />
-                    <div className="post-modal-name-date">
-                      <h3>{postOwnerData?.fullName}</h3>
-                      <span>{new Date(post.createdAt).toLocaleString()}</span>
+      {postData ? (
+        <div
+          className={`modal fade ${
+            showModal ? "show d-block" : ""
+          } view-post-modal`}
+          tabIndex={-1}
+        >
+          <div className="modal-dialog   modal-lg view-post-modal-dialog">
+            <div className="modal-content view-post-modal-content">
+              <div className="modal-header view-post-modal-header">
+                {postOwnerData ? (
+                  <h5>{postOwnerData.fullName}</h5>
+                ) : (
+                  <h5>Loading....</h5>
+                )}
+                <button
+                  type="button"
+                  className="btn-close"
+                  aria-label="Close"
+                  onClick={ToggleClose}
+                />
+              </div>
+              <div className="modal-body  view-post-modal-body">
+                <div className="view-post-modal-data">
+                  <div className="post-modal-content-data">
+                    <div className="post-modal-profile-data">
+                      <img
+                        src={`http://localhost:4000/uploads/profile/${postOwnerData?._id}/${postOwnerData?.profilePicture}`}
+                        alt=""
+                      />
+                      <div className="post-modal-name-date">
+                        <h3>{postOwnerData?.fullName}</h3>
+                        <span>
+                          {new Date(postData.createdAt).toLocaleString()}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="post-modal-act">
+                      <button>+ Follow</button>
+                      <span
+                        className="material-symbols-outlined more-icon"
+                        data-to
+                      >
+                        more_horiz
+                      </span>
                     </div>
                   </div>
-                  <div className="post-modal-act">
-                    <button>+ Follow</button>
-                    <span
-                      className="material-symbols-outlined more-icon"
-                      data-to
-                    >
-                      more_horiz
+                  <div className="post-modal-text-content">
+                    {postData?.content}
+                  </div>
+                  {postData.image && (
+                    <div className="post-modal-image-container">
+                      <img
+                        src={`http://localhost:4000/images/posts/${postData.user}/${postData.image}`}
+                        alt=""
+                      />
+                    </div>
+                  )}
+                  <div className="post-modal-counter">
+                    {/* // Only Display if there is atleast 1 like/comment */}
+                    <span>
+                      {postData.likes && postData.likes.length > 0 && (
+                        <>{`${postData.likes.length} Like${
+                          postData.likes.length > 1 ? "s" : ""
+                        }`}</>
+                      )}
+                    </span>
+                    <span>
+                      {postData.comments && postData.comments.length > 0 && (
+                        <>{`${postData.comments.length} Comment${
+                          postData.comments.length > 1 ? "s" : ""
+                        }`}</>
+                      )}
                     </span>
                   </div>
-                </div>
-                <div className="post-modal-text-content">{post?.content}</div>
-                {post.image && (
-                  <div className="post-modal-image-container">
-                    <img
-                      src={`http://localhost:4000/images/posts/${post.user}/${post.image}`}
-                      alt=""
-                    />
+                  <div className="post-modal-action-cont">
+                    <div
+                      className="like-act-con"
+                      role="button" // act as button
+                      tabIndex={0} // fucosable
+                      aria-pressed={false}
+                      // onClick={}
+                    >
+                      <span className="material-symbols-outlined">
+                        thumb_up
+                      </span>
+                      <span>Like</span>
+                    </div>
+                    <div className="comment-logo">
+                      <span className="material-symbols-outlined">comment</span>
+                      <span>Comment</span>
+                    </div>
                   </div>
-                )}
-                <div className="post-modal-counter">
-                  {/* // Only Display if there is atleast 1 like/comment */}
-                  <span>
-                    {post.likes.length > 0 && (
-                      <>{`${post.likes.length} Like${
-                        post.likes.length > 1 ? "s" : ""
-                      }`}</>
-                    )}
-                  </span>
-                  <span>
-                    {" "}
-                    {post.comments.length > 0 && (
-                      <>{`${post.comments.length} Comment${
-                        post.comments.length > 1 ? "s" : ""
-                      }`}</>
-                    )}
-                  </span>
-                </div>
-                <div className="post-modal-action-cont">
-                  <div
-                    className="like-act-con"
-                    role="button" // act as button
-                    tabIndex={0} // fucosable
-                    aria-pressed={false}
-                    // onClick={}
-                  >
-                    <span className="material-symbols-outlined">thumb_up</span>
-                    <span>Like</span>
-                  </div>
-                  <div className="comment-logo">
-                    <span className="material-symbols-outlined">comment</span>
-                    <span>Comment</span>
-                  </div>
-                </div>
-                <div className="comment-list-container">
-                  {post.comments.map((comment, index) => {
-                    const commentUserData = commentUsersData[comment.user];
+                  <div className="comment-list-container">
+                    {postData.comments &&
+                      postData.comments.map((comment, index) => {
+                        const commentUserData = commentUsersData[comment.user];
 
-                    return (
-                      <div className="comment-cont" key={index}>
-                        <img
-                          src={`http://localhost:4000/uploads/profile/${commentUserData._id}/${commentUserData.profilePicture}`}
-                          alt=""
-                        />
-                        <div className="comment-content">
-                          <div className="info-content">
-                            <h5>{commentUserData.fullName}</h5>
-                            <span>{comment.content}</span>
+                        return (
+                          <div className="comment-cont" key={index}>
+                            <img
+                              src={`http://localhost:4000/uploads/profile/${commentUserData._id}/${commentUserData.profilePicture}`}
+                              alt=""
+                            />
+                            <div className="comment-content">
+                              <div className="info-content">
+                                <h5>{commentUserData.fullName}</h5>
+                                <span>{comment.content}</span>
+                              </div>
+                              <span id="comment-date">
+                                {new Date(comment.createdAt).toLocaleString()}
+                              </span>
+                            </div>
                           </div>
-                          <span id="comment-date">
-                            {new Date(comment.createdAt).toLocaleString()}
-                          </span>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-                <div className="comment-con-inputs">
-                  <div className="post-modal-profile">
-                    <img
-                      src={`http://localhost:4000/uploads/profile/${currentUser._id}/${currentUser.profilePicture}`}
-                      alt=""
-                    />
+                        );
+                      })}
                   </div>
-                  <div className="modal-input-con">
-                    <AutoResizeTextarea
-                      onChange={onChangeHandler}
-                      value={commentInput}
-                    />
-                    <span
-                      className="material-symbols-outlined"
-                      onClick={submitComment}
-                    >
-                      send
-                    </span>
+                  <div className="comment-con-inputs">
+                    <div className="post-modal-profile">
+                      <img
+                        src={`http://localhost:4000/uploads/profile/${currentUser._id}/${currentUser.profilePicture}`}
+                        alt=""
+                      />
+                    </div>
+                    <div className="modal-input-con">
+                      {/* Make sure the onSubmit is directly on the form element */}
+                      <form onSubmit={(e) => submitComment(e)}>
+                        <AutoResizeTextarea
+                          onChange={onChangeHandler}
+                          value={commentInput}
+                        />
+                        {/* Add type="button" to prevent form submission */}
+                        <button type="submit">
+                          <span className="material-symbols-outlined">
+                            send
+                          </span>
+                        </button>
+                      </form>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
+      ) : (
+        <>Loading</>
+      )}
     </>
   );
 };

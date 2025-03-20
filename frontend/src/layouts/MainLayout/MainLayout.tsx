@@ -20,7 +20,8 @@ const MainLayout = () => {
   const dispatch = useDispatch<AppDispatch>();
   const { isAuthenticated } = useSelector((state: RootState) => state.auth);
   const { postModal } = useModal();
-  const { onClosePostModal, postData, showPostModal } = postModal;
+  const { onClosePostModal, postId, showPostModal, submitPostComment } =
+    postModal;
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -73,7 +74,8 @@ const MainLayout = () => {
       <ViewPostModal
         showModal={showPostModal}
         onClose={onClosePostModal}
-        post={postData}
+        postId={postId!}
+        submitPostComment={submitPostComment}
       />
     </>
   );

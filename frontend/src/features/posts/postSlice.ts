@@ -2,6 +2,7 @@ import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
 
 import { ApiResponse, postApi } from "../../utils/api";
 import {
+  CommentEventPayload,
   CommentType,
   FetchPostType,
   LikeHandlerTypes,
@@ -91,14 +92,26 @@ interface commentRes extends ApiResponse {
   commentData?: {
     user: string;
     content: string;
-    createdAt: Date;
+    createdAt: string;
   };
 }
 export const addComment = createAsyncThunk(
   "posts/add-comment",
-  async (data: CommentType, { rejectWithValue }) => {
+  async (data: CommentType, { rejectWithValue, dispatch }) => {
     try {
       const res: commentRes = await postApi.uploadComment(data);
+
+      if (res.success) {
+        const resData = {
+          postId: data.postId,
+          data: {
+            user: res.commentData?.user || "none",
+            content: res.commentData?.content || "none",
+            createdAt: res.commentData?.createdAt || "none",
+          },
+        };
+        dispatch(commentOnPost(resData));
+      }
       return res;
     } catch (error) {
       return rejectWithValue("Error adding comment: " + error);
@@ -136,7 +149,20 @@ const postsSlice = createSlice({
         );
       }
     },
-    commentOnPost: (state, action): void => {},
+    commentOnPost: (
+      state,
+      action: PayloadAction<CommentEventPayload>
+    ): void => {
+      if (state.byId[action.payload.postId]) {
+        const { data } = action.payload;
+        const commentData = {
+          user: data.user,
+          content: data.content,
+          createdAt: data.createdAt!,
+        };
+        state.byId[action.payload.postId].comments.push(commentData);
+      }
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -197,20 +223,14 @@ const postsSlice = createSlice({
       })
 
       // add-comment
-      .addCase(addComment.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
       .addCase(addComment.fulfilled, (state) => {
-        state.loading = false;
         state.error = null;
       })
       .addCase(addComment.rejected, (state, action) => {
-        state.loading = false;
         state.error = action.payload as string;
       });
   },
 });
 
-export const { toggle, postLiked } = postsSlice.actions;
+export const { toggle, postLiked, commentOnPost } = postsSlice.actions;
 export default postsSlice.reducer;

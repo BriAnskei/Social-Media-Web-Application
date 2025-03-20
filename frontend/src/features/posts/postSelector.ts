@@ -1,5 +1,6 @@
 import { createSelector } from "@reduxjs/toolkit";
 import { RootState } from "../../store/store";
+import { FetchPostType } from "../../types/PostType";
 
 const byId = (state: RootState) => state.posts.byId;
 const allIds = (state: RootState) => state.posts.allIds;
@@ -21,8 +22,8 @@ export const selectCurrentUserPost = createSelector(
   }
 );
 
-// // Optional: Add a selector to get a single user post by ID
-// export const selectPostById = createSelector(
-//   [byId, (_, postId: string) => postId],
-//   (postById, postId) => postById[postId] || null
-// );
+// Optional: Add a selector to get a single user post by ID
+export const selectPostById = createSelector(
+  [byId, (_, postId: string) => postId],
+  (postById, postId) => postById[postId] || ({} as FetchPostType)
+);

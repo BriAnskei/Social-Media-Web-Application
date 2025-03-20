@@ -2,14 +2,10 @@ import { useDispatch, useSelector } from "react-redux";
 import { useCallback, useContext, useEffect, useRef } from "react";
 import { SocketContext } from "../../context/SocketContext";
 import { getToken } from "../../features/auth/authSlice";
-import { RootState } from "../../store/store";
-import {
-  CommentEventPayload,
-  CommentEventRes,
-  LikeHandlerTypes,
-} from "../../types/PostType";
-import { postLiked } from "../../features/posts/postSlice";
-import { addLikeNotif } from "../../features/notifications/notificationsSlice";
+import { AppDispatch, RootState } from "../../store/store";
+import { CommentEventPayload, LikeHandlerTypes } from "../../types/PostType";
+import { commentOnPost, postLiked } from "../../features/posts/postSlice";
+import { addNotification } from "../../features/notifications/notificationsSlice";
 import { NotificationType } from "../../types/NotificationTypes";
 
 export interface DataOutput {
@@ -18,8 +14,24 @@ export interface DataOutput {
   data: NotificationType;
 }
 
+export const SOCKET_EVENTS = {
+  posts: {
+    // Like Events
+    LIKE_POST: "likePost", // sends by the client
+    // sends both by server
+    POST_LIKED: "postLiked",
+    LIKE_NOTIFY: "likeNotify",
+
+    // comment events
+    COMMENT_POST: "commentPost",
+    // server
+    POST_COMMENTED: "postCommented",
+    COMMENT_NOTIF: "commentNotify",
+  },
+};
+
 export const useSocket = () => {
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
   const { socket, isConnected } = useContext(SocketContext);
   const { accessToken } = useSelector((state: RootState) => state.auth);
   const isInitialized = useRef(false); //  ensure that the socket event listeners (like postLiked, likeNotify) are only set up once, even if the useEffect runs multiple times.
@@ -34,13 +46,19 @@ export const useSocket = () => {
   );
   // postOwner
   const likeNotifEvents = useCallback((data: DataOutput) => {
-    dispatch(addLikeNotif(data));
+    dispatch(addNotification(data));
   }, []);
 
   // comment events function
   const handleCommentEvent = useCallback(
-    (data: CommentEventRes) => {
-      console.log("comment event from server(global): ", data);
+    (data: any) => {
+      dispatch(commentOnPost(data));
+    },
+    [dispatch]
+  );
+  const commentNotifEvent = useCallback(
+    (data: DataOutput) => {
+      dispatch(addNotification(data));
     },
     [dispatch]
   );
@@ -64,18 +82,16 @@ export const useSocket = () => {
       socket.off("likeNotify");
 
       socket.off("postCommented");
-
-      // Set up event listeners
+      socket.off(SOCKET_EVENTS.posts.COMMENT_NOTIF);
 
       // Like Events
       // global event
       socket.on("postLiked", handleLikeEvent);
+      socket.on("postCommented", handleCommentEvent);
+
       // owner event
       socket.on("likeNotify", likeNotifEvents);
-
-      // Comment Event
-      // global
-      socket.on("postCommented", handleCommentEvent);
+      socket.on(SOCKET_EVENTS.posts.COMMENT_NOTIF, commentNotifEvent);
 
       socket.on("error", (error: Error) => {
         console.error("Socket error:", error);
@@ -89,9 +105,11 @@ export const useSocket = () => {
     // Cleanup function
     return () => {
       if (socket) {
-        socket.off("postLiked", handleLikeEvent);
         socket.off("postLiked", handleLikeEvent); // used to remove the event triggers when the component unmounts
         socket.off("likeNotify", likeNotifEvents);
+
+        socket.off("postCommented");
+        socket.off(SOCKET_EVENTS.posts.COMMENT_NOTIF);
         isInitialized.current = false;
       }
     };
@@ -109,18 +127,21 @@ export const useSocket = () => {
     [isConnected]
   );
 
-  const emitComment = useCallback((data: CommentEventPayload) => {
-    console.log("Emting comment: ", data);
-    if (socket && isConnected) {
-      socket.emit("commentPost", data);
-      console.log("Comment succesfully emited");
-    } else
-      console.log(
-        "Socket not connected, connet emit data: ",
-        socket,
-        isConnected
-      );
-  }, []);
+  const emitComment = useCallback(
+    (data: CommentEventPayload) => {
+      console.log("Emting comment: ", data);
+      if (socket && isConnected) {
+        socket.emit("commentPost", data);
+        console.log("Comment succesfully emited");
+      } else
+        console.log(
+          "Socket not connected, connet emit data: ",
+          socket,
+          isConnected
+        );
+    },
+    [socket, isConnected]
+  );
 
   return {
     socket,
