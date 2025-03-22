@@ -3,7 +3,6 @@ import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { ApiResponse, postApi } from "../../utils/api";
 import {
   CommentEventPayload,
-  CommentType,
   FetchPostType,
   LikeHandlerTypes,
 } from "../../types/PostType";
@@ -88,7 +87,8 @@ export const toggleLike = createAsyncThunk(
 );
 
 // extend the comment object for returned comment data.
-interface commentRes extends ApiResponse {
+// the reason we get this payload is to have accurate date for the comment
+interface CommentRes extends ApiResponse {
   commentData?: {
     user: string;
     content: string;
@@ -97,18 +97,16 @@ interface commentRes extends ApiResponse {
 }
 export const addComment = createAsyncThunk(
   "posts/add-comment",
-  async (data: CommentType, { rejectWithValue, dispatch }) => {
+  async (data: CommentEventPayload, { rejectWithValue, dispatch }) => {
     try {
-      const res: commentRes = await postApi.uploadComment(data);
+      const res: CommentRes = await postApi.uploadComment(data);
 
       if (res.success) {
-        const resData = {
+        // if response is successfull, it will sure to have a payload of 'CommentRes' type
+        // if not return the errror message payload
+        const resData: CommentEventPayload = {
           postId: data.postId,
-          data: {
-            user: res.commentData?.user || "none",
-            content: res.commentData?.content || "none",
-            createdAt: res.commentData?.createdAt || "none",
-          },
+          data: res.commentData!,
         };
         dispatch(commentOnPost(resData));
       }
@@ -154,13 +152,16 @@ const postsSlice = createSlice({
       action: PayloadAction<CommentEventPayload>
     ): void => {
       if (state.byId[action.payload.postId]) {
-        const { data } = action.payload;
+        const { data, postId } = action.payload;
         const commentData = {
           user: data.user,
           content: data.content,
           createdAt: data.createdAt!,
         };
-        state.byId[action.payload.postId].comments.push(commentData);
+
+        if (state.byId[postId]) {
+          state.byId[postId].comments.push(commentData);
+        }
       }
     },
   },

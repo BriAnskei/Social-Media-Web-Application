@@ -15,7 +15,7 @@ const Navbr = () => {
   const [showNotifModal, setShowNotifModal] = useState(false);
   const [showLogout, setShowLogout] = useState(false);
 
-  const { unreadNotifLength } = useUnreadNotif(); // unread notification
+  const { nummberOfUnread, allIds } = useUnreadNotif(); // unread notification
 
   const numberOfChants = useSelector(
     (state: RootState) => state.chats.chats.length
@@ -28,7 +28,7 @@ const Navbr = () => {
   const toggleNotif = () => {
     if (showNotifModal) {
       // trigger dispatch only if the model is being closed
-      dispatch(markAllRead());
+      dispatch(markAllRead(allIds));
     }
     setShowNotifModal(!showNotifModal);
   };
@@ -57,8 +57,8 @@ const Navbr = () => {
               <span className="material-symbols-outlined .symbols">
                 notifications
               </span>
-              {unreadNotifLength !== 0 && (
-                <span className="count">{unreadNotifLength}</span>
+              {nummberOfUnread !== 0 && (
+                <span className="count">{nummberOfUnread}</span>
               )}
             </li>
             <Link to={"/profile"}>

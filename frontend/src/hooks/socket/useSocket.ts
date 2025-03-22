@@ -51,7 +51,7 @@ export const useSocket = () => {
 
   // comment events function
   const handleCommentEvent = useCallback(
-    (data: any) => {
+    (data: CommentEventPayload) => {
       dispatch(commentOnPost(data));
     },
     [dispatch]
@@ -124,21 +124,14 @@ export const useSocket = () => {
         socket.emit("likePost", data);
       }
     },
-    [isConnected]
+    [isConnected, socket]
   );
 
   const emitComment = useCallback(
     (data: CommentEventPayload) => {
-      console.log("Emting comment: ", data);
       if (socket && isConnected) {
         socket.emit("commentPost", data);
-        console.log("Comment succesfully emited");
-      } else
-        console.log(
-          "Socket not connected, connet emit data: ",
-          socket,
-          isConnected
-        );
+      }
     },
     [socket, isConnected]
   );

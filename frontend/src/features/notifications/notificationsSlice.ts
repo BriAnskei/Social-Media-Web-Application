@@ -46,16 +46,15 @@ export const fetchAllNotifs = createAsyncThunk(
 
 export const markAllRead = createAsyncThunk(
   "notification/set-read",
-  async (_: void, { getState }) => {
-    try {
-      const { auth, notification } = getState() as RootState;
+  async (allIds: string[], { getState }) => {
+    if (allIds.length === 0) return; // exit the function if array has no value
 
+    try {
+      const { auth } = getState() as RootState;
       const accessToken = auth.accessToken;
-      const allIds = notification.allIds;
 
       if (!accessToken) throw new Error("Access token is required");
       const res = await notificationApi.setReadNotif(accessToken, allIds);
-
       if (!res.success) {
         console.error("Faild to set-read notif: ", res.message);
         return;

@@ -6,6 +6,7 @@ interface AutoResizeTextareaProps {
   className?: string;
   value: string;
   onChange?: (e: ChangeEvent<HTMLTextAreaElement>) => void;
+  onKeyEvent: (e: any) => void;
 }
 
 const AutoResizeTextarea: React.FC<AutoResizeTextareaProps> = ({
@@ -14,6 +15,7 @@ const AutoResizeTextarea: React.FC<AutoResizeTextareaProps> = ({
   className,
   value,
   onChange,
+  onKeyEvent,
 }) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -22,7 +24,7 @@ const AutoResizeTextarea: React.FC<AutoResizeTextareaProps> = ({
     if (!textarea) return;
 
     // Reset the height temporarily to get the correct scrollHeight
-    textarea.style.height = "auto";
+    textarea.style.height = "0px";
     // Set the height to the scrollHeight
     textarea.style.height = `${textarea.scrollHeight}px`;
   };
@@ -36,7 +38,7 @@ const AutoResizeTextarea: React.FC<AutoResizeTextareaProps> = ({
     return () => {
       window.removeEventListener("resize", adjustHeight);
     };
-  }, []);
+  }, [value]);
 
   const handleChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
     // Run the height adjustment
@@ -49,17 +51,13 @@ const AutoResizeTextarea: React.FC<AutoResizeTextareaProps> = ({
 
   return (
     <textarea
+      onKeyDown={onKeyEvent}
       ref={textareaRef}
       className={className}
       placeholder={placeholder}
       defaultValue={defaultValue}
       onChange={handleChange}
       value={value}
-      rows={1} // Start with minimum rows
-      style={{
-        overflow: "hidden", // Hide scrollbar
-        resize: "none", // Prevent manual resizing
-      }}
     />
   );
 };

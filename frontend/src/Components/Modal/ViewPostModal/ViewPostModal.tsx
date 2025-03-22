@@ -1,7 +1,7 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import "./ViewPostModal.css";
 import { ModalTypes } from "../../../types/modalTypes";
-import { CommentEventPayload, CommentType } from "../../../types/PostType";
+import { CommentEventPayload } from "../../../types/PostType";
 import {
   useCurrentUser,
   useUserById,
@@ -9,7 +9,7 @@ import {
 } from "../../../hooks/useUsers";
 import { useDispatch } from "react-redux";
 import { AppDispatch } from "../../../store/store";
-import { addComment } from "../../../features/posts/postSlice";
+import { addComment, toggleLike } from "../../../features/posts/postSlice";
 
 import AutoResizeTextarea from "../../../utils/AutoResizeTextaria";
 import { usePostById } from "../../../hooks/usePost";
@@ -23,7 +23,7 @@ interface PostModal extends Omit<ModalTypes, "onClose"> {
 
 const ViewPostModal: React.FC<PostModal> = ({ showModal, onClose, postId }) => {
   const dispatch = useDispatch<AppDispatch>();
-  const { emitComment } = useSocket();
+  const { emitComment, emitLike } = useSocket();
   const { currentUser } = useCurrentUser(); // ccurrent user data
   const postData = usePostById(postId);
   const postOwnerData = useUserById(postData.user);
@@ -36,11 +36,46 @@ const ViewPostModal: React.FC<PostModal> = ({ showModal, onClose, postId }) => {
   );
   const commentUsersData = useUsersById(commentUserIds);
 
+  const [isLiked, setIsLiked] = useState<boolean>(false);
   const [commentInput, setCommentInput] = useState("");
+
+  const commentContRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (postData && currentUser._id) {
+      const isPostLiked = postData.likes.includes(currentUser._id);
+      setIsLiked(isPostLiked);
+    }
+  }, [postId]);
+
+  useEffect(() => {
+    if (commentContRef.current) {
+      commentContRef.current.scrollTop = commentContRef.current.scrollHeight;
+    }
+  }, [postData.comments]);
 
   const ToggleClose = () => {
     setCommentInput("");
     onClose();
+  };
+
+  const handleLike = async () => {
+    try {
+      const res = await dispatch(toggleLike(postId)).unwrap();
+      // emit after succesfully saved itto DB
+      if (res) {
+        const data = {
+          postId: postId,
+          postOwnerId: postData.user,
+          userId: currentUser._id!,
+        };
+
+        emitLike(data);
+        setIsLiked(!isLiked);
+      }
+    } catch (error) {
+      console.error(error);
+    }
   };
 
   const onChangeHandler = (e: any) => {
@@ -48,14 +83,20 @@ const ViewPostModal: React.FC<PostModal> = ({ showModal, onClose, postId }) => {
 
     setCommentInput(inputValue);
   };
-  // In your ViewPostModal component
-  const submitComment = async (e: React.FormEvent) => {
-    e.preventDefault();
+
+  const onKeyEvent = (e: any) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault(); // prevent from adding new line
+      submitComment();
+    }
+  };
+
+  const submitComment = async () => {
     // Check if comment is empty
     if (!commentInput.trim()) return;
 
     try {
-      let data: CommentType = {
+      let data: CommentEventPayload = {
         postId: postData._id,
         data: {
           user: currentUser._id,
@@ -162,21 +203,27 @@ const ViewPostModal: React.FC<PostModal> = ({ showModal, onClose, postId }) => {
                       className="like-act-con"
                       role="button" // act as button
                       tabIndex={0} // fucosable
-                      aria-pressed={false}
-                      // onClick={}
+                      aria-pressed={isLiked}
+                      onClick={handleLike}
                     >
-                      <span className="material-symbols-outlined">
+                      <span
+                        className={`material-symbols-outlined   ${
+                          isLiked ? "filled-icon" : ""
+                        }`}
+                      >
                         thumb_up
                       </span>
-                      <span>Like</span>
+                      <span id={`${isLiked ? "like-text" : ""}`}>{`Like${
+                        isLiked ? "d" : ""
+                      }`}</span>
                     </div>
                     <div className="comment-logo">
                       <span className="material-symbols-outlined">comment</span>
                       <span>Comment</span>
                     </div>
                   </div>
-                  <div className="comment-list-container">
-                    {postData.comments &&
+                  <div className="comment-list-container" ref={commentContRef}>
+                    {postData.comments && postData.comments.length > 0 ? (
                       postData.comments.map((comment, index) => {
                         const commentUserData = commentUsersData[comment.user];
 
@@ -197,7 +244,10 @@ const ViewPostModal: React.FC<PostModal> = ({ showModal, onClose, postId }) => {
                             </div>
                           </div>
                         );
-                      })}
+                      })
+                    ) : (
+                      <>Write a comment</>
+                    )}
                   </div>
                   <div className="comment-con-inputs">
                     <div className="post-modal-profile">
@@ -207,13 +257,18 @@ const ViewPostModal: React.FC<PostModal> = ({ showModal, onClose, postId }) => {
                       />
                     </div>
                     <div className="modal-input-con">
-                      {/* Make sure the onSubmit is directly on the form element */}
-                      <form onSubmit={(e) => submitComment(e)}>
+                      <form
+                        onSubmit={(e) => {
+                          e.preventDefault();
+                          submitComment();
+                        }}
+                      >
                         <AutoResizeTextarea
                           onChange={onChangeHandler}
                           value={commentInput}
+                          onKeyEvent={onKeyEvent}
                         />
-                        {/* Add type="button" to prevent form submission */}
+
                         <button type="submit">
                           <span className="material-symbols-outlined">
                             send

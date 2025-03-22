@@ -26,15 +26,6 @@ export interface LikeHandlerTypes {
   username: string;
 }
 
-// for commenting post
-export interface CommentType {
-  postId: string;
-  data: {
-    user: string;
-    content: string;
-  };
-}
-
 // Comment event payload
 // Client side
 export interface CommentEventPayload {

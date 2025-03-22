@@ -141,6 +141,12 @@
   justify-content: center;
   gap: 0.5rem;
 }
+.like-act-con .filled-icon,
+#like-text {
+  font-variation-settings: "FILL" 1;
+  color: blue;
+  font-weight: bold;
+}
 
 .comment-list-container {
   max-height: 300px;
@@ -233,15 +239,35 @@
   margin-right: 12px;
 }
 
+.modal-input-con form {
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
 .modal-input-con textarea {
+  box-sizing: border-box;
   background-color: inherit;
   border: none;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+  overflow-y: auto; /* Maintain vertical scrolling */
+  max-height: 10rem;
   min-height: 1.3rem;
   width: 90%;
   resize: none;
 }
-
 .modal-input-con textarea:focus {
   border: none;
   outline: none;
+}
+.modal-input-con button {
+  border: none;
+  background-color: inherit;
+}
+.modal-input-con button span {
+  display: flex;
+  align-items: center;
+  height: 30px;
+  margin-left: 30px;
 }

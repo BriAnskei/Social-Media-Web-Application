@@ -227,7 +227,6 @@ export class SocketServer {
       if (data.postOwnerId !== data.data.user) {
         commentEventData = await saveCommentNotif(commentEventData);
       }
-      console.log("Funtion triggered: ", commentEventData);
 
       const notifEmitData = {
         isExist: false,
@@ -242,12 +241,6 @@ export class SocketServer {
         this.io
           .to(ownerSocket.socketId)
           .emit(SOCKET_EVENTS.posts.COMMENT_NOTIF, notifEmitData);
-      } else {
-        console.log(
-          "OWNER IS NOT ONLINE",
-          commentEventData.receiver,
-          this.connectedUSers
-        );
       }
     } catch (error) {
       console.error("Error handling post comment:", error);

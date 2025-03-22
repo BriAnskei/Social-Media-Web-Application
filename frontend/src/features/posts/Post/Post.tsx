@@ -20,7 +20,7 @@ const Post = ({ post, user }: Post) => {
   const { postModal } = useModal();
   const { openPostModal } = postModal;
 
-  const { emitLike, emitComment } = useSocket();
+  const { emitLike } = useSocket();
   const dispatch = useDispatch<AppDispatch>();
 
   const [liked, setLiked] = useState(false);
@@ -36,7 +36,6 @@ const Post = ({ post, user }: Post) => {
   };
 
   const handleLike = async () => {
-    setLiked(!liked);
     try {
       const res = await dispatch(toggleLike(post._id)).unwrap();
       // emit after succesfully saved itto DB
@@ -48,30 +47,10 @@ const Post = ({ post, user }: Post) => {
         };
 
         emitLike(data);
+        setLiked(!liked);
       }
     } catch (error) {
       console.error(error);
-    }
-  };
-
-  const submitPostComment = async (
-    e: React.FormEvent,
-    data: CommentEventPayload
-  ) => {
-    e.preventDefault();
-    try {
-      const res = await dispatch(addComment(data)).unwrap();
-
-      if (res.success) {
-        const dataEventPayload: CommentEventPayload = {
-          ...data,
-          data: res.commentData!,
-        };
-        console.log(dataEventPayload);
-        emitComment(dataEventPayload);
-      }
-    } catch (error) {
-      console.log("Submitting comment Error: ", error);
     }
   };
 
@@ -111,16 +90,16 @@ const Post = ({ post, user }: Post) => {
         {/* // Make the word plural if there more than one like/comment */}
         <div className="post-counter">
           {/* // Only Display if there is atleast 1 like/comment */}
-          {post.likes.length > 0 && (
-            <span>{`${post.likes.length} Like${
-              post.likes.length > 1 ? "s" : ""
-            }`}</span>
-          )}
-          {post.comments.length > 0 && (
-            <span>{`${post.comments.length} Comment${
-              post.comments.length > 1 ? "s" : ""
-            }`}</span>
-          )}
+          <span>
+            {post.likes.length > 0 &&
+              `${post.likes.length} Like${post.likes.length > 1 ? "s" : ""}`}
+          </span>
+          <span>
+            {post.comments.length > 0 &&
+              `${post.comments.length} Comment${
+                post.comments.length > 1 ? "s" : ""
+              }`}
+          </span>
         </div>
         <div className="post-action-cont">
           <div
