@@ -13,7 +13,12 @@
 }
 
 .view-post-modal-header h5 {
-  margin-top: 5px;
+  margin: 0 auto 0 auto;
+}
+
+.view-post-modal-header button {
+  position: absolute;
+  right: 12px;
 }
 
 .view-post-modal-body {

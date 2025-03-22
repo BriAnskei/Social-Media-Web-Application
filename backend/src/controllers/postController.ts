@@ -16,18 +16,16 @@ export const createPost = async (
 
     const userObjectId = mongoose.Types.ObjectId.createFromHexString(userId); //hexadecimal string into a valid ObjectId instance.
 
-    await postModel.create({
+    const postData = await postModel.create({
       user: userObjectId,
       content: req.body.content,
       image: req.file?.filename,
     });
 
-    const allPost = await postModel.find({});
-
     res.json({
       success: true,
       message: "post successfully created",
-      posts: allPost,
+      posts: postData,
     });
   } catch (error) {
     console.log(error);

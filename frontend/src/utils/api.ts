@@ -1,7 +1,7 @@
 import axios from "axios";
 import { LoginTypes, RegisterTypes } from "../types/AuthTypes";
 import { FetchedUserType } from "../types/user";
-import { CommentType, FetchPostType } from "../types/PostType";
+import { CommentEventPayload, FetchPostType } from "../types/PostType";
 import { NotificationType } from "../types/NotificationTypes";
 
 // Axion instance
@@ -14,7 +14,7 @@ export interface ApiResponse {
   token?: { refreshToken: string; accessToken: string };
   message?: string;
   user?: FetchedUserType[] | FetchedUserType;
-  posts?: FetchPostType[];
+  posts?: FetchPostType[] | FetchPostType;
   notifications?: NotificationType[] | NotificationType;
 }
 
@@ -39,6 +39,8 @@ export const postApi = {
           "Content-Type": "multipart/form-data",
         },
       });
+
+      console.log(response.data);
 
       return response.data;
     } catch (error) {
@@ -70,7 +72,7 @@ export const postApi = {
     }
   },
 
-  uploadComment: async (data: CommentType): Promise<ApiResponse> => {
+  uploadComment: async (data: CommentEventPayload): Promise<ApiResponse> => {
     try {
       const res = await api.post(
         "/api/posts/add-comment",

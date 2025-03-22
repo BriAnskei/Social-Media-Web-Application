@@ -8,6 +8,7 @@ import {
 } from "../../types/PostType";
 import { NormalizeState } from "../../types/NormalizeType";
 import { RootState } from "../../store/store";
+import normalizeResponse from "../../utils/normalizeResponse";
 
 interface Poststate extends NormalizeState<FetchPostType> {}
 
@@ -51,7 +52,7 @@ export const createPost = createAsyncThunk(
         return rejectWithValue(res.message || "Error Uploading post");
       }
 
-      await dispatch(fetchAllPost()); // wrong emplementation
+      dispatch(addPost(res.posts!));
 
       return res;
     } catch (error) {
@@ -147,6 +148,17 @@ const postsSlice = createSlice({
         );
       }
     },
+    addPost: (
+      state,
+      action: PayloadAction<FetchPostType | FetchPostType[]>
+    ): void => {
+      const { allIds, byId } = normalizeResponse(action.payload);
+
+      if (!state.allIds.includes(allIds[0])) {
+        state.allIds.push(allIds[0]);
+      }
+      state.byId = { ...state.byId, ...byId };
+    },
     commentOnPost: (
       state,
       action: PayloadAction<CommentEventPayload>
@@ -175,13 +187,14 @@ const postsSlice = createSlice({
       .addCase(fetchAllPost.fulfilled, (state, action) => {
         state.loading = false;
 
+        const { allIds, byId } = normalizeResponse(action.payload);
+
         // Reset all data in the state
         state.byId = {};
         state.allIds = [];
-        action.payload?.forEach((post) => {
-          state.byId[post._id] = post;
-          state.allIds.push(post._id);
-        });
+
+        state.allIds = allIds;
+        state.byId = { ...state.byId, ...byId };
       })
       .addCase(fetchAllPost.rejected, (state, action) => {
         state.loading = false;
@@ -189,10 +202,6 @@ const postsSlice = createSlice({
       })
 
       // Uploading Post Cases
-      .addCase(createPost.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
       .addCase(createPost.fulfilled, (state) => {
         state.loading = false;
       })
@@ -233,5 +242,5 @@ const postsSlice = createSlice({
   },
 });
 
-export const { toggle, postLiked, commentOnPost } = postsSlice.actions;
+export const { toggle, postLiked, commentOnPost, addPost } = postsSlice.actions;
 export default postsSlice.reducer;

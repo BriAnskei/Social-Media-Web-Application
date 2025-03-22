@@ -49,6 +49,8 @@ const ViewPostModal: React.FC<PostModal> = ({ showModal, onClose, postId }) => {
   }, [postId]);
 
   useEffect(() => {
+    // ScrollHeight: The total height of the scrollable content inside the container, including any overflow that is not visible in the viewport.
+    // ScrollTop: The current vertical scroll position of the container (how far it is scrolled down from the top).
     if (commentContRef.current) {
       commentContRef.current.scrollTop = commentContRef.current.scrollHeight;
     }
@@ -134,7 +136,7 @@ const ViewPostModal: React.FC<PostModal> = ({ showModal, onClose, postId }) => {
             <div className="modal-content view-post-modal-content">
               <div className="modal-header view-post-modal-header">
                 {postOwnerData ? (
-                  <h5>{postOwnerData.fullName}</h5>
+                  <h5>{currentUser.fullName.replace(/ .*/, "")}' s post</h5>
                 ) : (
                   <h5>Loading....</h5>
                 )}
