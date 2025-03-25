@@ -23,3 +23,9 @@ export interface UserState {
   loading: boolean;
   error: string | null;
 }
+
+// follow-toggle type
+export interface FollowPayload {
+  userId: string;
+  followerId: string;
+}

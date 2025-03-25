@@ -110,6 +110,32 @@
   cursor: pointer;
 }
 
+/* follow animation */
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+
+.post-modal-act #followed {
+  color: green;
+  font-family: "Helvetica";
+  font-size: 10pt;
+  font-weight: bolder;
+  background-color: #ffffff;
+  border: 3px solid green;
+  border-radius: 3px;
+  width: 80px;
+  height: 25px;
+  cursor: pointer;
+
+  animation: fadeOut 2s ease-out forwards;
+}
+
 /* content */
 .view-post-modal-data .post-modal-text-content {
   padding: 4px 12px 12px 12px;

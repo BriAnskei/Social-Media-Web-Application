@@ -7,6 +7,7 @@ import {
   register,
   updateProfile,
   authorization,
+  followUser,
 } from "../controllers/userController";
 import upload from "../middleware/upload";
 import authMiddleware from "../middleware/auth";
@@ -24,5 +25,7 @@ userRouter.put(
   updateProfile
 );
 userRouter.get("/authentication", authMiddleware, authorization);
+
+userRouter.post("/follow", followUser);
 
 export default userRouter;

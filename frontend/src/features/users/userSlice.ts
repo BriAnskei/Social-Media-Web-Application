@@ -1,9 +1,10 @@
-import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import { FetchedUserType } from "../../types/user";
+import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { FetchedUserType, FollowPayload } from "../../types/user";
 import { ApiResponse, userApi } from "../../utils/api";
 import { RootState } from "../../store/store";
 import { NormalizeState } from "../../types/NormalizeType";
 import normalizeResponse from "../../utils/normalizeResponse";
+import { data } from "react-router";
 
 export const getUsersData = createAsyncThunk(
   "user/getUsersData",
@@ -64,7 +65,26 @@ export const updateCurrentUser = createAsyncThunk<
 
       return res;
     } catch (error) {
-      return rejectWithValue("Editing profile failed");
+      return rejectWithValue("Editing profile failed: " + error);
+    }
+  }
+);
+
+export const followToggled = createAsyncThunk(
+  "user/follow",
+  async (data: FollowPayload, { rejectWithValue, dispatch }) => {
+    try {
+      if (!data) throw new Error("No Data recieve");
+
+      const res = await userApi.followToggle(data);
+
+      if (res.success) {
+        dispatch(updateFollow(data.followerId));
+      }
+
+      return res;
+    } catch (error) {
+      return rejectWithValue("Follow toggle failed: " + error);
     }
   }
 );
@@ -89,6 +109,15 @@ const userSlice = createSlice({
       state.byId = {};
       state.allIds = [];
       state.currentUserId = null;
+    },
+    updateFollow: (state, action) => {
+      const userId = action.payload;
+
+      const userData: FetchedUserType = state.byId[state.currentUserId!];
+
+      if (userData.followers.includes(userId)) {
+        userData.followers.indexOf(userId);
+      }
     },
   },
   extraReducers: (builder) => {
@@ -149,5 +178,5 @@ const userSlice = createSlice({
   },
 });
 
-export const { clearData } = userSlice.actions;
+export const { clearData, updateFollow } = userSlice.actions;
 export default userSlice.reducer;

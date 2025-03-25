@@ -3,33 +3,46 @@ import { useDispatch, useSelector } from "react-redux";
 import { addComment, toggleLike } from "../postSlice";
 import { useEffect, useState } from "react";
 import { CommentEventPayload, FetchPostType } from "../../../types/PostType";
-import { FetchedUserType } from "../../../types/user";
+import { FetchedUserType, FollowPayload } from "../../../types/user";
 import { AppDispatch, RootState } from "../../../store/store";
 import { useSocket } from "../../../hooks/socket/useSocket";
 import { useModal } from "../../../hooks/useModal";
+import { useCurrentUser, useUserById } from "../../../hooks/useUsers";
+import { followToggled } from "../../users/userSlice";
 
 interface Post {
   post: FetchPostType;
-  user: FetchedUserType;
+  ownerId: string;
 }
 
-const Post = ({ post, user }: Post) => {
-  const currentUser = useSelector(
-    (state: RootState) => state.user.currentUserId
-  );
+const Post = ({ post, ownerId }: Post) => {
+  const { currentUser } = useCurrentUser();
   const { postModal } = useModal();
-  const { openPostModal } = postModal;
-
   const { emitLike } = useSocket();
+
+  const postOwnerData = useUserById(ownerId);
+
+  const { openPostModal } = postModal;
   const dispatch = useDispatch<AppDispatch>();
 
   const [liked, setLiked] = useState(false);
+  const [isOwnerFollowed, setIsOwnerFollowed] = useState(false);
+  const [followToggleClass, setFollowToggleClass] = useState("follow-button");
 
   useEffect(() => {
     // if current user is included in the like(current user liked this post)
-    const isLiked = post.likes.includes(currentUser!);
+    const isLiked = post.likes.includes(currentUser._id!);
     setLiked(isLiked);
-  }, [post, currentUser]);
+  }, [post, currentUser._id]);
+
+  useEffect(() => {
+    if (!postOwnerData || !currentUser) return;
+
+    // check if the current user folows the post owner
+    if (postOwnerData.followers.includes(currentUser._id)) {
+      setIsOwnerFollowed(true);
+    }
+  }, [postOwnerData.followers, currentUser]);
 
   const toggleComments = () => {
     openPostModal(post._id);
@@ -42,13 +55,35 @@ const Post = ({ post, user }: Post) => {
       if (res) {
         const data = {
           postId: post._id,
-          postOwnerId: user._id,
-          userId: currentUser!,
+          postOwnerId: postOwnerData._id,
+          userId: currentUser._id!,
         };
 
         emitLike(data);
         setLiked(!liked);
       }
+    } catch (error) {
+      console.error(error);
+    }
+  };
+  const handleFollow = async () => {
+    try {
+      if (isOwnerFollowed) return;
+
+      const data: FollowPayload = {
+        userId: post.user,
+        followerId: currentUser._id,
+      };
+      const res = await dispatch(followToggled(data)).unwrap();
+
+      if (!res.success) return;
+
+      setFollowToggleClass("followed");
+
+      // Make the button disappear after 3 seconds
+      setTimeout(() => {
+        setFollowToggleClass(""); // Removes the button
+      }, 3000);
     } catch (error) {
       console.error(error);
     }
@@ -60,19 +95,23 @@ const Post = ({ post, user }: Post) => {
         <div className="post-info">
           <div className="profile-name">
             <img
-              src={`http://localhost:4000/uploads/profile/${user._id}/${user.profilePicture}`}
+              src={`http://localhost:4000/uploads/profile/${postOwnerData._id}/${postOwnerData.profilePicture}`}
               alt=""
             />
             <div className="name-date">
-              <h3>{user.fullName}</h3>
+              <h3>{postOwnerData.fullName}</h3>
               <span>{new Date(post.createdAt).toLocaleString()}</span>
             </div>
           </div>
 
           <div className="post-info-act">
-            {post.user !== currentUser && (
-              <button id="follow-button">+ Follow</button>
-            )}
+            {!isOwnerFollowed &&
+              post.user !== currentUser._id &&
+              followToggleClass !== "" && (
+                <button id={followToggleClass} onClick={handleFollow}>
+                  {followToggleClass === "followed" ? "✔ Followed" : "+ Follow"}
+                </button>
+              )}
             <span className="material-symbols-outlined more-icon">
               more_horiz
             </span>

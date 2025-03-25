@@ -79,7 +79,10 @@ const notificationSlice = createSlice({
         if (!state.allIds.includes(allIds[0])) {
           state.allIds.push(allIds[0]);
         }
-        state.byId = { ...state.byId, ...byId };
+
+        console.log(Object.assign(byId, state.byId));
+
+        state.byId = { ...byId, ...state.byId };
       } else {
         state.allIds = [...state.allIds.filter((id) => id !== allIds[0])];
         delete state.byId[allIds[0]];

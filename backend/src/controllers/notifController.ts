@@ -82,9 +82,11 @@ export const getNotification = async (
   res: Response
 ): Promise<any> => {
   try {
-    const notifications = await notificationModel.find({
-      receiver: { $eq: req.userId },
-    });
+    const notifications = await notificationModel
+      .find({
+        receiver: { $eq: req.userId },
+      })
+      .sort({ createdAt: -1 });
 
     res.json({ success: true, notifications });
   } catch (error) {

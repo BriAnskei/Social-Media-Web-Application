@@ -52,7 +52,11 @@ export const createPost = createAsyncThunk(
         return rejectWithValue(res.message || "Error Uploading post");
       }
 
-      dispatch(addPost(res.posts!));
+      if (res.posts) {
+        dispatch(addPost(res.posts as FetchPostType)); // enter a single object
+      }
+
+      location.reload();
 
       return res;
     } catch (error) {
@@ -148,10 +152,7 @@ const postsSlice = createSlice({
         );
       }
     },
-    addPost: (
-      state,
-      action: PayloadAction<FetchPostType | FetchPostType[]>
-    ): void => {
+    addPost: (state, action: PayloadAction<FetchPostType>): void => {
       const { allIds, byId } = normalizeResponse(action.payload);
 
       if (!state.allIds.includes(allIds[0])) {

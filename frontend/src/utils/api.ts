@@ -1,8 +1,9 @@
 import axios from "axios";
 import { LoginTypes, RegisterTypes } from "../types/AuthTypes";
-import { FetchedUserType } from "../types/user";
+import { FetchedUserType, FollowPayload } from "../types/user";
 import { CommentEventPayload, FetchPostType } from "../types/PostType";
 import { NotificationType } from "../types/NotificationTypes";
+import { data } from "react-router";
 
 // Axion instance
 export const api = axios.create({
@@ -143,6 +144,28 @@ export const userApi = {
         {
           headers: {
             token,
+          },
+        }
+      );
+
+      return response.data;
+    } catch (error) {
+      return {
+        success: false,
+        message: "Api error response",
+      };
+    }
+  },
+  followToggle: async (data: FollowPayload): Promise<ApiResponse> => {
+    try {
+      const response = await api.post(
+        "/api/users/follow",
+
+        data,
+
+        {
+          headers: {
+            "Content-Type": "application/json",
           },
         }
       );

@@ -62,6 +62,7 @@ const UploadModal: React.FC<ModalTypes> = ({ showModal, onClose }) => {
           image: undefined,
         }));
         onClose(); // CLose the modal after posting
+        location.reload();
       }
     } catch (error) {
       alert("dsfsdfdssdf: " + error);

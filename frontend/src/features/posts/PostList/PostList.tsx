@@ -13,7 +13,6 @@ const PostList = () => {
   const postIds = useSelector((state: RootState) => state.posts.allIds);
   const postLoading = useSelector((state: RootState) => state.posts.loading);
   const userLodaing = useSelector((state: RootState) => state.user.loading);
-  const user = useSelector((state: RootState) => state.user.byId);
   const { accessToken, isAuthenticated } = useSelector(
     (state: RootState) => state.auth
   );
@@ -36,10 +35,10 @@ const PostList = () => {
         ) : (
           postIds.map((postId) => {
             const post = posts[postId];
-            const postOwner = user[post.user];
+
             return (
               <div key={postId}>
-                <Post post={post} user={postOwner} />
+                <Post post={post} ownerId={post.user} />
               </div>
             );
           })

@@ -1,3 +1,1 @@
-if(gwwapoKo) {
-log(tahnktchu)
-}
+SOCIAL MEDIA STOCK

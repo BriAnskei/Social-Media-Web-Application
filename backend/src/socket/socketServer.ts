@@ -34,6 +34,10 @@ interface CommentEventPayload {
 // Define events
 const SOCKET_EVENTS = {
   posts: {
+    // uploading post
+    POST_CREATED: "post-created",
+    POST_UPLOAD: "upload-post",
+
     // Like Events
     LIKE_POST: "likePost", // sends by the client
     // sends both by server
@@ -111,6 +115,10 @@ export class SocketServer {
 
       socket.on("disconnect", () => this.handleDisconnection(socket));
 
+      socket.on(SOCKET_EVENTS.posts.POST_CREATED, (data: any) => {
+        this.handlePostUploadEvent(socket, data);
+      });
+
       socket.on(SOCKET_EVENTS.posts.LIKE_POST, (data: LikeEventPayload) =>
         this.handleLikePost(socket, data)
       );
@@ -170,8 +178,6 @@ export class SocketServer {
         postId,
       });
 
-      console.log("like handle triggered: ", data);
-
       // send and persist notification of the liker(userId) if its not the post owner
       if (userId !== postOwnerId) {
         const data: NotifData = {
@@ -223,28 +229,36 @@ export class SocketServer {
         createdAt: data.data.createdAt,
       };
 
-      // only persist if the user(commenter) is not the postOwwner
+      // only persist notify(if online) if the user(commenter) is not the postOwwner
       if (data.postOwnerId !== data.data.user) {
         commentEventData = await saveCommentNotif(commentEventData);
-      }
 
-      const notifEmitData = {
-        isExist: false,
-        data: commentEventData,
-      };
-
-      // notify owner if online
-      const ownerSocket = this.connectedUSers.get(
-        commentEventData.receiver.toString()
-      );
-      if (ownerSocket) {
-        this.io
-          .to(ownerSocket.socketId)
-          .emit(SOCKET_EVENTS.posts.COMMENT_NOTIF, notifEmitData);
+        const notifEmitData = {
+          isExist: false,
+          data: commentEventData,
+        };
+        // trace the bug, when the owner liked its own posy
+        // notify owner if online
+        const ownerSocket = this.connectedUSers.get(
+          commentEventData.receiver.toString() // convert object data to string
+        );
+        if (ownerSocket) {
+          this.io
+            .to(ownerSocket.socketId)
+            .emit(SOCKET_EVENTS.posts.COMMENT_NOTIF, notifEmitData);
+        }
       }
     } catch (error) {
       console.error("Error handling post comment:", error);
       socket.emit("error", "Failed to process comment action");
+    }
+  }
+
+  private handlePostUploadEvent(socket: any, data: any): void {
+    try {
+      socket.broadcast.emit(SOCKET_EVENTS.posts.POST_UPLOAD, data);
+    } catch (error) {
+      console.log("Error handling post upload event: ", error);
     }
   }
 

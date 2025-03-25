@@ -35,7 +35,7 @@ export const createPost = async (
 
 export const postsLists = async (_: Request, res: Response): Promise<void> => {
   try {
-    const allPost = await postModel.find({});
+    const allPost = await postModel.find({}).sort({ createdAt: -1 });
 
     res.json({ success: true, posts: allPost });
   } catch (error) {

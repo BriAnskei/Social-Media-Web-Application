@@ -11,6 +11,7 @@ import { AppDispatch } from "../../../store/store";
 const CurrentUserPosts = () => {
   const dispatch: AppDispatch = useDispatch();
   const { currentUserPosts, loading } = useCurrentUserPosts();
+
   const { currentUser } = useCurrentUser();
 
   useEffect(() => {

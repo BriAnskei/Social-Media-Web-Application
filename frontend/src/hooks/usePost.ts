@@ -4,7 +4,6 @@ import {
   selectPostById,
 } from "../features/posts/postSelector";
 import { RootState } from "../store/store";
-import { FetchPostType } from "../types/PostType";
 
 export const useCurrentUserPosts = () => {
   const result = useSelector(selectCurrentUserPost);

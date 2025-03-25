@@ -7,6 +7,7 @@ import path from "path";
 import fs from "fs";
 
 import { nameSuffix } from "../middleware/upload";
+import { exists } from "fs-extra";
 
 const createToken = (userId: string) => {
   if (!process.env.ACCESS_SECRET || !process.env.REFRESH_SECRET) {
@@ -145,6 +146,20 @@ export const fetchCurrentUser = async (
   }
 };
 
+export const fetchAllUsers = async (
+  _: ExtendReq,
+  res: Response
+): Promise<any> => {
+  try {
+    const allUsers = await UserModel.find({});
+
+    res.json({ success: true, user: allUsers });
+  } catch (error) {
+    console.log(error);
+    return res.json({ success: false, message: "Error" });
+  }
+};
+
 export const login = async (req: Request, res: Response): Promise<any> => {
   const { email, password } = req.body;
 
@@ -170,20 +185,6 @@ export const login = async (req: Request, res: Response): Promise<any> => {
   }
 };
 
-export const fetchAllUsers = async (
-  _: ExtendReq,
-  res: Response
-): Promise<any> => {
-  try {
-    const allUsers = await UserModel.find({});
-
-    res.json({ success: true, user: allUsers });
-  } catch (error) {
-    console.log(error);
-    return res.json({ success: false, message: "Error" });
-  }
-};
-
 export const updateProfile = async (
   req: ExtendReq,
   res: Response
@@ -201,7 +202,7 @@ export const updateProfile = async (
 
     if (!userId) return res.json({ success: false, message: "Unauthorized" });
 
-    // Check uf there is attached file, if so save to servere and set as a newProfile
+    // Check if there is attached file, if so save to servere and set as a newProfile
     if (newProfileImage) {
       const fileName = `${nameSuffix}${newProfileImage.originalname}`;
       const uploadPath = path.join("uploads", "profile", userId.toString());
@@ -253,6 +254,54 @@ export const authorization = async (
       success: true,
       message: "authenticated",
     });
+  } catch (error) {
+    console.log(error);
+    return res.json({ success: false, message: "Error" });
+  }
+};
+
+export const followUser = async (req: Request, res: Response): Promise<any> => {
+  try {
+    const { userId, followerId } = req.body;
+    console.log(req.body);
+
+    if (!userId || !followerId) {
+      throw new Error("Attributes are required: userId, followerId");
+    }
+
+    // First check if user exists
+    const user = await UserModel.findById(userId);
+
+    if (!user) {
+      return res.json({
+        success: false,
+        message: "User cannot be found (user does not exist)",
+      });
+    }
+
+    // Check if followerId already exists in the followers array
+    const isFollowing = user.followers.includes(followerId);
+
+    let updateData;
+    let message;
+
+    if (isFollowing) {
+      // If already following, remove (unfollow)
+      updateData = await UserModel.findByIdAndUpdate(userId, {
+        $pull: { followers: followerId },
+      });
+      message = "User successfully unfollowed";
+    } else {
+      // If not following, add (follow)
+      updateData = await UserModel.findByIdAndUpdate(userId, {
+        $push: { followers: followerId },
+      });
+      message = "User successfully followed";
+    }
+
+    console.log(updateData);
+
+    return res.json({ success: true, message });
   } catch (error) {
     console.log(error);
     return res.json({ success: false, message: "Error" });
