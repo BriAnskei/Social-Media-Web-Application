@@ -3,7 +3,7 @@ import "./UploadModal.css";
 import { ModalTypes } from "../../../types/modalTypes";
 import { useDispatch } from "react-redux";
 import { AppDispatch } from "../../../store/store";
-import { UploadPostTypes } from "../../../types/PostType";
+import { FetchPostType, UploadPostTypes } from "../../../types/PostType";
 import { createPost } from "../../../features/posts/postSlice";
 import { useCurrentUser } from "../../../hooks/useUsers";
 
@@ -56,16 +56,21 @@ const UploadModal: React.FC<ModalTypes> = ({ showModal, onClose }) => {
     try {
       const response = await dispatch(createPost(formData)).unwrap();
 
-      if (response.success) {
-        setPostInputData(() => ({
-          content: "",
-          image: undefined,
-        }));
-        onClose(); // CLose the modal after posting
-        location.reload();
-      }
+      if (!response.success) return;
+      setPostInputData(() => ({
+        content: "",
+        image: undefined,
+      }));
+      onClose(); // CLose the modal after posting
+
+      const postData = response.posts as FetchPostType;
+
+      const eventPayload = {
+        userId: currentUser._id,
+        postId: postData._id,
+      };
     } catch (error) {
-      alert("dsfsdfdssdf: " + error);
+      console.error(error);
       onClose();
     }
   };

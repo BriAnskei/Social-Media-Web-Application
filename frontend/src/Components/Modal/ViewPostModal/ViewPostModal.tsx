@@ -14,7 +14,7 @@ import { addComment, toggleLike } from "../../../features/posts/postSlice";
 import AutoResizeTextarea from "../../../utils/AutoResizeTextaria";
 import { usePostById } from "../../../hooks/usePost";
 import { useSocket } from "../../../hooks/socket/useSocket";
-import { followToggled } from "../../../features/users/userSlice";
+import { followToggled, updateFollow } from "../../../features/users/userSlice";
 import { FollowPayload } from "../../../types/user";
 
 interface PostModal extends Omit<ModalTypes, "onClose"> {
@@ -25,10 +25,12 @@ interface PostModal extends Omit<ModalTypes, "onClose"> {
 
 const ViewPostModal: React.FC<PostModal> = ({ showModal, onClose, postId }) => {
   const dispatch = useDispatch<AppDispatch>();
-  const { emitComment, emitLike } = useSocket();
+  const { emitComment, emitLike, emitFollow } = useSocket();
   const { currentUser } = useCurrentUser(); // ccurrent user data
+
   const postData = usePostById(postId);
   const postOwnerData = useUserById(postData.user);
+
   const [isOwnerFollowed, setIsOwnerFollowed] = useState(false);
   const [followToggleClass, setFollowToggleClass] = useState("follow-button");
 
@@ -46,29 +48,41 @@ const ViewPostModal: React.FC<PostModal> = ({ showModal, onClose, postId }) => {
   const commentContRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!postData.likes || !currentUser._id || !postOwnerData) return;
-
-    if (postData && currentUser._id) {
-      const isPostLiked = postData.likes.includes(currentUser._id);
-      setIsLiked(isPostLiked);
-    }
-
-    // check if thw owner is followed
-    const isFollowed = postOwnerData.followers.includes(currentUser._id);
-    console.log(isFollowed);
-
-    if (postOwnerData.followers.includes(currentUser._id)) {
-      setIsOwnerFollowed(true);
-    }
-  }, [postId, currentUser]);
-
-  useEffect(() => {
     // ScrollHeight: The total height of the scrollable content inside the container, including any overflow that is not visible in the viewport.
     // ScrollTop: The current vertical scroll position of the container (how far it is scrolled down from the top).
     if (commentContRef.current) {
       commentContRef.current!.scrollTop = commentContRef.current!.scrollHeight;
     }
   }, [postData, postData.comments]);
+
+  useEffect(() => {
+    if (!postData.likes || !currentUser._id || !postOwnerData) return;
+
+    if (postData && currentUser._id) {
+      const isPostLiked = postData.likes.includes(currentUser._id);
+      setIsLiked(isPostLiked);
+    }
+  }, [postId, currentUser, currentUser.followers]);
+
+  useEffect(() => {
+    if (!postOwnerData.followers || !currentUser) return;
+    // check if thw owner is followed
+    if (postOwnerData.followers.includes(currentUser._id)) {
+      setButtonDisplay();
+    }
+  }, [postOwnerData, currentUser, postId]);
+
+  const setButtonDisplay = () => {
+    // if classID is setted to followed, the follow is being toggled in modal, otherwise in posts
+    if (followToggleClass !== "followed") {
+      setIsOwnerFollowed(true);
+    } else {
+      setTimeout(() => {
+        setFollowToggleClass(""); // Removes the button
+        setIsOwnerFollowed(true);
+      }, 3000);
+    }
+  };
 
   const ToggleClose = () => {
     setCommentInput("");
@@ -77,7 +91,7 @@ const ViewPostModal: React.FC<PostModal> = ({ showModal, onClose, postId }) => {
 
   const handleFollow = async () => {
     try {
-      if (isOwnerFollowed) return;
+      setFollowToggleClass("followed");
 
       const data: FollowPayload = {
         userId: postData.user,
@@ -85,16 +99,12 @@ const ViewPostModal: React.FC<PostModal> = ({ showModal, onClose, postId }) => {
       };
       const res = await dispatch(followToggled(data)).unwrap();
 
-      console.log(res);
-
-      if (!res.success) return;
-
-      setFollowToggleClass("followed");
-
-      // Make the button disappear after 3 seconds
-      setTimeout(() => {
-        setFollowToggleClass(""); // Removes the button
-      }, 3000);
+      if (!res.success) {
+        console.error(res.message);
+        return;
+      }
+      dispatch(updateFollow(data));
+      emitFollow(data);
     } catch (error) {
       console.error(error);
     }
@@ -202,9 +212,9 @@ const ViewPostModal: React.FC<PostModal> = ({ showModal, onClose, postId }) => {
                       </div>
                     </div>
                     <div className="post-modal-act">
-                      {!isOwnerFollowed &&
-                        postData.user !== currentUser._id &&
-                        followToggleClass !== "" && (
+                      {followToggleClass !== "" &&
+                        !isOwnerFollowed &&
+                        postData.user !== currentUser._id && (
                           <button id={followToggleClass} onClick={handleFollow}>
                             {followToggleClass === "followed"
                               ? "✔ Followed"

@@ -18,7 +18,13 @@ const notificationSchema = new Schema<INotification>({
     required: true,
   },
   sender: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
-  post: { type: mongoose.Schema.Types.ObjectId, ref: "Post", required: true },
+  post: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Post",
+    required: function () {
+      return ["like", "comment"].includes(this.type); // only requierd if one of this array element matches the type
+    },
+  },
   message: { type: String, required: true },
   type: { type: String, required: true },
   read: { type: Boolean, default: false },

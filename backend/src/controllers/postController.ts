@@ -99,3 +99,25 @@ export const addComment = async (req: Request, res: Response): Promise<any> => {
     res.json({ success: false, message: "Error" });
   }
 };
+
+export const findPostById = async (
+  req: Request,
+  res: Response
+): Promise<any> => {
+  try {
+    const { postId } = req.body;
+
+    if (!postId) throw new Error("Invvalid no Id recieved");
+
+    const postData = await postModel.findById(postId);
+
+    if (!postData) {
+      return res.json({ success: false, message: "Post not found" });
+    }
+
+    res.json({ success: false, message: "Post is found", postData });
+  } catch (error) {
+    console.log(error);
+    res.json({ success: false, message: "Error" });
+  }
+};

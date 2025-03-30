@@ -263,47 +263,90 @@ export const authorization = async (
 export const followUser = async (req: Request, res: Response): Promise<any> => {
   try {
     const { userId, followerId } = req.body;
-    console.log(req.body);
 
     if (!userId || !followerId) {
       throw new Error("Attributes are required: userId, followerId");
     }
 
     // First check if user exists
-    const user = await UserModel.findById(userId);
+    const userToBeFollowed = await UserModel.findById(userId);
+    const userWhoFollowed = await UserModel.findById(followerId);
 
-    if (!user) {
+    if (!userToBeFollowed || !userWhoFollowed) {
       return res.json({
         success: false,
-        message: "User cannot be found (user does not exist)",
+        message: "one the  user cannot be found (possibly does not exist)",
       });
     }
 
     // Check if followerId already exists in the followers array
-    const isFollowing = user.followers.includes(followerId);
+    const isFollowing =
+      userToBeFollowed.followers.includes(followerId) &&
+      userWhoFollowed.following.includes(userId);
 
-    let updateData;
+    let tobeFollowedData, whoFollowedData;
     let message;
+
+    const returnUpdate = { new: true }; // nothing special, just return the updated data
 
     if (isFollowing) {
       // If already following, remove (unfollow)
-      updateData = await UserModel.findByIdAndUpdate(userId, {
-        $pull: { followers: followerId },
-      });
+      tobeFollowedData = await UserModel.findByIdAndUpdate(
+        userId,
+        {
+          $pull: { followers: followerId },
+        },
+        returnUpdate
+      );
+
+      whoFollowedData = await UserModel.findByIdAndUpdate(
+        followerId,
+        {
+          $pull: { following: userId },
+        },
+        returnUpdate
+      );
+
       message = "User successfully unfollowed";
     } else {
       // If not following, add (follow)
-      updateData = await UserModel.findByIdAndUpdate(userId, {
-        $push: { followers: followerId },
-      });
+      tobeFollowedData = await UserModel.findByIdAndUpdate(
+        userId,
+        {
+          $push: { followers: followerId },
+        },
+        returnUpdate
+      );
+
+      whoFollowedData = await UserModel.findByIdAndUpdate(
+        followerId,
+        {
+          $push: { following: userId },
+        },
+        returnUpdate
+      );
+
       message = "User successfully followed";
     }
-
-    console.log(updateData);
 
     return res.json({ success: true, message });
   } catch (error) {
     console.log(error);
     return res.json({ success: false, message: "Error" });
+  }
+};
+
+export const getUsersFolowers = async (userId: string) => {
+  try {
+    const userData = await UserModel.findById(userId);
+    if (!userData) {
+      throw new Error("Cannot find user");
+    }
+
+    const allFollowers = userData.followers;
+
+    return allFollowers;
+  } catch (error) {
+    console.log(error);
   }
 };

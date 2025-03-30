@@ -52,12 +52,6 @@ export const createPost = createAsyncThunk(
         return rejectWithValue(res.message || "Error Uploading post");
       }
 
-      if (res.posts) {
-        dispatch(addPost(res.posts as FetchPostType)); // enter a single object
-      }
-
-      location.reload();
-
       return res;
     } catch (error) {
       return rejectWithValue("Error Uploading post");
@@ -131,6 +125,10 @@ const postsSlice = createSlice({
       action: PayloadAction<{ postId: string; userId: string }>
     ): void => {
       console.log(action.payload);
+    },
+    resetData: (state) => {
+      state.allIds = [];
+      state.byId = {};
     },
     postLiked: (
       // global funtion
@@ -243,5 +241,6 @@ const postsSlice = createSlice({
   },
 });
 
-export const { toggle, postLiked, commentOnPost, addPost } = postsSlice.actions;
+export const { toggle, postLiked, commentOnPost, addPost, resetData } =
+  postsSlice.actions;
 export default postsSlice.reducer;

@@ -7,6 +7,7 @@ import { CommentEventPayload, LikeHandlerTypes } from "../../types/PostType";
 import { commentOnPost, postLiked } from "../../features/posts/postSlice";
 import { addNotification } from "../../features/notifications/notificationsSlice";
 import { NotificationType } from "../../types/NotificationTypes";
+import { updateFollow } from "../../features/users/userSlice";
 
 export interface DataOutput {
   // for post-like notification
@@ -63,6 +64,20 @@ export const useSocket = () => {
     [dispatch]
   );
 
+  // user event
+  const handleFollowEvent = useCallback(
+    (data: { isExist: boolean; data: NotificationType }) => {
+      const followPayload = {
+        followerId: data.data.sender,
+        userId: data.data.receiver,
+      };
+
+      dispatch(updateFollow(followPayload));
+      dispatch(addNotification(data));
+    },
+    [dispatch]
+  );
+
   useEffect(() => {
     if (!accessToken) {
       dispatch(getToken());
@@ -84,7 +99,8 @@ export const useSocket = () => {
       socket.off("postCommented");
       socket.off(SOCKET_EVENTS.posts.COMMENT_NOTIF);
 
-      // Like Events
+      socket.off("followed-user");
+
       // global event
       socket.on("postLiked", handleLikeEvent);
       socket.on("postCommented", handleCommentEvent);
@@ -92,6 +108,9 @@ export const useSocket = () => {
       // owner event
       socket.on("likeNotify", likeNotifEvents);
       socket.on(SOCKET_EVENTS.posts.COMMENT_NOTIF, commentNotifEvent);
+
+      // FollowEvent
+      socket.on("followed-user", handleFollowEvent);
 
       socket.on("error", (error: Error) => {
         console.error("Socket error:", error);
@@ -110,6 +129,9 @@ export const useSocket = () => {
 
         socket.off("postCommented");
         socket.off(SOCKET_EVENTS.posts.COMMENT_NOTIF);
+
+        socket.off("followed-user", handleFollowEvent);
+
         isInitialized.current = false;
       }
     };
@@ -136,10 +158,24 @@ export const useSocket = () => {
     [socket, isConnected]
   );
 
+  const emitFollow = useCallback(
+    (data: any) => {
+      if (socket && isConnected) {
+        console.log("sending emit");
+
+        socket.emit("user-follow", data);
+      } else {
+        console.log("faild to send, socket not connected", socket, isConnected);
+      }
+    },
+    [socket, isConnected]
+  );
+
   return {
     socket,
     isConnected,
     emitLike,
     emitComment,
+    emitFollow,
   };
 };

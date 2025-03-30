@@ -1,14 +1,14 @@
 import "./Post.css";
-import { useDispatch, useSelector } from "react-redux";
-import { addComment, toggleLike } from "../postSlice";
+import { useDispatch } from "react-redux";
+import { toggleLike } from "../postSlice";
 import { useEffect, useState } from "react";
-import { CommentEventPayload, FetchPostType } from "../../../types/PostType";
-import { FetchedUserType, FollowPayload } from "../../../types/user";
-import { AppDispatch, RootState } from "../../../store/store";
+import { FetchPostType } from "../../../types/PostType";
+import { FollowPayload } from "../../../types/user";
+import { AppDispatch } from "../../../store/store";
 import { useSocket } from "../../../hooks/socket/useSocket";
 import { useModal } from "../../../hooks/useModal";
 import { useCurrentUser, useUserById } from "../../../hooks/useUsers";
-import { followToggled } from "../../users/userSlice";
+import { followToggled, updateFollow } from "../../users/userSlice";
 
 interface Post {
   post: FetchPostType;
@@ -18,7 +18,7 @@ interface Post {
 const Post = ({ post, ownerId }: Post) => {
   const { currentUser } = useCurrentUser();
   const { postModal } = useModal();
-  const { emitLike } = useSocket();
+  const { emitLike, emitFollow } = useSocket();
 
   const postOwnerData = useUserById(ownerId);
 
@@ -28,6 +28,7 @@ const Post = ({ post, ownerId }: Post) => {
   const [liked, setLiked] = useState(false);
   const [isOwnerFollowed, setIsOwnerFollowed] = useState(false);
   const [followToggleClass, setFollowToggleClass] = useState("follow-button");
+  const [toggleFollow, setToggleFollow] = useState(false);
 
   useEffect(() => {
     // if current user is included in the like(current user liked this post)
@@ -36,13 +37,30 @@ const Post = ({ post, ownerId }: Post) => {
   }, [post, currentUser._id]);
 
   useEffect(() => {
-    if (!postOwnerData || !currentUser) return;
-
-    // check if the current user folows the post owner
-    if (postOwnerData.followers.includes(currentUser._id)) {
-      setIsOwnerFollowed(true);
+    if (post.user !== currentUser._id) {
+      validateFollow();
     }
-  }, [postOwnerData.followers, currentUser]);
+  }, [postOwnerData.followers, currentUser.following]);
+
+  const validateFollow = () => {
+    if (!postOwnerData.followers || !currentUser._id) return;
+
+    // check if the current user follows the post owner, this will prevent to show the follow button
+    if (postOwnerData.followers.includes(currentUser._id)) {
+      console.log("currentuser followed the postOwner");
+
+      // check if this component triggered the follow. if so, wait for 3 sec before removing the follow button
+      if (!toggleFollow) {
+        setFollowToggleClass("");
+        setIsOwnerFollowed(true); // remove autoamtically
+      } else {
+        setTimeout(() => {
+          setIsOwnerFollowed(true);
+          setFollowToggleClass("");
+        }, 3000);
+      }
+    }
+  };
 
   const toggleComments = () => {
     openPostModal(post._id);
@@ -52,7 +70,7 @@ const Post = ({ post, ownerId }: Post) => {
     try {
       const res = await dispatch(toggleLike(post._id)).unwrap();
       // emit after succesfully saved itto DB
-      if (res) {
+      if (res && res) {
         const data = {
           postId: post._id,
           postOwnerId: postOwnerData._id,
@@ -66,9 +84,15 @@ const Post = ({ post, ownerId }: Post) => {
       console.error(error);
     }
   };
+
   const handleFollow = async () => {
     try {
-      if (isOwnerFollowed) return;
+      if (toggleFollow || postOwnerData.followers.includes(currentUser._id)) {
+        return;
+      }
+
+      setFollowToggleClass("followed");
+      setToggleFollow(true);
 
       const data: FollowPayload = {
         userId: post.user,
@@ -76,14 +100,19 @@ const Post = ({ post, ownerId }: Post) => {
       };
       const res = await dispatch(followToggled(data)).unwrap();
 
-      if (!res.success) return;
+      if (!res.success) {
+        console.error(res.message || "Error handling follow");
+        return;
+      }
+      dispatch(updateFollow(data));
 
-      setFollowToggleClass("followed");
+      const emitPayload = {
+        userId: post.user,
+        followerId: currentUser._id,
+        followingName: currentUser.fullName,
+      };
 
-      // Make the button disappear after 3 seconds
-      setTimeout(() => {
-        setFollowToggleClass(""); // Removes the button
-      }, 3000);
+      emitFollow(emitPayload);
     } catch (error) {
       console.error(error);
     }
@@ -119,7 +148,7 @@ const Post = ({ post, ownerId }: Post) => {
         </div>
         <div className="post-content">{post.content}</div>
         {post.image && (
-          <div className="image-container">
+          <div className="image-container" onClick={toggleComments}>
             <img
               src={`http://localhost:4000/images/posts/${post.user}/${post.image}`}
               alt=""

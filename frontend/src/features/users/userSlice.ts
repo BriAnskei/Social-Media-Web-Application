@@ -1,4 +1,9 @@
-import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
+import {
+  createAsyncThunk,
+  createSlice,
+  current,
+  PayloadAction,
+} from "@reduxjs/toolkit";
 import { FetchedUserType, FollowPayload } from "../../types/user";
 import { ApiResponse, userApi } from "../../utils/api";
 import { RootState } from "../../store/store";
@@ -72,15 +77,13 @@ export const updateCurrentUser = createAsyncThunk<
 
 export const followToggled = createAsyncThunk(
   "user/follow",
-  async (data: FollowPayload, { rejectWithValue, dispatch }) => {
+  async (data: FollowPayload, { rejectWithValue }) => {
     try {
-      if (!data) throw new Error("No Data recieve");
+      if (!data) {
+        return rejectWithValue("No data recieved");
+      }
 
       const res = await userApi.followToggle(data);
-
-      if (res.success) {
-        dispatch(updateFollow(data.followerId));
-      }
 
       return res;
     } catch (error) {
@@ -101,6 +104,11 @@ const initialState: UserState = {
   error: null,
 };
 
+// How Redux handles state updates:
+// Your reducer function receives the current state and an action.
+// If you return a new object, Redux replaces the old state with the new one.
+// If you mutate the existing state but don't return anything, Redux won't detect the change
+
 const userSlice = createSlice({
   name: "user",
   initialState,
@@ -111,13 +119,27 @@ const userSlice = createSlice({
       state.currentUserId = null;
     },
     updateFollow: (state, action) => {
-      const userId = action.payload;
+      const { userId, followerId } = action.payload;
+      const userToBeFollowed = state.byId[userId];
+      const userWhoFollowed = state.byId[followerId];
 
-      const userData: FetchedUserType = state.byId[state.currentUserId!];
+      if (!userToBeFollowed || !userWhoFollowed) return; // Ensure users exist
 
-      if (userData.followers.includes(userId)) {
-        userData.followers.indexOf(userId);
+      // Use Set to avoid duplicates efficiently
+      const updatedFollowers = new Set(userToBeFollowed.followers);
+      const updatedFollowing = new Set(userWhoFollowed.following);
+
+      if (updatedFollowers.has(followerId)) {
+        updatedFollowers.delete(followerId);
+        updatedFollowing.delete(userId);
+      } else {
+        updatedFollowers.add(followerId);
+        updatedFollowing.add(userId);
       }
+
+      // Convert Set back to array for state update
+      userToBeFollowed.followers = Array.from(updatedFollowers);
+      userWhoFollowed.following = Array.from(updatedFollowing);
     },
   },
   extraReducers: (builder) => {
@@ -130,9 +152,7 @@ const userSlice = createSlice({
       .addCase(getUsersData.fulfilled, (state, action) => {
         state.loading = false;
         const normalizedData = normalizeResponse(action.payload);
-        // Reset all data, before initializing
-        state.byId = {};
-        state.allIds = [];
+
         state.byId = normalizedData.byId;
         state.allIds = normalizedData.allIds;
       })

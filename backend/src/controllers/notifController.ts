@@ -10,7 +10,7 @@ export interface NotifData {
   _id?: string;
   receiver: string;
   sender: string;
-  post: string;
+  post?: string;
   message: string;
   type: string;
   createdAt?: Date;
@@ -18,8 +18,6 @@ export interface NotifData {
 
 export const saveLikeNotification = async (data: NotifData): Promise<any> => {
   try {
-    if (!data) throw new Error("No Data");
-
     const isNotifExist = await notificationModel.findOne({
       $and: [
         { sender: { $eq: data.sender } },
@@ -27,8 +25,6 @@ export const saveLikeNotification = async (data: NotifData): Promise<any> => {
         { type: { $eq: "like" } },
       ], // only trace  the like type notif
     });
-
-    console.log("Notif exist found: ", isNotifExist);
 
     if (isNotifExist) {
       await notificationModel.deleteOne({
@@ -39,7 +35,6 @@ export const saveLikeNotification = async (data: NotifData): Promise<any> => {
           { type: { $eq: isNotifExist.type } },
         ],
       });
-      console.log("notif data deleted", isNotifExist._id);
 
       return { isExist: Boolean(isNotifExist), data: isNotifExist };
     }
@@ -47,7 +42,7 @@ export const saveLikeNotification = async (data: NotifData): Promise<any> => {
     const notifdata = await notificationModel.create({
       receiver: mongoose.Types.ObjectId.createFromHexString(data.receiver),
       sender: mongoose.Types.ObjectId.createFromHexString(data.sender),
-      post: mongoose.Types.ObjectId.createFromHexString(data.post),
+      post: mongoose.Types.ObjectId.createFromHexString(data.post! || "null"),
       message: data.message,
       type: data.type,
     });
@@ -60,12 +55,10 @@ export const saveLikeNotification = async (data: NotifData): Promise<any> => {
 
 export const saveCommentNotif = async (data: NotifData): Promise<any> => {
   try {
-    console.log("Comment notif recieve: ", data);
-
     const notifdata = await notificationModel.create({
       receiver: mongoose.Types.ObjectId.createFromHexString(data.receiver),
       sender: mongoose.Types.ObjectId.createFromHexString(data.sender),
-      post: mongoose.Types.ObjectId.createFromHexString(data.post),
+      post: mongoose.Types.ObjectId.createFromHexString(data.post! || "null"),
       message: data.message,
       type: data.type,
       createdAt: data.createdAt,
@@ -74,6 +67,43 @@ export const saveCommentNotif = async (data: NotifData): Promise<any> => {
   } catch (error) {
     console.error("Error persisting comment data");
     return null;
+  }
+};
+
+export const saveFollowNotif = async (data: NotifData): Promise<any> => {
+  try {
+    const isNotifExist = await notificationModel.findOne({
+      $and: [
+        { sender: { $eq: data.sender } },
+        { receiver: { $eq: data.receiver } },
+        { type: { $eq: "follow" } },
+      ], // only trace  the like type notif
+    });
+
+    if (isNotifExist) {
+      await notificationModel.deleteOne({
+        $and: [
+          { _id: isNotifExist._id },
+          { sender: { $eq: isNotifExist.sender } },
+          { receiver: { $eq: isNotifExist.receiver } },
+          { type: { $eq: isNotifExist.type } },
+        ],
+      });
+
+      return { isExist: Boolean(isNotifExist), data: isNotifExist };
+    }
+
+    const notifData = await notificationModel.create({
+      receiver: mongoose.Types.ObjectId.createFromHexString(data.receiver),
+      sender: mongoose.Types.ObjectId.createFromHexString(data.sender),
+      message: data.message,
+      type: data.type,
+      createdAt: data.createdAt,
+    });
+    return { isExist: false, data: notifData };
+  } catch (error) {
+    console.error("Error persisting notif data");
+    return { isExist: false, data };
   }
 };
 
@@ -86,7 +116,7 @@ export const getNotification = async (
       .find({
         receiver: { $eq: req.userId },
       })
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 }); // sort by date
 
     res.json({ success: true, notifications });
   } catch (error) {

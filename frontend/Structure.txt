@@ -1,5 +1,5 @@
 
-src/
+src/──────ModalContext
 │
 ├── assets/                # Static assets like images, fonts, etc.
 │   ├── images/            # Profile images, logos, etc.
@@ -8,7 +8,7 @@ src/
 │
 ├── components/            # Reusable UI components
 │   ├── Button.tsx         # Custom button component
-│   ├── Modal──────this is a folder and all of my model like notif model is here
+│   ├── Modal──────this is a folder and all of my model like notif model is here etch...
 │   ├── Navbar.tsx         # Top navigation bar
 │   └── Notification.tsx   # Real-time notification component
 │
@@ -26,7 +26,8 @@ src/
 │   ├── users/             # User-related components and logic
 │   │   ├── Profile.tsx    # User profile page
 │   │   ├── UserCard.tsx   # Small user profile card for followers/following
-│   │   | usersSlice.ts  # Redux slice for user-related state
+│   │   ├── PhotoGallery.tsx 
+│   │   ├── usersSlice.ts  # Redux slice for user-related state
 |   |   └──selector.ts      # For fetching the current user data
 │   │
 │   ├── notifications/     # Real-time notifications

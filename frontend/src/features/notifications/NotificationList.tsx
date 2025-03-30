@@ -21,6 +21,10 @@ const NotificationList = () => {
     }
   };
 
+  const viewPost = (postId: string) => {
+    console.log(postId);
+  };
+
   const capitializeFristWord = (text: string) => {
     return String(text).charAt(0).toUpperCase() + String(text).slice(1);
   };
@@ -31,32 +35,39 @@ const NotificationList = () => {
         <>Loading</>
       ) : (
         allIds.map((id, index) => {
-          const senderId = byId[id].sender; // get sender by notif
+          const notifData = byId[id];
+          const senderId = notifData.sender; // get sender by notif
+
           const senderData = userById[senderId];
 
           return (
             <div
               className={`notif-container ${
-                !byId[id].read && "unread-backgroud"
+                !notifData.read ? "unread-backgroud" : ""
               }`}
               key={index}
+              onClick={
+                notifData.type === "like"
+                  ? () => viewPost(notifData.post!)
+                  : undefined
+              }
             >
               <div className="notif-content">
                 <div className="type-logo">
                   <span className="material-symbols-outlined">
-                    {displayLogoType(byId[id].type)}
+                    {displayLogoType(notifData.type)}
                   </span>
                 </div>
                 <div
                   className={`notif-message ${
-                    !byId[id].read && "unread-message"
+                    !notifData.read && "unread-message"
                   }`}
                 >{`${
                   senderData ? capitializeFristWord(senderData.username) : "..."
-                } ${byId[id].message}`}</div>
+                } ${notifData.message}`}</div>
               </div>
               <div className="notif-data">
-                <span>{new Date(byId[id].createdAt).toLocaleString()}</span>
+                <span>{new Date(notifData.createdAt).toLocaleString()}</span>
               </div>
             </div>
           );

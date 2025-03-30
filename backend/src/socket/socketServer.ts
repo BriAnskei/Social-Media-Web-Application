@@ -5,8 +5,10 @@ import { verifyToken } from "../middleware/auth";
 import {
   NotifData,
   saveCommentNotif,
+  saveFollowNotif,
   saveLikeNotification,
 } from "../controllers/notifController";
+import { getUsersFolowers } from "../controllers/userController";
 
 interface ConnectedUser {
   userId: string;
@@ -50,6 +52,13 @@ const SOCKET_EVENTS = {
     POST_COMMENTED: "postCommented",
     COMMENT_NOTIF: "commentNotify",
   },
+
+  user: {
+    // Follow Events
+    USER_FOLLOW: "user-follow",
+    //server
+    FOLLOWED_USER: "followed-user",
+  },
 };
 
 export class SocketServer {
@@ -89,7 +98,6 @@ export class SocketServer {
       try {
         // this asyncfuntion will run before the clients connects
         const token = socket.handshake.auth.accessToken; // extracts the token from the initial(handshake) req from the client
-        console.log(token);
 
         if (!token) return next(new Error("No Token provided"));
 
@@ -130,6 +138,11 @@ export class SocketServer {
         }
       );
 
+      // user event
+      socket.on(SOCKET_EVENTS.user.USER_FOLLOW, (data: any) => {
+        this.handleFollowEvent(socket, data);
+      });
+
       // Handle Error
       socket.on("error", (error) => {
         console.error("Socket Server Error", error);
@@ -146,8 +159,11 @@ export class SocketServer {
       };
 
       this.connectedUSers.set(socket.data.userId, user);
-      console.log(`user Connected: ${socket.data.userId}:`);
-      console.log(JSON.stringify(Object.fromEntries(this.connectedUSers)));
+      console.log(`a user just connect: ${socket.data.userId}:`);
+      console.log(
+        "all connected users: ",
+        JSON.stringify(Object.fromEntries(this.connectedUSers))
+      );
     } catch (error) {
       console.error("Error handling connection: ", error);
     }
@@ -157,6 +173,11 @@ export class SocketServer {
     try {
       this.connectedUSers.delete(socket.data.userId);
       console.log(`User Disconnected: ${socket.data.userId}`);
+
+      console.log(
+        "all connected users: ",
+        JSON.stringify(Object.fromEntries(this.connectedUSers))
+      );
 
       this.broadcastOnlineUsers();
     } catch (error) {
@@ -229,7 +250,7 @@ export class SocketServer {
         createdAt: data.data.createdAt,
       };
 
-      // only persist notify(if online) if the user(commenter) is not the postOwwner
+      // only persist notify(if online)if the user(commenter) is not the postOwwner
       if (data.postOwnerId !== data.data.user) {
         commentEventData = await saveCommentNotif(commentEventData);
 
@@ -237,7 +258,7 @@ export class SocketServer {
           isExist: false,
           data: commentEventData,
         };
-        // trace the bug, when the owner liked its own posy
+        // trace the bug, when the owner liked its own post
         // notify owner if online
         const ownerSocket = this.connectedUSers.get(
           commentEventData.receiver.toString() // convert object data to string
@@ -254,9 +275,43 @@ export class SocketServer {
     }
   }
 
-  private handlePostUploadEvent(socket: any, data: any): void {
+  private async handleFollowEvent(
+    socket: any,
+    data: { followerId: string; followingName: string; userId: string }
+  ): Promise<void> {
     try {
-      socket.broadcast.emit(SOCKET_EVENTS.posts.POST_UPLOAD, data);
+      const { followerId, userId } = data;
+
+      const followEventPayload: NotifData = {
+        receiver: userId,
+        sender: followerId,
+        message: "started following you",
+        type: "follow",
+      };
+
+      const notifData = await saveFollowNotif(followEventPayload);
+
+      const ownerSocket = this.connectedUSers.get(userId);
+      if (ownerSocket) {
+        this.io
+          .to(ownerSocket.socketId)
+          .emit(SOCKET_EVENTS.user.FOLLOWED_USER, notifData);
+      }
+    } catch (error) {
+      console.error(error);
+      socket.emit("error", "Failed to process comment action");
+    }
+  }
+
+  private async handlePostUploadEvent(socket: any, data: any): Promise<void> {
+    try {
+      const { userId, postId } = data;
+
+      const usersFollowers = await getUsersFolowers(userId);
+      // here we will save a 'user Upload post' notification to all users that are in the usersFollowers
+      // and after that we emit a notification to all if them if online
+
+      //https://chatgpt.com/c/67e9360b-fae8-8012-81da-f85df648a644
     } catch (error) {
       console.log("Error handling post upload event: ", error);
     }

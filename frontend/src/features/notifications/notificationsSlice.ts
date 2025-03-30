@@ -71,16 +71,15 @@ const notificationSlice = createSlice({
   reducers: {
     addNotification: (state, action: PayloadAction<NotifData>): void => {
       // used in socket
+
       const { isExist, data } = action.payload;
       const { byId, allIds } = normalizeResponse(data);
 
       // if data exist, remove. Otherwise add the data to state
       if (!isExist) {
         if (!state.allIds.includes(allIds[0])) {
-          state.allIds.push(allIds[0]);
+          state.allIds.unshift(allIds[0]);
         }
-
-        console.log(Object.assign(byId, state.byId));
 
         state.byId = { ...byId, ...state.byId };
       } else {

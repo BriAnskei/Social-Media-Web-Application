@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useContext } from "react";
 import "./LogoutModal.css";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faXTwitter } from "@fortawesome/free-brands-svg-icons";
@@ -8,15 +8,18 @@ import { AppDispatch } from "../../../store/store";
 import { logout } from "../../../features/auth/authSlice";
 import { useNavigate } from "react-router-dom";
 import { clearData } from "../../../features/users/userSlice";
+import { resetData } from "../../../features/posts/postSlice";
+import { SocketContext } from "../../../context/SocketContext";
 
 const LogoutModal: React.FC<ModalTypes> = ({ showModal, onClose }) => {
   const navigate = useNavigate();
   const dispatch = useDispatch<AppDispatch>();
+  const { socket } = useContext(SocketContext);
 
   const handleLogout = (e: any) => {
     e.preventDefault();
-
-    dispatch(logout(), clearData());
+    dispatch(logout(), clearData(), resetData());
+    socket?.disconnect(); // disconnect socket
     navigate("/");
   };
 

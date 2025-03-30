@@ -18,8 +18,6 @@ const CurrentUserPosts = () => {
     dispatch(fetchAllPost());
   }, [dispatch]);
 
-  console.log(currentUserPosts);
-
   return (
     <>
       <div className="postlist-container">
@@ -28,7 +26,7 @@ const CurrentUserPosts = () => {
         ) : currentUserPosts ? (
           currentUserPosts.map((post) => (
             <div key={post._id}>
-              <Post post={post} user={currentUser} />
+              <Post post={post} ownerId={currentUser._id} />
             </div>
           ))
         ) : (
