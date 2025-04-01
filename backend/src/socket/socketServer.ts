@@ -9,6 +9,8 @@ import {
   saveLikeNotification,
 } from "../controllers/notifController";
 import { getUsersFolowers } from "../controllers/userController";
+import mongoose from "mongoose";
+import notificationModel from "../models/notificationModel";
 
 interface ConnectedUser {
   userId: string;
@@ -58,6 +60,11 @@ const SOCKET_EVENTS = {
     USER_FOLLOW: "user-follow",
     //server
     FOLLOWED_USER: "followed-user",
+  },
+
+  notification: {
+    POST_UPLOADED: "post-uploaded",
+    UPLOAD_POST: "upload-post",
   },
 };
 
@@ -141,6 +148,11 @@ export class SocketServer {
       // user event
       socket.on(SOCKET_EVENTS.user.USER_FOLLOW, (data: any) => {
         this.handleFollowEvent(socket, data);
+      });
+
+      // post notfication
+      socket.on(SOCKET_EVENTS.notification.POST_UPLOADED, (data: any) => {
+        this.handlePostUploadEvent(socket, data);
       });
 
       // Handle Error
@@ -308,12 +320,75 @@ export class SocketServer {
       const { userId, postId } = data;
 
       const usersFollowers = await getUsersFolowers(userId);
-      // here we will save a 'user Upload post' notification to all users that are in the usersFollowers
-      // and after that we emit a notification to all if them if online
 
-      //https://chatgpt.com/c/67e9360b-fae8-8012-81da-f85df648a644
+      if (!usersFollowers || usersFollowers.length === 0) {
+        console.log("User has no followers or couldn't fetch followers");
+        return;
+      }
+
+      console.log(
+        "Post event triggered,  performing batch proccessing approach"
+      );
+
+      // we use batch proccessing approach for high followers
+      const batchSize = 1000;
+      const totalFollowers = usersFollowers.length;
+
+      // const postNotificationRoom = `post-notification:${postId}`;
+      // This creates a room for all users interested in this post notification. The benefits are:
+      // 1. Efficient Broadcasts
+      // Instead of sending notifications individually to each follower:
+
+      // this.io.to(followerSocket.socketId).emit(...)
+      // We can broadcast to all followers at once using:
+
+      // this.io.to(postNotificationRoom).emit("post-notification", { ... });
+      // WILL EMPLEMENT THIS IN THE FUTURE HEHEHE
+
+      for (let i = 0; i < totalFollowers; i += batchSize) {
+        const followersBatch = usersFollowers.slice(i, i + batchSize);
+
+        // Create bulk notifications in database
+        const bulkNotifications = followersBatch.map((followerId) => ({
+          receiver: followerId,
+          sender: mongoose.Types.ObjectId.createFromHexString(userId),
+          post: mongoose.Types.ObjectId.createFromHexString(postId),
+          message: "uploaded a new post",
+          type: "post",
+        }));
+
+        await notificationModel.insertMany(bulkNotifications);
+        // Check which followers are online and notify them
+        for (const followerId of followersBatch) {
+          const followerSocket = this.connectedUSers.get(followerId.toString());
+          if (followerSocket) {
+            // Send notification to the online follower
+            this.io
+              .to(followerSocket.socketId)
+              .emit(SOCKET_EVENTS.notification.UPLOAD_POST, {
+                postId,
+                userId,
+                type: "upload",
+                message: `uploaded a new post`,
+              });
+          }
+        }
+
+        // Log progress for large follower counts
+        if (totalFollowers > batchSize) {
+          console.log(
+            `Processed ${Math.min(
+              i + batchSize,
+              totalFollowers
+            )}/${totalFollowers} followers`
+          );
+        }
+      }
+
+      console.log(`Completed notification process for post ${postId}`);
     } catch (error) {
-      console.log("Error handling post upload event: ", error);
+      console.error("Error handling post upload event: ", error);
+      socket.emit("error", "Failed to process post upload notifications");
     }
   }
 

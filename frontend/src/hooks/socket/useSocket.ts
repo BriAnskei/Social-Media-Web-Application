@@ -8,6 +8,7 @@ import { commentOnPost, postLiked } from "../../features/posts/postSlice";
 import { addNotification } from "../../features/notifications/notificationsSlice";
 import { NotificationType } from "../../types/NotificationTypes";
 import { updateFollow } from "../../features/users/userSlice";
+import { data } from "react-router";
 
 export interface DataOutput {
   // for post-like notification
@@ -28,6 +29,11 @@ export const SOCKET_EVENTS = {
     // server
     POST_COMMENTED: "postCommented",
     COMMENT_NOTIF: "commentNotify",
+
+    // post upload
+    UPLOAD_POST: "upload-post",
+
+    POST_UPLOADED: "post-uploaded",
   },
 };
 
@@ -60,6 +66,13 @@ export const useSocket = () => {
   const commentNotifEvent = useCallback(
     (data: DataOutput) => {
       dispatch(addNotification(data));
+    },
+    [dispatch]
+  );
+
+  const uploadNotifEvent = useCallback(
+    (data: any) => {
+      console.log("uploaded event triggired: ", data);
     },
     [dispatch]
   );
@@ -100,6 +113,8 @@ export const useSocket = () => {
       socket.off(SOCKET_EVENTS.posts.COMMENT_NOTIF);
 
       socket.off("followed-user");
+      // uploading event
+      socket.off(SOCKET_EVENTS.posts.UPLOAD_POST);
 
       // global event
       socket.on("postLiked", handleLikeEvent);
@@ -111,6 +126,8 @@ export const useSocket = () => {
 
       // FollowEvent
       socket.on("followed-user", handleFollowEvent);
+
+      socket.on(SOCKET_EVENTS.posts.UPLOAD_POST, uploadNotifEvent);
 
       socket.on("error", (error: Error) => {
         console.error("Socket error:", error);
@@ -131,6 +148,7 @@ export const useSocket = () => {
         socket.off(SOCKET_EVENTS.posts.COMMENT_NOTIF);
 
         socket.off("followed-user", handleFollowEvent);
+        socket.off(SOCKET_EVENTS.posts.UPLOAD_POST, uploadNotifEvent);
 
         isInitialized.current = false;
       }
@@ -171,11 +189,24 @@ export const useSocket = () => {
     [socket, isConnected]
   );
 
+  const emitUpload = useCallback(
+    (data: any) => {
+      if (socket && isConnected) {
+        console.log("emiting post event");
+        socket.emit(SOCKET_EVENTS.posts.POST_UPLOADED, data);
+      } else {
+        console.log("ERROR user not conntected");
+      }
+    },
+    [socket, isConnected]
+  );
+
   return {
     socket,
     isConnected,
     emitLike,
     emitComment,
     emitFollow,
+    emitUpload,
   };
 };

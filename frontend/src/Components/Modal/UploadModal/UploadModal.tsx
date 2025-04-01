@@ -6,9 +6,12 @@ import { AppDispatch } from "../../../store/store";
 import { FetchPostType, UploadPostTypes } from "../../../types/PostType";
 import { createPost } from "../../../features/posts/postSlice";
 import { useCurrentUser } from "../../../hooks/useUsers";
+import { useSocket } from "../../../hooks/socket/useSocket";
 
 const UploadModal: React.FC<ModalTypes> = ({ showModal, onClose }) => {
   const dispatch: AppDispatch = useDispatch();
+  const { emitUpload } = useSocket();
+
   const { currentUser } = useCurrentUser();
   const { profilePicture, _id, fullName } = currentUser;
 
@@ -69,6 +72,8 @@ const UploadModal: React.FC<ModalTypes> = ({ showModal, onClose }) => {
         userId: currentUser._id,
         postId: postData._id,
       };
+
+      emitUpload(eventPayload);
     } catch (error) {
       console.error(error);
       onClose();
