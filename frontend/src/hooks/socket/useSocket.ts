@@ -8,7 +8,6 @@ import { commentOnPost, postLiked } from "../../features/posts/postSlice";
 import { addNotification } from "../../features/notifications/notificationsSlice";
 import { NotificationType } from "../../types/NotificationTypes";
 import { updateFollow } from "../../features/users/userSlice";
-import { data } from "react-router";
 
 export interface DataOutput {
   // for post-like notification
@@ -51,10 +50,6 @@ export const useSocket = () => {
     },
     [dispatch]
   );
-  // postOwner
-  const likeNotifEvents = useCallback((data: DataOutput) => {
-    dispatch(addNotification(data));
-  }, []);
 
   // comment events function
   const handleCommentEvent = useCallback(
@@ -63,6 +58,12 @@ export const useSocket = () => {
     },
     [dispatch]
   );
+
+  // postOwner
+  const likeNotifEvents = useCallback((data: DataOutput) => {
+    dispatch(addNotification(data));
+  }, []);
+
   const commentNotifEvent = useCallback(
     (data: DataOutput) => {
       dispatch(addNotification(data));
@@ -72,7 +73,7 @@ export const useSocket = () => {
 
   const uploadNotifEvent = useCallback(
     (data: any) => {
-      console.log("uploaded event triggired: ", data);
+      dispatch(addNotification(data));
     },
     [dispatch]
   );

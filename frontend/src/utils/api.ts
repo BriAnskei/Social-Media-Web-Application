@@ -4,6 +4,7 @@ import { FetchedUserType, FollowPayload } from "../types/user";
 import { CommentEventPayload, FetchPostType } from "../types/PostType";
 import { NotificationType } from "../types/NotificationTypes";
 import { data } from "react-router";
+import { posts } from "../assets/assets";
 
 // Axion instance
 export const api = axios.create({
@@ -87,6 +88,32 @@ export const postApi = {
       return res.data;
     } catch (error) {
       console.error(error);
+      return {
+        success: false,
+        message: "Network Error Occured",
+      };
+    }
+  },
+
+  getPostById: async (postId: string): Promise<ApiResponse> => {
+    try {
+      if (!postId) {
+        throw new Error("No PostId provided");
+      }
+
+      const response = await api.post(
+        "api/posts/getpost",
+        { postId },
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      console.log(response.data);
+
+      return response.data;
+    } catch (error) {
       return {
         success: false,
         message: "Network Error Occured",

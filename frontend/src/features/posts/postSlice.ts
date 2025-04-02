@@ -1,4 +1,9 @@
-import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
+import {
+  createAsyncThunk,
+  createSlice,
+  current,
+  PayloadAction,
+} from "@reduxjs/toolkit";
 
 import { ApiResponse, postApi } from "../../utils/api";
 import {
@@ -39,7 +44,7 @@ export const fetchAllPost = createAsyncThunk(
 
 export const createPost = createAsyncThunk(
   "posts/createPost",
-  async (data: FormData, { rejectWithValue, dispatch, getState }) => {
+  async (data: FormData, { rejectWithValue, getState }) => {
     const { auth } = getState() as RootState;
     const accessToken = auth.accessToken;
 
@@ -112,6 +117,25 @@ export const addComment = createAsyncThunk(
       return res;
     } catch (error) {
       return rejectWithValue("Error adding comment: " + error);
+    }
+  }
+);
+
+export const fetchPost = createAsyncThunk(
+  "posts/getpost",
+  async (postId: string, { rejectWithValue }) => {
+    try {
+      const res = await postApi.getPostById(postId);
+
+      console.log(res);
+
+      if (!res.success) {
+        return rejectWithValue(res.message || "Failed to retrived post");
+      }
+
+      return res.posts;
+    } catch (error) {
+      return rejectWithValue("Error geeting post: " + error);
     }
   }
 );
@@ -236,6 +260,20 @@ const postsSlice = createSlice({
         state.error = null;
       })
       .addCase(addComment.rejected, (state, action) => {
+        state.error = action.payload as string;
+      })
+
+      // get post by id
+      .addCase(fetchPost.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchPost.fulfilled, (state, action) => {
+        const { byId, allIds } = normalizeResponse(action.payload);
+        state.loading = false;
+      })
+      .addCase(fetchPost.rejected, (state, action) => {
+        state.loading = false;
         state.error = action.payload as string;
       });
   },

@@ -20,6 +20,6 @@ postRouter.post(
 );
 postRouter.post("/like-toggle", authMiddleware, likeToggled);
 postRouter.post("/add-comment", addComment);
-postRouter.get("/getpost", findPostById);
+postRouter.post("/getpost", findPostById);
 
 export default postRouter;

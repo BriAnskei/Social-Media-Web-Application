@@ -106,16 +106,20 @@ export const findPostById = async (
 ): Promise<any> => {
   try {
     const { postId } = req.body;
+    const data = req.body;
+    console.log(data);
 
     if (!postId) throw new Error("Invvalid no Id recieved");
 
     const postData = await postModel.findById(postId);
 
+    console.log(postData);
+
     if (!postData) {
       return res.json({ success: false, message: "Post not found" });
     }
 
-    res.json({ success: false, message: "Post is found", postData });
+    res.json({ success: true, posts: postData });
   } catch (error) {
     console.log(error);
     res.json({ success: false, message: "Error" });

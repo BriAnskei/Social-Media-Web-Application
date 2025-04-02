@@ -320,17 +320,11 @@ export class SocketServer {
       const { userId, postId } = data;
 
       const usersFollowers = await getUsersFolowers(userId);
+      console.log("followers found: ", usersFollowers);
 
-      if (!usersFollowers || usersFollowers.length === 0) {
-        console.log("User has no followers or couldn't fetch followers");
-        return;
-      }
+      if (!usersFollowers || usersFollowers.length === 0) return;
 
-      console.log(
-        "Post event triggered,  performing batch proccessing approach"
-      );
-
-      // we use batch proccessing approach for high followers
+      // Safe Batch Insert Handling
       const batchSize = 1000;
       const totalFollowers = usersFollowers.length;
 
@@ -354,38 +348,39 @@ export class SocketServer {
           sender: mongoose.Types.ObjectId.createFromHexString(userId),
           post: mongoose.Types.ObjectId.createFromHexString(postId),
           message: "uploaded a new post",
-          type: "post",
+          type: "upload",
         }));
 
-        await notificationModel.insertMany(bulkNotifications);
-        // Check which followers are online and notify them
-        for (const followerId of followersBatch) {
+        const response = await notificationModel.insertMany(bulkNotifications);
+
+        for (let i = 0; i < followersBatch.length; i++) {
+          const followerId = followersBatch[i];
           const followerSocket = this.connectedUSers.get(followerId.toString());
+
           if (followerSocket) {
-            // Send notification to the online follower
+            const notifData = { isExist: false, data: response[i] };
             this.io
               .to(followerSocket.socketId)
-              .emit(SOCKET_EVENTS.notification.UPLOAD_POST, {
-                postId,
-                userId,
-                type: "upload",
-                message: `uploaded a new post`,
-              });
+              .emit(SOCKET_EVENTS.notification.UPLOAD_POST, notifData);
           }
         }
 
-        // Log progress for large follower counts
-        if (totalFollowers > batchSize) {
-          console.log(
-            `Processed ${Math.min(
-              i + batchSize,
-              totalFollowers
-            )}/${totalFollowers} followers`
-          );
-        }
+        // Check which followers are online and notify them
+        // for (const followerId of followersBatch) {
+        //   const followerSocket = this.connectedUSers.get(followerId.toString());
+        //   if (followerSocket) {
+        //     // Send notification to the online follower
+        //     this.io
+        //       .to(followerSocket.socketId)
+        //       .emit(SOCKET_EVENTS.notification.UPLOAD_POST, {
+        //         postId,
+        //         userId,
+        //         type: "upload",
+        //         message: `uploaded a new post`,
+        //       });
+        //   }
+        // }
       }
-
-      console.log(`Completed notification process for post ${postId}`);
     } catch (error) {
       console.error("Error handling post upload event: ", error);
       socket.emit("error", "Failed to process post upload notifications");

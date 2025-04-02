@@ -1,8 +1,11 @@
 import "./NotificationList.css";
-import { useSelector } from "react-redux";
-import { RootState } from "../../store/store";
+import { useDispatch, useSelector } from "react-redux";
+import { AppDispatch, RootState } from "../../store/store";
+import { fetchPost } from "../posts/postSlice";
 
 const NotificationList = () => {
+  const dispatch = useDispatch<AppDispatch>();
+
   const { allIds, byId, loading } = useSelector(
     (state: RootState) => state.notification
   );
@@ -16,13 +19,18 @@ const NotificationList = () => {
         return "person_add";
       case "comment":
         return "forum";
+      case "upload":
+        return "notification_add";
       default:
         return "notification_important";
     }
   };
 
-  const viewPost = (postId: string) => {
-    console.log(postId);
+  const viewPost = async (e: any, postId: string) => {
+    e.preventDefault();
+    const res = await dispatch(fetchPost(postId)).unwrap();
+
+    console.log(res);
   };
 
   const capitializeFristWord = (text: string) => {
@@ -47,8 +55,8 @@ const NotificationList = () => {
               }`}
               key={index}
               onClick={
-                notifData.type === "like"
-                  ? () => viewPost(notifData.post!)
+                notifData.type === "upload"
+                  ? (e) => viewPost(e, notifData.post!)
                   : undefined
               }
             >

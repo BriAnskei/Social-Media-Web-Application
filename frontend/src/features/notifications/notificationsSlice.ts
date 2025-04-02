@@ -1,4 +1,9 @@
-import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
+import {
+  createAsyncThunk,
+  createSlice,
+  current,
+  PayloadAction,
+} from "@reduxjs/toolkit";
 import { NormalizeState } from "../../types/NormalizeType";
 import normalizeResponse from "../../utils/normalizeResponse";
 import { NotificationType } from "../../types/NotificationTypes";
@@ -71,9 +76,11 @@ const notificationSlice = createSlice({
   reducers: {
     addNotification: (state, action: PayloadAction<NotifData>): void => {
       // used in socket
-
       const { isExist, data } = action.payload;
       const { byId, allIds } = normalizeResponse(data);
+
+      console.log("notification data: ", action.payload, byId, allIds);
+      console.log("State before: ", current(state.byId), current(state.allIds));
 
       // if data exist, remove. Otherwise add the data to state
       if (!isExist) {
@@ -86,6 +93,7 @@ const notificationSlice = createSlice({
         state.allIds = [...state.allIds.filter((id) => id !== allIds[0])];
         delete state.byId[allIds[0]];
       }
+      console.log("State after: ", state.byId, state.allIds);
     },
   },
   extraReducers: (builder) => {
