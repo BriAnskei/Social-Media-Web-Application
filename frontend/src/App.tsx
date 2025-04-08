@@ -14,13 +14,20 @@ import { AppDispatch, RootState } from "./store/store";
 import ProfilePage from "./pages/Profile/ProfilePage";
 import { useEffect } from "react";
 import { fetchCurrentUser } from "./features/users/userSlice";
+import ViewPost from "./features/posts/ViewPost/ViewPost";
+import { useModal } from "./hooks/useModal";
 
 function App() {
   const dispatch = useDispatch<AppDispatch>();
+  const { postData } = useModal();
 
   const { isAuthenticated, accessToken } = useSelector(
     (state: RootState) => state.auth
   );
+
+  useEffect(() => {
+    console.log("TRACESS UPDATE OF POSTDATA: ", postData.postId);
+  }, [postData.postId]);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -45,6 +52,10 @@ function App() {
           >
             <Route path="/" element={<Feed />} />
             <Route path="/profile" element={<ProfilePage />} />
+            <Route
+              path="/viewpost"
+              element={<ViewPost postId={postData.postId} />}
+            />
           </Route>
           {/* Catch-All Route */}
           <Route

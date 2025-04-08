@@ -1,0 +1,21 @@
+.view-post-con {
+  margin: auto;
+  width: 56rem;
+}
+
+.view-post-con .view-post-act {
+  border-bottom: 1px solid gray;
+}
+
+.view-post-act .like-act-con,
+.comment-logo {
+  width: 50%;
+  display: flex;
+  margin: 0.4rem 0 0.4rem 0;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.view-post-con .comment-list-viewpost {
+  padding: 12px 12px 0px 12px;
+}

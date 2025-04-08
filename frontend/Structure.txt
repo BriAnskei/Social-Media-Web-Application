@@ -21,6 +21,7 @@ src/──────ModalContext
 │   ├── posts/             # Post-related components and logic
 │   │   ├── Post.tsx       # Individual post component
 │   │   ├── PostList.tsx   # Component to display a list of posts
+│   │   ├── ViewPost.txs   # View the lates post by the followed user
 │   │   └── postsSlice.ts  # Redux slice for post-related state
 │   │
 │   ├── users/             # User-related components and logic

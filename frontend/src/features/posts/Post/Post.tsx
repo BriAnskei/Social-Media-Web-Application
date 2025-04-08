@@ -26,6 +26,8 @@ const Post = ({ post, ownerId }: Post) => {
   const dispatch = useDispatch<AppDispatch>();
 
   const [liked, setLiked] = useState(false);
+  const [validTime, setValidTIme] = useState(true); // validation for like function(multiple triggering)
+
   const [isOwnerFollowed, setIsOwnerFollowed] = useState(false);
   const [followToggleClass, setFollowToggleClass] = useState("follow-button");
   const [toggleFollow, setToggleFollow] = useState(false);
@@ -67,22 +69,31 @@ const Post = ({ post, ownerId }: Post) => {
   };
 
   const handleLike = async () => {
-    try {
-      const res = await dispatch(toggleLike(post._id)).unwrap();
-      // emit after succesfully saved itto DB
-      if (res && res) {
+    if (validTime) {
+      setValidTIme(false);
+      try {
+        const res = await dispatch(toggleLike(post._id)).unwrap();
+
+        // emit after succesfully saved itto DB
         const data = {
           postId: post._id,
           postOwnerId: postOwnerData._id,
           userId: currentUser._id!,
         };
-
         emitLike(data);
-        setLiked(!liked);
+        if (res.success) {
+          setLiked(!liked);
+        }
+      } catch (error) {
+        console.error(error);
       }
-    } catch (error) {
-      console.error(error);
+    } else {
+      console.log("validation not complemete");
     }
+
+    setTimeout(() => {
+      setValidTIme(true);
+    }, 5000);
   };
 
   const handleFollow = async () => {

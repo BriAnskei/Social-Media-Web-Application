@@ -106,14 +106,10 @@ export const findPostById = async (
 ): Promise<any> => {
   try {
     const { postId } = req.body;
-    const data = req.body;
-    console.log(data);
 
     if (!postId) throw new Error("Invvalid no Id recieved");
 
     const postData = await postModel.findById(postId);
-
-    console.log(postData);
 
     if (!postData) {
       return res.json({ success: false, message: "Post not found" });
@@ -123,5 +119,23 @@ export const findPostById = async (
   } catch (error) {
     console.log(error);
     res.json({ success: false, message: "Error" });
+  }
+};
+
+export const getAllCommenter = async (postId: string) => {
+  try {
+    if (!postId) throw new Error("No post Id recieved to fetch all id");
+
+    const postData = await postModel.findById(postId);
+
+    if (!postData) {
+      throw new Error("post data cannot be found");
+    }
+
+    const allIds = postData.comments.map((comment) => comment.user);
+
+    return allIds;
+  } catch (error) {
+    console.log(error);
   }
 };

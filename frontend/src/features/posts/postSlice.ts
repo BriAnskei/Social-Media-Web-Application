@@ -66,11 +66,11 @@ export const createPost = createAsyncThunk(
 
 export const toggleLike = createAsyncThunk(
   "posts/toggle-like",
-  async (postId: string, { rejectWithValue, getState }) => {
+  async (postId: string, { rejectWithValue, getState, dispatch }) => {
     const { auth, user } = getState() as RootState;
-
+    const userId = user.currentUserId!;
     const accessToken = auth.accessToken;
-    const userId = user.currentUserId;
+
     if (!postId) throw new Error("No Post Id attached");
 
     if (!accessToken) throw new Error("Unauthorize");
@@ -83,7 +83,8 @@ export const toggleLike = createAsyncThunk(
           res?.message || "Faild to persist like data into POST object"
         );
 
-      return { postId, userId };
+      dispatch(postLiked({ postId, userId }));
+      return res;
     } catch (error) {
       return rejectWithValue("Error Uploading post");
     }
@@ -123,19 +124,24 @@ export const addComment = createAsyncThunk(
 
 export const fetchPost = createAsyncThunk(
   "posts/getpost",
-  async (postId: string, { rejectWithValue }) => {
+  async (postId: string, { rejectWithValue, getState }) => {
     try {
-      const res = await postApi.getPostById(postId);
+      // check first if the post already exist in the state
+      const { posts } = getState() as RootState;
 
-      console.log(res);
+      if (posts.allIds.includes(postId) && posts.byId[postId]) {
+        return { success: true, posts: posts.byId[postId] };
+      }
+
+      const res = await postApi.getPostById(postId);
 
       if (!res.success) {
         return rejectWithValue(res.message || "Failed to retrived post");
       }
 
-      return res.posts;
+      return res;
     } catch (error) {
-      return rejectWithValue("Error geeting post: " + error);
+      return rejectWithValue("Error getting post: " + error);
     }
   }
 );
@@ -225,8 +231,20 @@ const postsSlice = createSlice({
       })
 
       // Uploading Post Cases
-      .addCase(createPost.fulfilled, (state) => {
+      .addCase(createPost.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(createPost.fulfilled, (state, action) => {
         state.loading = false;
+        const { byId, allIds } = normalizeResponse(action.payload.posts);
+
+        console.log(byId, allIds);
+
+        if (!state.allIds.includes(allIds[0])) {
+          state.allIds = [allIds[0], ...state.allIds]; // Put the latest post in the first index, to sort it
+        }
+        state.byId = { ...state.byId, ...byId };
+        console.log(state.allIds, state.byId);
       })
       .addCase(createPost.rejected, (state, action) => {
         state.loading = false;
@@ -234,22 +252,6 @@ const postsSlice = createSlice({
       })
 
       // toggle Post Cases(Likes)
-      .addCase(toggleLike.fulfilled, (state, action) => {
-        state.loading = false;
-        const { postId, userId } = action.payload;
-
-        const isLiked = state.byId[action.payload.postId].likes.some(
-          (like) => like === userId
-        );
-
-        if (!isLiked) {
-          state.byId[postId].likes.push(userId!);
-        } else {
-          state.byId[postId].likes = state.byId[postId].likes.filter(
-            (like) => like !== userId
-          );
-        }
-      })
       .addCase(toggleLike.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
@@ -269,8 +271,12 @@ const postsSlice = createSlice({
         state.error = null;
       })
       .addCase(fetchPost.fulfilled, (state, action) => {
-        const { byId, allIds } = normalizeResponse(action.payload);
+        const { byId, allIds } = normalizeResponse(action.payload.posts);
         state.loading = false;
+        if (!state.allIds.includes(allIds[0]) && !state.byId[allIds[0]]) {
+          state.allIds.unshift(allIds[0]);
+          state.byId = { ...state.byId, ...byId };
+        }
       })
       .addCase(fetchPost.rejected, (state, action) => {
         state.loading = false;

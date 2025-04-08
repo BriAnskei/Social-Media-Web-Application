@@ -7,7 +7,6 @@ import path from "path";
 import fs from "fs";
 
 import { nameSuffix } from "../middleware/upload";
-import { exists } from "fs-extra";
 
 const createToken = (userId: string) => {
   if (!process.env.ACCESS_SECRET || !process.env.REFRESH_SECRET) {
@@ -336,6 +335,7 @@ export const followUser = async (req: Request, res: Response): Promise<any> => {
   }
 };
 
+// Server socket export
 export const getUsersFolowers = async (userId: string) => {
   try {
     const userData = await UserModel.findById(userId);
@@ -346,6 +346,21 @@ export const getUsersFolowers = async (userId: string) => {
     const allFollowers = userData.followers;
 
     return allFollowers;
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+export const getUserById = async (userId: string) => {
+  try {
+    if (!userId) {
+      throw new Error("No Id recieved to retrive user data");
+    }
+    const userData = UserModel.findById(userId);
+
+    if (!userData) throw new Error("Cannot find user");
+
+    return userData;
   } catch (error) {
     console.log(error);
   }

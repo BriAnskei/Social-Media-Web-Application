@@ -1,15 +1,19 @@
 import "./NotificationList.css";
-import { useDispatch, useSelector } from "react-redux";
-import { AppDispatch, RootState } from "../../store/store";
-import { fetchPost } from "../posts/postSlice";
+import { useSelector } from "react-redux";
+import { RootState } from "../../store/store";
+import { useModal } from "../../hooks/useModal";
+import { useNavigate } from "react-router";
+import { useUnreadNotif } from "../../hooks/useUnreadNotif";
 
 const NotificationList = () => {
-  const dispatch = useDispatch<AppDispatch>();
+  const navigate = useNavigate();
 
   const { allIds, byId, loading } = useSelector(
     (state: RootState) => state.notification
   );
   const userById = useSelector((state: RootState) => state.user.byId);
+
+  const { postData } = useModal();
 
   const displayLogoType = (notificationType: string): string => {
     switch (notificationType) {
@@ -28,9 +32,9 @@ const NotificationList = () => {
 
   const viewPost = async (e: any, postId: string) => {
     e.preventDefault();
-    const res = await dispatch(fetchPost(postId)).unwrap();
-
-    console.log(res);
+    if (!postId) throw new Error("No Id recievedd");
+    postData.viewPost(postId);
+    navigate("/viewpost");
   };
 
   const capitializeFristWord = (text: string) => {

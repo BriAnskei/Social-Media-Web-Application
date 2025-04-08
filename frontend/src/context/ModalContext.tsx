@@ -1,5 +1,11 @@
-import React, { Children, createContext, ReactNode, useState } from "react";
-import { CommentEventPayload, CommentType } from "../types/PostType";
+import React, {
+  Children,
+  createContext,
+  ReactNode,
+  useEffect,
+  useState,
+} from "react";
+import { CommentEventPayload } from "../types/PostType";
 import { useDispatch } from "react-redux";
 import { AppDispatch } from "../store/store";
 import { addComment } from "../features/posts/postSlice";
@@ -10,11 +16,18 @@ interface PostModalTypes {
   showPostModal: boolean;
   openPostModal: (postId: string) => void;
   onClosePostModal: () => void;
+
   submitPostComment: (e: React.FormEvent, data: CommentEventPayload) => void;
+}
+
+interface ViewPost {
+  viewPost: (post: string) => void;
+  postId: string;
 }
 
 interface ModalContextValue {
   postModal: PostModalTypes;
+  postData: ViewPost;
 }
 
 interface ModalProviderProps {
@@ -28,6 +41,8 @@ export const ModalContext = createContext<ModalContextValue | undefined>(
 export const ModalProvider: React.FC<ModalProviderProps> = ({ children }) => {
   const dispatch = useDispatch<AppDispatch>();
   const { emitComment } = useSocket();
+
+  const [postId, setPostId] = useState(""); // for view post(latest post) component
   const [postModalData, setPostModalData] = useState<{
     showModal: boolean;
     postId: string;
@@ -55,22 +70,24 @@ export const ModalProvider: React.FC<ModalProviderProps> = ({ children }) => {
     });
   };
 
+  const viewPost = (postId: string) => {
+    if (!postId) throw new Error("Error: No Id recieved");
+    setPostId(postId);
+  };
+
   const submitPostComment = async (
     e: React.FormEvent,
     data: CommentEventPayload
   ) => {
     e.preventDefault();
 
-    console.log("data: ", data);
     try {
       const res = await dispatch(addComment(data)).unwrap();
-
       if (res.success) {
         const dataEventPayload: CommentEventPayload = {
           ...data,
           data: res.commentData!,
         };
-        console.log(dataEventPayload);
         emitComment(dataEventPayload);
       }
     } catch (error) {
@@ -82,9 +99,14 @@ export const ModalProvider: React.FC<ModalProviderProps> = ({ children }) => {
     postModal: {
       postId: postModalData.postId,
       showPostModal: postModalData.showModal,
+
       openPostModal,
       onClosePostModal,
       submitPostComment,
+    },
+    postData: {
+      viewPost,
+      postId,
     },
   };
 

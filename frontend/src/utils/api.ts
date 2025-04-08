@@ -51,7 +51,7 @@ export const postApi = {
     }
   },
 
-  toggleLike: async (token: string, postId: string) => {
+  toggleLike: async (token: string, postId: string): Promise<ApiResponse> => {
     try {
       const response = await api.post(
         "/api/posts/like-toggle",
@@ -63,7 +63,7 @@ export const postApi = {
           },
         }
       );
-      response.data;
+      return response.data;
     } catch (error) {
       return {
         success: false,

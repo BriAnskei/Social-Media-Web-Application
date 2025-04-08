@@ -21,9 +21,7 @@ export interface UploadPostTypes {
 // Payload for like event(socket)
 export interface LikeHandlerTypes {
   postId: string;
-  postOwnerId: string;
   userId: string; // sender
-  username: string;
 }
 
 // Comment event payload
