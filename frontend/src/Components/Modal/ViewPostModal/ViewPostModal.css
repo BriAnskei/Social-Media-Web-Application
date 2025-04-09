@@ -8,6 +8,10 @@
   top: 4rem;
 }
 
+.view-post-modal-dialog .view-post-modal-content {
+  min-height: 20rem;
+}
+
 .view-post-modal-header {
   height: 40px;
 }

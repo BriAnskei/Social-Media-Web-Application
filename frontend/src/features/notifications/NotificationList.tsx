@@ -3,7 +3,6 @@ import { useSelector } from "react-redux";
 import { RootState } from "../../store/store";
 import { useModal } from "../../hooks/useModal";
 import { useNavigate } from "react-router";
-import { useUnreadNotif } from "../../hooks/useUnreadNotif";
 
 const NotificationList = () => {
   const navigate = useNavigate();
@@ -30,11 +29,13 @@ const NotificationList = () => {
     }
   };
 
-  const viewPost = async (e: any, postId: string) => {
-    e.preventDefault();
-    if (!postId) throw new Error("No Id recievedd");
-    postData.viewPost(postId);
-    navigate("/viewpost");
+  const listOnClick = async (postId: string | undefined, type: string) => {
+    if (!postId) throw new Error("No post Id to view post");
+
+    if (type === "upload" || type === "comment" || type === "like") {
+      postData.viewPost(postId);
+      navigate("/viewpost");
+    }
   };
 
   const capitializeFristWord = (text: string) => {
@@ -56,13 +57,15 @@ const NotificationList = () => {
             <div
               className={`notif-container ${
                 !notifData.read ? "unread-backgroud" : ""
+              }  ${
+                notifData.type === "upload" ||
+                notifData.type === "comment" ||
+                notifData.type === "like"
+                  ? "cursor-onclick"
+                  : ""
               }`}
               key={index}
-              onClick={
-                notifData.type === "upload"
-                  ? (e) => viewPost(e, notifData.post!)
-                  : undefined
-              }
+              onClick={() => listOnClick(notifData.post, notifData.type)}
             >
               <div className="notif-content">
                 <div className="type-logo">

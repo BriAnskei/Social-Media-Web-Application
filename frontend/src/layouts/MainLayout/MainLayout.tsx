@@ -15,13 +15,13 @@ import { AppDispatch, RootState } from "../../store/store";
 import { fetchAllNotifs } from "../../features/notifications/notificationsSlice";
 import { useModal } from "../../hooks/useModal";
 import ViewPostModal from "../../Components/Modal/ViewPostModal/ViewPostModal";
+import PopoverMenu from "../../Components/Popover/Popover";
 
 const MainLayout = () => {
   const dispatch = useDispatch<AppDispatch>();
   const { isAuthenticated } = useSelector((state: RootState) => state.auth);
-  const { postModal } = useModal();
-  const { onClosePostModal, postId, showPostModal, submitPostComment } =
-    postModal;
+  const { postModal, popover } = useModal();
+  const { onClosePostModal, postId, showPostModal } = postModal;
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -75,8 +75,8 @@ const MainLayout = () => {
         showModal={showPostModal}
         onClose={onClosePostModal}
         postId={postId!}
-        submitPostComment={submitPostComment}
       />
+      <PopoverMenu target={popover.target!} show={popover.show} />
     </>
   );
 };

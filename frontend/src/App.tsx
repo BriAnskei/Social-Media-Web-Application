@@ -14,7 +14,7 @@ import { AppDispatch, RootState } from "./store/store";
 import ProfilePage from "./pages/Profile/ProfilePage";
 import { useEffect } from "react";
 import { fetchCurrentUser } from "./features/users/userSlice";
-import ViewPost from "./features/posts/ViewPost/ViewPost";
+import ViewPost from "./features/posts/ViewPost/Viewpost";
 import { useModal } from "./hooks/useModal";
 
 function App() {
@@ -24,10 +24,6 @@ function App() {
   const { isAuthenticated, accessToken } = useSelector(
     (state: RootState) => state.auth
   );
-
-  useEffect(() => {
-    console.log("TRACESS UPDATE OF POSTDATA: ", postData.postId);
-  }, [postData.postId]);
 
   useEffect(() => {
     if (isAuthenticated) {

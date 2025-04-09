@@ -1,12 +1,13 @@
 import "./Post.css";
 import { useDispatch } from "react-redux";
 import { toggleLike } from "../postSlice";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { FetchPostType } from "../../../types/PostType";
 import { FollowPayload } from "../../../types/user";
 import { AppDispatch } from "../../../store/store";
 import { useSocket } from "../../../hooks/socket/useSocket";
 import { useModal } from "../../../hooks/useModal";
+import PopoverMenu from "../../../Components/Popover/Popover";
 import { useCurrentUser, useUserById } from "../../../hooks/useUsers";
 import { followToggled, updateFollow } from "../../users/userSlice";
 
@@ -17,13 +18,16 @@ interface Post {
 
 const Post = ({ post, ownerId }: Post) => {
   const { currentUser } = useCurrentUser();
-  const { postModal } = useModal();
+  const { postModal, popover } = useModal();
   const { emitLike, emitFollow } = useSocket();
 
   const postOwnerData = useUserById(ownerId);
 
   const { openPostModal } = postModal;
   const dispatch = useDispatch<AppDispatch>();
+
+  const [showPopover, setShowPopover] = useState(false);
+  const target = useRef(null);
 
   const [liked, setLiked] = useState(false);
   const [validTime, setValidTIme] = useState(true); // validation for like function(multiple triggering)
@@ -131,6 +135,7 @@ const Post = ({ post, ownerId }: Post) => {
 
   return (
     <>
+      <PopoverMenu target={target} show={showPopover} />
       <div className="post-container">
         <div className="post-info">
           <div className="profile-name">
@@ -152,7 +157,17 @@ const Post = ({ post, ownerId }: Post) => {
                   {followToggleClass === "followed" ? "✔ Followed" : "+ Follow"}
                 </button>
               )}
-            <span className="material-symbols-outlined more-icon">
+            <span
+              className={`material-symbols-outlined ${
+                post.user === currentUser._id ? "more-icon" : ""
+              }`}
+              ref={target}
+              onClick={() => {
+                post.user !== currentUser._id
+                  ? undefined
+                  : popover.popOverToggle(post, target);
+              }}
+            >
               more_horiz
             </span>
           </div>

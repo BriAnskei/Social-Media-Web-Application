@@ -1,23 +1,11 @@
-import React, {
-  Children,
-  createContext,
-  ReactNode,
-  useEffect,
-  useState,
-} from "react";
-import { CommentEventPayload } from "../types/PostType";
-import { useDispatch } from "react-redux";
-import { AppDispatch } from "../store/store";
-import { addComment } from "../features/posts/postSlice";
-import { useSocket } from "../hooks/socket/useSocket";
+import React, { createContext, ReactNode, useState } from "react";
+import { FetchPostType } from "../types/PostType";
 
 interface PostModalTypes {
   postId?: string;
   showPostModal: boolean;
   openPostModal: (postId: string) => void;
   onClosePostModal: () => void;
-
-  submitPostComment: (e: React.FormEvent, data: CommentEventPayload) => void;
 }
 
 interface ViewPost {
@@ -25,24 +13,40 @@ interface ViewPost {
   postId: string;
 }
 
-interface ModalContextValue {
+interface PopoverProp {
+  show: boolean;
+  target: React.MutableRefObject<null>;
+  popOverToggle: (
+    data: FetchPostType,
+    target: React.MutableRefObject<null>
+  ) => void;
+}
+
+interface GlobalContextValue {
   postModal: PostModalTypes;
   postData: ViewPost;
+  popover: PopoverProp;
 }
 
 interface ModalProviderProps {
   children: ReactNode;
 }
 
-export const ModalContext = createContext<ModalContextValue | undefined>(
+export const GlobalContext = createContext<GlobalContextValue | undefined>(
   undefined
 );
 
-export const ModalProvider: React.FC<ModalProviderProps> = ({ children }) => {
-  const dispatch = useDispatch<AppDispatch>();
-  const { emitComment } = useSocket();
-
+export const GlobalProvider: React.FC<ModalProviderProps> = ({ children }) => {
   const [postId, setPostId] = useState(""); // for view post(latest post) component
+
+  const [popoverData, setPopoverData] = useState<{
+    show: boolean;
+    target: React.MutableRefObject<null> | any;
+  }>({
+    show: false,
+    target: null,
+  });
+
   const [postModalData, setPostModalData] = useState<{
     showModal: boolean;
     postId: string;
@@ -75,44 +79,37 @@ export const ModalProvider: React.FC<ModalProviderProps> = ({ children }) => {
     setPostId(postId);
   };
 
-  const submitPostComment = async (
-    e: React.FormEvent,
-    data: CommentEventPayload
+  // popover
+  const popOverToggle = (
+    data: FetchPostType,
+    target: React.MutableRefObject<null>
   ) => {
-    e.preventDefault();
-
-    try {
-      const res = await dispatch(addComment(data)).unwrap();
-      if (res.success) {
-        const dataEventPayload: CommentEventPayload = {
-          ...data,
-          data: res.commentData!,
-        };
-        emitComment(dataEventPayload);
-      }
-    } catch (error) {
-      console.log("Submitting comment Error: ", error);
-    }
+    setPopoverData((prev) => ({ ...prev, target: target, show: !prev.show }));
+    console.log("Data: ", data);
   };
 
-  const modalContextValue: ModalContextValue = {
+  const globalContextValue: GlobalContextValue = {
     postModal: {
       postId: postModalData.postId,
       showPostModal: postModalData.showModal,
 
       openPostModal,
       onClosePostModal,
-      submitPostComment,
     },
     postData: {
       viewPost,
       postId,
     },
+    popover: {
+      show: popoverData.show,
+      target: popoverData.target,
+      popOverToggle,
+    },
   };
 
   return (
-    <ModalContext.Provider value={modalContextValue}>
+    <GlobalContext.Provider value={globalContextValue}>
       {children}
-    </ModalContext.Provider>
+    </GlobalContext.Provider>
   );
 };

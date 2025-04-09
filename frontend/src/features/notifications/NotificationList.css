@@ -11,6 +11,10 @@
   background-color: rgb(245, 239, 239);
 }
 
+.cursor-onclick {
+  cursor: pointer;
+}
+
 .notif-container .notif-content .type-logo span {
   font-size: 3.4rem;
 }
