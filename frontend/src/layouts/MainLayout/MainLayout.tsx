@@ -13,14 +13,15 @@ import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "../../store/store";
 import { fetchAllNotifs } from "../../features/notifications/notificationsSlice";
-import { useModal } from "../../hooks/useModal";
+import { useGlobal } from "../../hooks/useModal";
 import ViewPostModal from "../../Components/Modal/ViewPostModal/ViewPostModal";
 import PopoverMenu from "../../Components/Popover/Popover";
+import EditPostModal from "../../Components/Modal/EditPostModal/EditPostModal";
 
 const MainLayout = () => {
   const dispatch = useDispatch<AppDispatch>();
   const { isAuthenticated } = useSelector((state: RootState) => state.auth);
-  const { postModal, popover } = useModal();
+  const { postModal, popover, editPostModa } = useGlobal();
   const { onClosePostModal, postId, showPostModal } = postModal;
 
   useEffect(() => {
@@ -77,6 +78,7 @@ const MainLayout = () => {
         postId={postId!}
       />
       <PopoverMenu target={popover.target!} show={popover.show} />
+      <EditPostModal postId={editPostModa.postId} show={editPostModa.show} />
     </>
   );
 };

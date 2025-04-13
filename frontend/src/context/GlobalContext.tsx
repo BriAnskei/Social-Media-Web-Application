@@ -1,4 +1,4 @@
-import React, { createContext, ReactNode, useState } from "react";
+import React, { createContext, ReactNode, useEffect, useState } from "react";
 import { FetchPostType } from "../types/PostType";
 
 interface PostModalTypes {
@@ -16,16 +16,22 @@ interface ViewPost {
 interface PopoverProp {
   show: boolean;
   target: React.MutableRefObject<null>;
-  popOverToggle: (
-    data: FetchPostType,
-    target: React.MutableRefObject<null>
-  ) => void;
+  postId: string;
+  popOverToggle: (postId: string, target: React.MutableRefObject<null>) => void;
+  popoverEventMenu: (id: string, type: string) => void;
+}
+
+interface EditPostModal {
+  postId: string;
+  show: boolean;
+  toggleEditModal: (postId: string | null) => void;
 }
 
 interface GlobalContextValue {
   postModal: PostModalTypes;
   postData: ViewPost;
   popover: PopoverProp;
+  editPostModa: EditPostModal;
 }
 
 interface ModalProviderProps {
@@ -39,11 +45,21 @@ export const GlobalContext = createContext<GlobalContextValue | undefined>(
 export const GlobalProvider: React.FC<ModalProviderProps> = ({ children }) => {
   const [postId, setPostId] = useState(""); // for view post(latest post) component
 
+  const [postEditModal, setPostEditModal] = useState<{
+    postId: string;
+    show: boolean;
+  }>({
+    postId: "",
+    show: false,
+  });
+
   const [popoverData, setPopoverData] = useState<{
     show: boolean;
+    postId: string;
     target: React.MutableRefObject<null> | any;
   }>({
     show: false,
+    postId: "",
     target: null,
   });
 
@@ -79,13 +95,47 @@ export const GlobalProvider: React.FC<ModalProviderProps> = ({ children }) => {
     setPostId(postId);
   };
 
-  // popover
+  // Popover events
   const popOverToggle = (
-    data: FetchPostType,
+    postId: string,
     target: React.MutableRefObject<null>
   ) => {
-    setPopoverData((prev) => ({ ...prev, target: target, show: !prev.show }));
-    console.log("Data: ", data);
+    if (target.current && popoverData.show) {
+      if (target.current !== popoverData.target.current) {
+        setPopoverData((prev) => ({ ...prev, target: target, postId }));
+      } else {
+        setPopoverData((prev) => ({ ...prev, show: !prev.show, postId: "" }));
+      }
+    } else {
+      setPopoverData((prev) => ({
+        ...prev,
+        target: target,
+        show: !prev.show,
+        postId,
+      }));
+    }
+  };
+  const popoverEventMenu = (postId: string, type: string) => {
+    switch (type) {
+      case "edit":
+        toggleEditModal(postId);
+        setPopoverData((prev) => ({ ...prev, show: false }));
+        break;
+      case "delete":
+        console.log("Dispatch delete", postId);
+        break;
+      default:
+        return type;
+    }
+  };
+
+  // Edit Post Modal
+  const toggleEditModal = (postId: string | null) => {
+    setPostEditModal((prev) => ({
+      ...prev,
+      show: !prev.show,
+      postId: postId ? postId : "",
+    }));
   };
 
   const globalContextValue: GlobalContextValue = {
@@ -103,7 +153,14 @@ export const GlobalProvider: React.FC<ModalProviderProps> = ({ children }) => {
     popover: {
       show: popoverData.show,
       target: popoverData.target,
+      postId: popoverData.postId,
       popOverToggle,
+      popoverEventMenu,
+    },
+    editPostModa: {
+      postId: postEditModal.postId,
+      show: postEditModal.show,
+      toggleEditModal,
     },
   };
 

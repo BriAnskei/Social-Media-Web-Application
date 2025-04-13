@@ -1,0 +1,131 @@
+.edit-post-modal-content {
+  height: 43.2rem;
+}
+
+.upload-header {
+  display: flex;
+  align-items: center; /* Vertically center the items */
+  justify-content: space-between; /* Space out the elements: one at the start and the other at the end */
+  height: 35px;
+}
+
+.upload-header div span {
+  cursor: pointer;
+}
+
+.upload-header .post-logo {
+  margin: 0 auto;
+  text-align: center;
+  flex: 1;
+}
+
+.user-logo {
+  display: flex;
+  gap: 8px;
+  padding: 0;
+  margin: 0;
+  border: 0;
+}
+.user-logo img {
+  height: 2.3rem;
+  width: 2.3rem;
+  border-radius: 100%;
+  object-fit: cover;
+}
+
+.user-logo span {
+  font-size: 1rem;
+}
+
+.post-input {
+  padding: 2px 5px;
+  height: 18.3rem;
+}
+
+.post-input textarea {
+  padding: 10px 16px;
+  resize: none;
+  border: none;
+
+  height: 250px;
+  width: 100%;
+}
+
+.post-input textarea:focus {
+  outline: none;
+  box-shadow: none;
+}
+
+.image-prev-border {
+  height: 300px;
+  width: 100%;
+}
+
+.image-border-no-image {
+  border: 2px solid gray;
+  border-radius: 4px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.image-prev-border .edit-post-upload {
+  cursor: pointer;
+  font-size: large;
+  color: gray;
+}
+
+.edit-post-upload input[type="file"] {
+  display: none;
+}
+
+.image-prev-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+  background-color: black;
+  border-radius: 4px;
+  height: 100%;
+  width: 100%;
+}
+
+.post-input .edit-post-image-preview {
+  width: 100%;
+  height: 100%;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: contain;
+  position: relative;
+}
+
+.edit-post-image-preview .image-prev-action {
+  position: absolute;
+  top: 3px;
+  right: 0;
+  display: inline-block;
+  font-size: 10pt;
+  padding: 5px 20px;
+  font-variation-settings: "FILL" 1;
+  color: rgb(189, 131, 131);
+  border-radius: 5px;
+  cursor: pointer;
+  text-align: center;
+}
+
+.modal-post-footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  margin-top: -22px;
+  height: 3rem;
+}
+
+.modal-post-footer button {
+  background-color: inherit;
+  border: 1px solid gray;
+  border-radius: 5px;
+  width: 80%;
+  margin: 5px;
+}

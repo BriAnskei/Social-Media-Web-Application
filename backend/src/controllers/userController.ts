@@ -6,7 +6,7 @@ import jwt from "jsonwebtoken";
 import path from "path";
 import fs from "fs";
 
-import { nameSuffix } from "../middleware/upload";
+import { generateNameSuffix } from "../middleware/upload";
 
 const createToken = (userId: string) => {
   if (!process.env.ACCESS_SECRET || !process.env.REFRESH_SECRET) {
@@ -107,7 +107,7 @@ export const register = async (req: Request, res: Response): Promise<any> => {
     await fs.promises.mkdir(uploadPath, { recursive: true }); // Creates the upload path deriectory if it doesn't Exist
 
     if (req.file) {
-      const fileName = `${nameSuffix}${req.file.originalname}`;
+      const fileName = `${generateNameSuffix}${req.file.originalname}`;
 
       const filePath = path.join(uploadPath, fileName);
       await fs.promises.writeFile(filePath, req.file.buffer); // Save the file from to memory disk
@@ -203,7 +203,9 @@ export const updateProfile = async (
 
     // Check if there is attached file, if so save to servere and set as a newProfile
     if (newProfileImage) {
-      const fileName = `${nameSuffix}${newProfileImage.originalname}`;
+      console.log(newProfileImage);
+
+      const fileName = `${generateNameSuffix}${newProfileImage.originalname}`;
       const uploadPath = path.join("uploads", "profile", userId.toString());
       await fs.promises.mkdir(uploadPath, { recursive: true }); // Creates the upload path deriectory if it doesn't Exist
 

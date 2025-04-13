@@ -6,8 +6,8 @@ import { FetchPostType } from "../../../types/PostType";
 import { FollowPayload } from "../../../types/user";
 import { AppDispatch } from "../../../store/store";
 import { useSocket } from "../../../hooks/socket/useSocket";
-import { useModal } from "../../../hooks/useModal";
-import PopoverMenu from "../../../Components/Popover/Popover";
+import { useGlobal } from "../../../hooks/useModal";
+
 import { useCurrentUser, useUserById } from "../../../hooks/useUsers";
 import { followToggled, updateFollow } from "../../users/userSlice";
 
@@ -18,7 +18,7 @@ interface Post {
 
 const Post = ({ post, ownerId }: Post) => {
   const { currentUser } = useCurrentUser();
-  const { postModal, popover } = useModal();
+  const { postModal, popover } = useGlobal();
   const { emitLike, emitFollow } = useSocket();
 
   const postOwnerData = useUserById(ownerId);
@@ -26,7 +26,6 @@ const Post = ({ post, ownerId }: Post) => {
   const { openPostModal } = postModal;
   const dispatch = useDispatch<AppDispatch>();
 
-  const [showPopover, setShowPopover] = useState(false);
   const target = useRef(null);
 
   const [liked, setLiked] = useState(false);
@@ -135,7 +134,6 @@ const Post = ({ post, ownerId }: Post) => {
 
   return (
     <>
-      <PopoverMenu target={target} show={showPopover} />
       <div className="post-container">
         <div className="post-info">
           <div className="profile-name">
@@ -165,7 +163,7 @@ const Post = ({ post, ownerId }: Post) => {
               onClick={() => {
                 post.user !== currentUser._id
                   ? undefined
-                  : popover.popOverToggle(post, target);
+                  : popover.popOverToggle(post._id, target);
               }}
             >
               more_horiz

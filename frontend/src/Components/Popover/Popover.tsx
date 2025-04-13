@@ -1,6 +1,7 @@
 // PopoverMenu.tsx
 import React, { useEffect, useRef, useState } from "react";
 import { Overlay, Popover, Button } from "react-bootstrap";
+import { useGlobal } from "../../hooks/useModal";
 
 interface PopoverProp {
   target: React.MutableRefObject<null>;
@@ -8,10 +9,11 @@ interface PopoverProp {
 }
 
 const PopoverMenu: React.FC<PopoverProp> = ({ target, show }) => {
-  useEffect(() => {
-    console.log(show, target);
-  }, [show, target]);
+  const { popover } = useGlobal();
 
+  useEffect(() => {
+    console.log(popover.postId);
+  }, [popover]);
   if (!target) return;
 
   return (
@@ -25,7 +27,9 @@ const PopoverMenu: React.FC<PopoverProp> = ({ target, show }) => {
                   variant="outline-secondary"
                   size="sm"
                   style={{ height: "1.7rem" }}
-                  onClick={() => alert("Menu 1 clicked")}
+                  onClick={() =>
+                    popover.popoverEventMenu(popover.postId, "edit")
+                  }
                 >
                   Edit post
                 </Button>
@@ -33,7 +37,9 @@ const PopoverMenu: React.FC<PopoverProp> = ({ target, show }) => {
                   variant="outline-secondary"
                   size="sm"
                   style={{ height: "1.7rem" }}
-                  onClick={() => alert("Menu 2 clicked")}
+                  onClick={() =>
+                    popover.popoverEventMenu(popover.postId, "delete")
+                  }
                 >
                   Delete post
                 </Button>

@@ -1,7 +1,7 @@
 import { useContext } from "react";
 import { GlobalContext } from "../context/GlobalContext";
 
-export const useModal = () => {
+export const useGlobal = () => {
   const context = useContext(GlobalContext);
   if (!context) throw new Error("No context in the modalContext");
   return context;

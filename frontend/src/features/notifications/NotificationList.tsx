@@ -1,7 +1,7 @@
 import "./NotificationList.css";
 import { useSelector } from "react-redux";
 import { RootState } from "../../store/store";
-import { useModal } from "../../hooks/useModal";
+import { useGlobal } from "../../hooks/useModal";
 import { useNavigate } from "react-router";
 
 const NotificationList = () => {
@@ -12,7 +12,7 @@ const NotificationList = () => {
   );
   const userById = useSelector((state: RootState) => state.user.byId);
 
-  const { postData } = useModal();
+  const { postData } = useGlobal();
 
   const displayLogoType = (notificationType: string): string => {
     switch (notificationType) {

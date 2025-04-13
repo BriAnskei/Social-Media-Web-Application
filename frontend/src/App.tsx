@@ -15,11 +15,11 @@ import ProfilePage from "./pages/Profile/ProfilePage";
 import { useEffect } from "react";
 import { fetchCurrentUser } from "./features/users/userSlice";
 import ViewPost from "./features/posts/ViewPost/Viewpost";
-import { useModal } from "./hooks/useModal";
+import { useGlobal } from "./hooks/useModal";
 
 function App() {
   const dispatch = useDispatch<AppDispatch>();
-  const { postData } = useModal();
+  const { postData } = useGlobal();
 
   const { isAuthenticated, accessToken } = useSelector(
     (state: RootState) => state.auth

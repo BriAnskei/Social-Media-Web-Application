@@ -23,9 +23,8 @@ const EditProfileModal: React.FC<EditProp> = ({ showModal, onClose, data }) => {
   const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target?.files;
     if (file && file.length > 0) {
-      console.log("File before: ", file[0]["name"]);
-
       const imageUrl = URL.createObjectURL(file[0]);
+      console.log(imageUrl);
       setProfileUrl(imageUrl);
 
       setUpdatedData((prev) => {

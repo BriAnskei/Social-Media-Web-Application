@@ -5,7 +5,6 @@ import mongoose from "mongoose";
 interface ExtentRequest extends Request {
   userId?: string;
 }
-
 export const createPost = async (
   req: ExtentRequest,
   res: Response
@@ -26,6 +25,48 @@ export const createPost = async (
       success: true,
       message: "post successfully created",
       posts: postData,
+    });
+  } catch (error) {
+    console.log(error);
+    res.json({ success: false, message: "Error" });
+  }
+};
+
+export const updatePost = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const { postId } = req.params;
+    const newImageFile = req.file;
+    const { deletedImage, deletedContent, content } = req.body;
+
+    console.log(deletedImage, content, newImageFile);
+
+    const postData = await postModel.findById(postId);
+
+    if (!postData) throw new Error("Cannot find postData");
+
+    console.log("data before: ", postData);
+
+    if (newImageFile || postData?.image) {
+      if (deletedImage === "true") {
+        postData.image = newImageFile ? newImageFile.filename : "";
+      } else {
+        if (newImageFile) {
+          postData.image = newImageFile.filename;
+        }
+      }
+    }
+
+    postData.content = (deletedContent === "true" && content) || "";
+
+    console.log("data after: ", postData);
+    await postData.save();
+
+    res.json({
+      success: true,
+      message: "post successfully updated",
     });
   } catch (error) {
     console.log(error);

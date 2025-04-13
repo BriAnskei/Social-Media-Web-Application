@@ -2,7 +2,7 @@ export interface FetchPostType {
   _id: string;
   user: string;
   content: string;
-  image?: string;
+  image?: string | File;
   likes: string[];
   comments: {
     user: string;
