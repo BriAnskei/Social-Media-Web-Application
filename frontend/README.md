@@ -1,50 +1,83 @@
-# React + TypeScript + Vite
+# Notes on Uploading and Deleting Files with Node.js
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## Uploading Directory
 
-Currently, two official plugins are available:
-
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type aware lint rules:
-
-- Configure the top-level `parserOptions` property like this:
+This line creates the directory specified in `uploadPath` synchronously using Node.js's `fs` module:
 
 ```js
-export default tseslint.config({
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
+fs.mkdirSync(uploadPath, { recursive: true });
 ```
 
-- Replace `tseslint.configs.recommended` to `tseslint.configs.recommendedTypeChecked` or `tseslint.configs.strictTypeChecked`
-- Optionally add `...tseslint.configs.stylisticTypeChecked`
-- Install [eslint-plugin-react](https://github.com/jsx-eslint/eslint-plugin-react) and update the config:
+### Explanation
+
+- `mkdirSync` is a method to **make a directory synchronously**.
+- `uploadPath` is the path to create (e.g., `uploads/posts/123`).
+- `{ recursive: true }` means:
+  - If any parent folders (like `uploads/` or `uploads/posts/`) don’t exist, they’ll be automatically created.
+  - Without `recursive: true`, it would throw an error if parent folders are missing.
+
+---
+
+## Deleting a File
+
+You **don't need to use `multer` to delete a file**, and you **should not use `_removeFile`** since it's a private function.
+
+Instead, delete the file using Node.js’s `fs.unlink` method.
+
+### Example
+
+Wherever you have access to `req.file`, you can do the following:
 
 ```js
-// eslint.config.js
-import react from 'eslint-plugin-react'
+const fs = require("fs");
 
-export default tseslint.config({
-  // Set the react version
-  settings: { react: { version: '18.3' } },
-  plugins: {
-    // Add the react plugin
-    react,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended rules
-    ...react.configs.recommended.rules,
-    ...react.configs['jsx-runtime'].rules,
-  },
-})
+if (req.file) {
+  fs.unlink(req.file.path, (err) => {
+    if (err) {
+      console.error("Error deleting the file:", err);
+    } else {
+      console.log("File successfully deleted");
+    }
+  });
+}
+```
+
+> ✅ This is the standard and safe way to remove files using Node.js.
+
+---
+
+# ⚠️ Avoid Mutating While Iterating: A Must-Know for Clean Code
+
+When working with structures like `FormData`, arrays, maps, sets, or objects—**never modify them directly (add/delete items) while you're looping over them.**
+
+---
+
+## 💡 Why Is This a Problem?
+
+Mutating during iteration causes **unpredictable behavior**:
+
+- Items might get **skipped**.
+- The loop might behave **inconsistently**.
+- You might silently miss data or even introduce bugs.
+
+---
+
+## ✅ The Right Way: Copy Before You Mutate
+
+If you need to modify something while looping, **make a copy first**.
+
+### ✅ Good Example: Working with `FormData`
+
+```ts
+const form = new FormData();
+// ...form gets populated...
+
+// Step 1: Copy entries into an array
+const entries = Array.from(form.entries());
+
+// Step 2: Now it's safe to iterate and mutate
+for (const [key, value] of entries) {
+  console.log(`${key}: ${value}`);
+  form.delete(key); // ✅ Safe mutation
+}
 ```
