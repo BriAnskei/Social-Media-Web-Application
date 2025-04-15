@@ -81,3 +81,63 @@ for (const [key, value] of entries) {
   form.delete(key); // ✅ Safe mutation
 }
 ```
+
+---
+
+# 📘 Redux Toolkit: Async Thunk & Loading State
+
+## 🧩 Topic  
+Managing the loading state during an `asyncThunk` that also dispatches synchronous reducers like `deleteList`.
+
+---
+
+## ✅ How `createAsyncThunk` Works
+
+When you dispatch an `asyncThunk` (e.g., `removeNotifList`), Redux Toolkit automatically dispatches **three lifecycle actions**:
+
+- **`pending`** – Dispatched immediately when the thunk starts  
+  → `state.loading = true`
+
+- **`fulfilled`** – Dispatched when the async function completes successfully  
+  → `state.loading = false`
+
+- **`rejected`** – Dispatched when the async function throws or uses `rejectWithValue`  
+  → `state.loading = false`
+
+### 🔍 Internal Flow
+
+- All async logic is handled inside a `try/catch` block.
+- You can dispatch **synchronous reducers** (e.g., `deleteList`) **inside** the thunk.
+- The loading state remains `true` until the thunk resolves (either fulfilled or rejected).
+- Even if local state updates are synchronous, the `loading` flag is not reset until the async operation ends.
+
+---
+
+## 🔁 Example Flow
+
+```ts
+dispatch(removeNotifList("123")); 
+// → state.loading = true  (pending)
+
+await API call...
+
+dispatch(deleteList("123")); 
+// → updates local state (e.g., remove item from UI)
+
+return result;
+// → state.loading = false (fulfilled)
+```
+
+---
+
+## 🧠 Important Notes
+
+- The `loading` state is **tied to the async thunk’s lifecycle**, not the time taken by internal reducers.
+- Synchronous reducers like `deleteList` **do not affect** the timing of `pending` or `fulfilled` actions.
+- If a reducer is **computationally expensive** (e.g., `O(n)` or more), it might still cause a **UI freeze** unless:
+  - It’s optimized (e.g., batched updates, memoization)
+  - Or offloaded (e.g., to a web worker)
+
+---
+
+💡 Use this structure to confidently manage async and sync logic together while keeping your UI responsive and predictable.
