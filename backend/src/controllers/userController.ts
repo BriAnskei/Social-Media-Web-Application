@@ -205,11 +205,13 @@ export const updateProfile = async (
     if (newProfileImage) {
       console.log(newProfileImage);
 
-      const fileName = `${generateNameSuffix}${newProfileImage.originalname}`;
+      const fileName = `${generateNameSuffix()}${newProfileImage.originalname}`;
       const uploadPath = path.join("uploads", "profile", userId.toString());
+
       await fs.promises.mkdir(uploadPath, { recursive: true }); // Creates the upload path deriectory if it doesn't Exist
 
       const filePath = path.join(uploadPath, fileName);
+
       await fs.promises.writeFile(filePath, newProfileImage.buffer);
 
       updatedData.profilePicture = fileName;
@@ -233,7 +235,7 @@ export const updateProfile = async (
       message: "User succesfully updated",
     });
   } catch (error) {
-    console.log(error);
+    console.log("updating profile error: ", error);
     return res.json({ success: false, message: "Error" });
   }
 };

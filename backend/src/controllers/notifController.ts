@@ -168,3 +168,31 @@ export const setReadNotification = async (
     return res.json({ success: false, message: "Error" });
   }
 };
+
+export const deleteNotifs = async (
+  req: Request,
+  res: Response
+): Promise<any> => {
+  try {
+    const postId = req.body.postId;
+
+    console.log(postId);
+
+    if (!postId) {
+      return res.json({
+        success: false,
+        message: "No Id has been recieved in the controller",
+      });
+    }
+
+    const result = await notificationModel.deleteMany({ post: postId });
+
+    res.json({
+      success: false,
+      message: `Notification succesfully remove from DB, deleted count: ${result.deletedCount}`,
+    });
+  } catch (error) {
+    console.log(error);
+    return res.json({ success: false, message: "Error" });
+  }
+};

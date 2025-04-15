@@ -2,6 +2,7 @@ import express from "express";
 import {
   addComment,
   createPost,
+  deletePost,
   findPostById,
   likeToggled,
   postsLists,
@@ -28,5 +29,6 @@ postRouter.post(
 postRouter.post("/like-toggle", authMiddleware, likeToggled);
 postRouter.post("/add-comment", addComment);
 postRouter.post("/getpost", findPostById);
+postRouter.post("/delete", deletePost);
 
 export default postRouter;

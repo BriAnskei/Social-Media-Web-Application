@@ -146,6 +146,55 @@ export const fetchPost = createAsyncThunk(
   }
 );
 
+export const updatePost = createAsyncThunk(
+  "post/update",
+  async (
+    { data, postId }: { data: FormData; postId: string },
+    { rejectWithValue, getState, dispatch }
+  ) => {
+    try {
+      const { auth } = getState() as RootState;
+      const token = auth.accessToken;
+      if (!token)
+        return rejectWithValue("No access token to procces this request");
+      const res = await postApi.update(token, data, postId);
+
+      if (res.success) {
+        dispatch(update(res.posts as FetchPostType));
+      }
+
+      return res;
+    } catch (error) {
+      rejectWithValue(error);
+    }
+  }
+);
+
+export const deletePost = createAsyncThunk(
+  "post/delete",
+  async (postId: string, { getState, rejectWithValue, dispatch }) => {
+    try {
+      const { auth } = getState() as RootState;
+      const token = auth.accessToken;
+
+      if (!token || !postId)
+        return rejectWithValue(
+          "No access token/postId to procces this request"
+        );
+
+      const res = await postApi.delete(postId, token);
+
+      if (res.success) {
+        dispatch(dropPost(postId));
+      }
+
+      return res;
+    } catch (error) {
+      rejectWithValue(error);
+    }
+  }
+);
+
 const postsSlice = createSlice({
   name: "posts",
   initialState,
@@ -204,6 +253,22 @@ const postsSlice = createSlice({
           state.byId[postId].comments.push(commentData);
         }
       }
+    },
+    update: (state, action: PayloadAction<FetchPostType>) => {
+      const postData = action.payload;
+
+      const prevData = state.byId[postData._id];
+      state.byId[postData._id] = {
+        ...prevData,
+        content: postData.content || "",
+        image: postData.image || "",
+      };
+    },
+    dropPost: (state, action) => {
+      const postId = action.payload;
+
+      delete state.byId[postId];
+      state.allIds = state.allIds.filter((id) => id !== postId);
     },
   },
   extraReducers: (builder) => {
@@ -281,10 +346,43 @@ const postsSlice = createSlice({
       .addCase(fetchPost.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
+      })
+
+      // update
+      .addCase(updatePost.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(updatePost.fulfilled, (state) => {
+        state.loading = false;
+      })
+      .addCase(updatePost.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+      })
+      // delete
+      .addCase(deletePost.pending, (state) => {
+        state.error = null;
+        state.loading = true;
+      })
+      .addCase(deletePost.fulfilled, (state) => {
+        state.error = null;
+        state.loading = false;
+      })
+      .addCase(deletePost.rejected, (state, action) => {
+        state.error = action.payload as string;
+        state.loading = false;
       });
   },
 });
 
-export const { toggle, postLiked, commentOnPost, addPost, resetData } =
-  postsSlice.actions;
+export const {
+  toggle,
+  postLiked,
+  commentOnPost,
+  addPost,
+  resetData,
+  update,
+  dropPost,
+} = postsSlice.actions;
 export default postsSlice.reducer;

@@ -5,6 +5,9 @@ import { useCurrentUser } from "../../../hooks/useUsers";
 import { useGlobal } from "../../../hooks/useModal";
 import { usePostById } from "../../../hooks/usePost";
 import Spinner from "../../Spinner/Spinner";
+import { useDispatch } from "react-redux";
+import { AppDispatch } from "../../../store/store";
+import { updatePost } from "../../../features/posts/postSlice";
 
 interface EditPostProp {
   postId: string;
@@ -12,8 +15,9 @@ interface EditPostProp {
 }
 
 const EditPostModal: React.FC<EditPostProp> = ({ postId, show }) => {
+  const dispatch = useDispatch<AppDispatch>();
   const postData = usePostById(postId);
-  const { editPostModa } = useGlobal();
+  const { editPostModal } = useGlobal();
 
   const { currentUser } = useCurrentUser();
   const { profilePicture, _id, fullName } = currentUser;
@@ -22,8 +26,14 @@ const EditPostModal: React.FC<EditPostProp> = ({ postId, show }) => {
     null
   );
   const [fontSize, setFontSize] = useState("25px");
+  879;
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+
+  const [deleteField, setDeletedField] = useState<{
+    contentDeleted: boolean;
+    imageDeleted: boolean;
+  }>({ contentDeleted: false, imageDeleted: false });
 
   useEffect(() => {
     if (!postData) return;
@@ -78,7 +88,7 @@ const EditPostModal: React.FC<EditPostProp> = ({ postId, show }) => {
   const onCloseModal = () => {
     setPhotoUrl(null);
     setPostInputData(null);
-    editPostModa.toggleEditModal(null);
+    editPostModal.toggleEditModal(null);
   };
 
   function isValidUrl(str: string) {
@@ -100,8 +110,51 @@ const EditPostModal: React.FC<EditPostProp> = ({ postId, show }) => {
       }
       return null;
     });
+    setDeletedField((prev) => ({ ...prev, imageDeleted: true }));
   };
 
+  const submitChanges = async (e: any) => {
+    try {
+      e.preventDefault();
+      const form = new FormData();
+
+      if (!postInputData?.content && !postInputData?.image) return;
+
+      if (postInputData?.image && typeof postInputData.image !== "string") {
+        form.append("image", postInputData.image);
+      }
+
+      if (postData.image && deleteField.imageDeleted) {
+        form.append("deletedImage", "true");
+        form.append("oldFileName", postData.image);
+      }
+
+      if (postInputData?.content || postData.content) {
+        if (postInputData?.content) {
+          if (postData.content !== postInputData.content) {
+            form.append("content", postInputData.content);
+          }
+        }
+
+        if (postInputData!.content.length === 0) {
+          form.append("deletedContent", "true");
+        }
+      }
+
+      const data = {
+        data: form,
+        postId,
+      };
+
+      const res = await dispatch(updatePost(data)).unwrap();
+
+      if (res?.success) {
+        onCloseModal();
+      }
+    } catch (error) {
+      console.log("Error submiting changes: " + error);
+    }
+  };
   return (
     <div className={`modal fade ${show ? "show d-block" : ""} edit-post-modal`}>
       <div className="modal-dialog upload-modal-position">
@@ -182,7 +235,7 @@ const EditPostModal: React.FC<EditPostProp> = ({ postId, show }) => {
             )}
           </div>
           <div className="modal-footer modal-post-footer">
-            <button>Save Changes</button>
+            <button onClick={submitChanges}>Save Changes</button>
           </div>
         </div>
       </div>

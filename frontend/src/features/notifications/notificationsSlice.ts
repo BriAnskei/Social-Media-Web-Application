@@ -70,6 +70,29 @@ export const markAllRead = createAsyncThunk(
   }
 );
 
+export const removeNotifList = createAsyncThunk(
+  "notification/delete-notif",
+  async (postId: string, { getState, dispatch, rejectWithValue }) => {
+    try {
+      const { auth } = getState() as RootState;
+      const token = auth.accessToken;
+
+      if (!token || !postId)
+        return rejectWithValue("No token or post ID to process this request");
+
+      const res = await notificationApi.removeList(postId, token);
+
+      if (true) {
+        dispatch(deleteList(postId));
+      }
+
+      return res;
+    } catch (error) {
+      rejectWithValue("Delete notif list error: " + error);
+    }
+  }
+);
+
 const notificationSlice = createSlice({
   name: "notification",
   initialState,
@@ -78,9 +101,6 @@ const notificationSlice = createSlice({
       // used in socket
       const { isExist, data } = action.payload;
       const { byId, allIds } = normalizeResponse(data);
-
-      console.log("notification data: ", action.payload, byId, allIds);
-      console.log("State before: ", current(state.byId), current(state.allIds));
 
       // if data exist, remove. Otherwise add the data to state
       if (!isExist) {
@@ -93,7 +113,25 @@ const notificationSlice = createSlice({
         state.allIds = [...state.allIds.filter((id) => id !== allIds[0])];
         delete state.byId[allIds[0]];
       }
-      console.log("State after: ", state.byId, state.allIds);
+    },
+    deleteList: (state, action) => {
+      try {
+        const postId = action.payload;
+
+        const idListToRemove = Object.keys(state.byId).filter(
+          (id) => state.byId[id].post === postId
+        );
+
+        state.allIds = state.allIds.filter(
+          (id) => !idListToRemove.includes(id)
+        );
+
+        for (let id of idListToRemove) {
+          delete state.byId[id];
+        }
+      } catch (error) {
+        console.log(error);
+      }
     },
   },
   extraReducers: (builder) => {
@@ -134,9 +172,23 @@ const notificationSlice = createSlice({
       .addCase(markAllRead.rejected, (state, action) => {
         state.error = action.payload as string;
         state.loading = false;
+      })
+
+      // delete notifs
+      .addCase(removeNotifList.pending, (state) => {
+        state.error = null;
+        state.loading = true;
+      })
+      .addCase(removeNotifList.fulfilled, (state) => {
+        state.error = null;
+        state.loading = false;
+      })
+      .addCase(removeNotifList.rejected, (state, action) => {
+        state.error = action.payload as string;
+        state.loading = false;
       });
   },
 });
 
-export const { addNotification } = notificationSlice.actions;
+export const { addNotification, deleteList } = notificationSlice.actions;
 export default notificationSlice.reducer;

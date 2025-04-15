@@ -17,11 +17,12 @@ import { useGlobal } from "../../hooks/useModal";
 import ViewPostModal from "../../Components/Modal/ViewPostModal/ViewPostModal";
 import PopoverMenu from "../../Components/Popover/Popover";
 import EditPostModal from "../../Components/Modal/EditPostModal/EditPostModal";
+import DeletePostModal from "../../Components/Modal/DeletePostModal/DeletePostModal";
 
 const MainLayout = () => {
   const dispatch = useDispatch<AppDispatch>();
   const { isAuthenticated } = useSelector((state: RootState) => state.auth);
-  const { postModal, popover, editPostModa } = useGlobal();
+  const { postModal, popover, editPostModal } = useGlobal();
   const { onClosePostModal, postId, showPostModal } = postModal;
 
   useEffect(() => {
@@ -78,7 +79,8 @@ const MainLayout = () => {
         postId={postId!}
       />
       <PopoverMenu target={popover.target!} show={popover.show} />
-      <EditPostModal postId={editPostModa.postId} show={editPostModa.show} />
+      <EditPostModal postId={editPostModal.postId} show={editPostModal.show} />
+      <DeletePostModal />
     </>
   );
 };

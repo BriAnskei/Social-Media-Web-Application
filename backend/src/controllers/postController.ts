@@ -32,22 +32,17 @@ export const createPost = async (
   }
 };
 
-export const updatePost = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
+export const updatePost = async (req: Request, res: Response): Promise<any> => {
   try {
     const { postId } = req.params;
     const newImageFile = req.file;
     const { deletedImage, deletedContent, content } = req.body;
 
-    console.log(deletedImage, content, newImageFile);
-
     const postData = await postModel.findById(postId);
 
-    if (!postData) throw new Error("Cannot find postData");
-
-    console.log("data before: ", postData);
+    if (!postData) {
+      return res.json({ success: false, message: "Post Data does not exist" });
+    }
 
     if (newImageFile || postData?.image) {
       if (deletedImage === "true") {
@@ -59,13 +54,16 @@ export const updatePost = async (
       }
     }
 
-    postData.content = (deletedContent === "true" && content) || "";
+    postData.content =
+      deletedContent && deletedContent === "true"
+        ? content
+        : content || postData.content;
 
-    console.log("data after: ", postData);
     await postData.save();
 
     res.json({
       success: true,
+      posts: postData,
       message: "post successfully updated",
     });
   } catch (error) {
@@ -157,6 +155,28 @@ export const findPostById = async (
     }
 
     res.json({ success: true, posts: postData });
+  } catch (error) {
+    console.log(error);
+    res.json({ success: false, message: "Error" });
+  }
+};
+
+export const deletePost = async (req: Request, res: Response): Promise<any> => {
+  try {
+    const { postId } = req.body;
+
+    console.log(postId);
+
+    if (!postId) {
+      return res.json({ success: false, message: "Post not found" });
+    }
+
+    const result = await postModel.deleteOne({ _id: postId });
+
+    res.json({
+      success: true,
+      message: `SuccesFully deleted; acknowledge: ${result.acknowledged}, deletedCount: ${result.deletedCount}`,
+    });
   } catch (error) {
     console.log(error);
     res.json({ success: false, message: "Error" });

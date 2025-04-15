@@ -3,8 +3,6 @@ import { LoginTypes, RegisterTypes } from "../types/AuthTypes";
 import { FetchedUserType, FollowPayload } from "../types/user";
 import { CommentEventPayload, FetchPostType } from "../types/PostType";
 import { NotificationType } from "../types/NotificationTypes";
-import { data } from "react-router";
-import { posts } from "../assets/assets";
 
 // Axion instance
 export const api = axios.create({
@@ -21,6 +19,28 @@ export interface ApiResponse {
 }
 
 export const postApi = {
+  update: async (
+    token: string,
+    data: FormData,
+    postId: string
+  ): Promise<ApiResponse> => {
+    try {
+      const response = await api.post(`/api/posts/update/${postId}`, data, {
+        headers: {
+          token,
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      return response.data;
+    } catch (error) {
+      return {
+        success: false,
+        message: "Updating error" + error,
+      };
+    }
+  },
+
   fetchPost: async (): Promise<ApiResponse> => {
     try {
       const response = await api.get(`/api/posts/postlist`);
@@ -117,6 +137,32 @@ export const postApi = {
       return {
         success: false,
         message: "Network Error Occured",
+      };
+    }
+  },
+
+  delete: async (postId: string, token: string): Promise<ApiResponse> => {
+    try {
+      if (!postId) {
+        throw new Error("No PostId provided");
+      }
+      const response = await api.post(
+        "api/posts/delete",
+        { postId },
+        {
+          headers: {
+            token,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      return response.data;
+    } catch (error) {
+      console.log("Error deleteting post: ", error);
+      return {
+        success: false,
+        message: "Network Error Occured: " + error,
       };
     }
   },
@@ -312,8 +358,6 @@ export const notificationApi = {
     try {
       if (!token) throw new Error("No token, cannot process");
 
-      console.log(allIds);
-
       const response = await api.post(
         "api/notify/set-read",
         { allIds },
@@ -328,6 +372,31 @@ export const notificationApi = {
       return response.data;
     } catch (error) {
       console.error(error);
+      return {
+        success: false,
+        message: "Network Error Occured",
+      };
+    }
+  },
+
+  removeList: async (postId: string, token: string): Promise<ApiResponse> => {
+    try {
+      if (!token || !postId) throw new Error("No token/postId, cannot process");
+
+      const res = await api.post(
+        "api/notify/delete-notif",
+        { postId },
+        {
+          headers: {
+            token,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      return res.data;
+    } catch (error) {
+      console.error("Faild to remove notifs: ", error);
       return {
         success: false,
         message: "Network Error Occured",

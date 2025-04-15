@@ -27,11 +27,18 @@ interface EditPostModal {
   toggleEditModal: (postId: string | null) => void;
 }
 
+interface DeletePostModal {
+  postId: string;
+  show: boolean;
+  toggleDeleteModal: (postId: string | null) => void;
+}
+
 interface GlobalContextValue {
   postModal: PostModalTypes;
   postData: ViewPost;
   popover: PopoverProp;
-  editPostModa: EditPostModal;
+  editPostModal: EditPostModal;
+  deletePostModal: DeletePostModal;
 }
 
 interface ModalProviderProps {
@@ -49,6 +56,11 @@ export const GlobalProvider: React.FC<ModalProviderProps> = ({ children }) => {
     postId: string;
     show: boolean;
   }>({
+    postId: "",
+    show: false,
+  });
+
+  const [deletePostData, setDeletePostData] = useState({
     postId: "",
     show: false,
   });
@@ -119,14 +131,15 @@ export const GlobalProvider: React.FC<ModalProviderProps> = ({ children }) => {
     switch (type) {
       case "edit":
         toggleEditModal(postId);
-        setPopoverData((prev) => ({ ...prev, show: false }));
+
         break;
       case "delete":
-        console.log("Dispatch delete", postId);
+        toggleDeleteModal(postId);
         break;
       default:
         return type;
     }
+    setPopoverData((prev) => ({ ...prev, show: false }));
   };
 
   // Edit Post Modal
@@ -136,6 +149,15 @@ export const GlobalProvider: React.FC<ModalProviderProps> = ({ children }) => {
       show: !prev.show,
       postId: postId ? postId : "",
     }));
+  };
+
+  const toggleDeleteModal = (postId: string | null) => {
+    setDeletePostData((prev) => ({
+      ...prev,
+      show: !prev.show,
+      postId: postId || "",
+    }));
+    console.log("toggler toggled: ", deletePostData);
   };
 
   const globalContextValue: GlobalContextValue = {
@@ -157,10 +179,15 @@ export const GlobalProvider: React.FC<ModalProviderProps> = ({ children }) => {
       popOverToggle,
       popoverEventMenu,
     },
-    editPostModa: {
+    editPostModal: {
       postId: postEditModal.postId,
       show: postEditModal.show,
       toggleEditModal,
+    },
+    deletePostModal: {
+      postId: deletePostData.postId,
+      show: deletePostData.show,
+      toggleDeleteModal,
     },
   };
 
