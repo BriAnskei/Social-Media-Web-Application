@@ -2,6 +2,9 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Overlay, Popover, Button } from "react-bootstrap";
 import { useGlobal } from "../../hooks/useModal";
+import { useDispatch } from "react-redux";
+import { AppDispatch } from "../../store/store";
+import { toggleDeleteModal, toggleEditModal } from "../Modal/globalSlice";
 
 interface PopoverProp {
   target: React.MutableRefObject<null>;
@@ -9,12 +12,26 @@ interface PopoverProp {
 }
 
 const PopoverMenu: React.FC<PopoverProp> = ({ target, show }) => {
+  if (!target || !target.current) {
+    return;
+  }
+
+  const dispatch = useDispatch<AppDispatch>();
   const { popover } = useGlobal();
 
-  useEffect(() => {
-    console.log(popover.postId);
-  }, [popover]);
-  if (!target) return;
+  const popoverEventMenu = (type: string) => {
+    switch (type) {
+      case "edit":
+        dispatch(toggleEditModal(popover.postId));
+        break;
+      case "delete":
+        dispatch(toggleDeleteModal(popover.postId));
+        break;
+      default:
+        return type;
+    }
+    popover.popOverClose();
+  };
 
   return (
     <div>
@@ -27,9 +44,7 @@ const PopoverMenu: React.FC<PopoverProp> = ({ target, show }) => {
                   variant="outline-secondary"
                   size="sm"
                   style={{ height: "1.7rem" }}
-                  onClick={() =>
-                    popover.popoverEventMenu(popover.postId, "edit")
-                  }
+                  onClick={() => popoverEventMenu("edit")}
                 >
                   Edit post
                 </Button>
@@ -37,9 +52,7 @@ const PopoverMenu: React.FC<PopoverProp> = ({ target, show }) => {
                   variant="outline-secondary"
                   size="sm"
                   style={{ height: "1.7rem" }}
-                  onClick={() =>
-                    popover.popoverEventMenu(popover.postId, "delete")
-                  }
+                  onClick={() => popoverEventMenu("delete")}
                 >
                   Delete post
                 </Button>

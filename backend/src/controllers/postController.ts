@@ -165,10 +165,11 @@ export const deletePost = async (req: Request, res: Response): Promise<any> => {
   try {
     const { postId } = req.body;
 
-    console.log(postId);
-
     if (!postId) {
-      return res.json({ success: false, message: "Post not found" });
+      return res.json({
+        success: false,
+        message: "Post Id is required to delete a post",
+      });
     }
 
     const result = await postModel.deleteOne({ _id: postId });

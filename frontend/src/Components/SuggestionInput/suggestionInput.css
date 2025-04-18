@@ -1,0 +1,59 @@
+.suggestion-wrapper {
+  position: relative;
+}
+
+.suggestions-dropdown {
+  position: absolute;
+  top: 100%; /* right below the input */
+  left: 0;
+  width: 100%;
+  z-index: 2000;
+  background-color: white;
+
+  border-radius: 0 0 8px 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.suggestions-dropdown .list-group {
+  border-radius: inherit;
+}
+
+.suggestions-dropdown ul {
+  list-style-type: none;
+}
+
+.suggestions-dropdown ul li {
+  padding: 2px 2px 4px 4px;
+}
+
+.list-user-cont {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.list-user-cont img {
+  height: 1.9rem;
+  box-sizing: border-box;
+  display: block;
+  cursor: pointer;
+  width: 1.9rem;
+  border-radius: 100%;
+  margin: 0.3rem 0 0 0;
+  padding: 0;
+  object-fit: cover;
+}
+
+.search-loading {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: rgba(235, 235, 235, 0.7);
+  border-radius: 0 0 8px 8px;
+  height: 5rem;
+  width: 100%;
+  z-index: -1;
+}

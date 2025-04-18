@@ -1,18 +1,21 @@
 .navbar {
   display: flex;
   justify-content: space-between;
-  padding: 12px 0px;
+  align-items: center;
   width: 80%;
+
   position: fixed;
   top: 0;
-  overflow: hidden;
+  overflow: visible; /* allow children to overflow */
   background-color: white;
   z-index: 1;
 }
 
 .navbar .logo {
   display: flex;
+  align-items: center;
   gap: 0.4rem;
+  height: inherit;
 }
 
 .logo span {
@@ -33,6 +36,7 @@ input {
 .navbar-act {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   gap: 30px;
 }
 
@@ -110,6 +114,10 @@ Link {
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.logout {
+  height: 30px;
 }
 
 .logout span {

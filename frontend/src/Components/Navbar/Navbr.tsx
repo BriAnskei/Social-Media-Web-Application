@@ -8,6 +8,7 @@ import { AppDispatch, RootState } from "../../store/store";
 import LogoutModal from "../Modal/LogoutModal/LogoutModal";
 import { useUnreadNotif } from "../../hooks/useUnreadNotif";
 import { markAllRead } from "../../features/notifications/notificationsSlice";
+import SuggestionInput from "../SuggestionInput/suggestionInput";
 
 const Navbr = () => {
   const dispatch = useDispatch<AppDispatch>();
@@ -42,7 +43,8 @@ const Navbr = () => {
       <div className="navbar">
         <div className="logo">
           <span>Social App</span>
-          <input type="text" placeholder="Search PekBok" />
+
+          <SuggestionInput />
         </div>
         <div className="navbar-act">
           <ul className="navbar-menu">

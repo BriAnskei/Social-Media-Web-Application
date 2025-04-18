@@ -10,6 +10,7 @@ import {
 } from "../controllers/postController";
 import upload from "../middleware/upload";
 import authMiddleware from "../middleware/auth";
+import { profileSearch } from "../controllers/userController";
 
 const postRouter = express.Router();
 
@@ -29,6 +30,13 @@ postRouter.post(
 postRouter.post("/like-toggle", authMiddleware, likeToggled);
 postRouter.post("/add-comment", addComment);
 postRouter.post("/getpost", findPostById);
-postRouter.post("/delete", deletePost);
+postRouter.post(
+  "/delete",
+  authMiddleware,
+  upload.post.delete.single(),
+  deletePost
+);
+// search
+postRouter.post("/search", profileSearch);
 
 export default postRouter;

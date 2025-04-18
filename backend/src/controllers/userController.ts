@@ -339,6 +339,40 @@ export const followUser = async (req: Request, res: Response): Promise<any> => {
   }
 };
 
+export const profileSearch = async (
+  req: Request,
+  res: Response
+): Promise<any> => {
+  try {
+    const { query } = req.query;
+    console.log("recieved query: ", query);
+
+    if (!query || (query as string).trim() === "") {
+      return res.json({
+        success: true,
+        message: "no query to return fetch",
+        user: [],
+      });
+    }
+
+    const result = await UserModel.find({
+      $or: [
+        { username: new RegExp(query as string, "i") }, // case sensitive
+        { fullName: new RegExp(query as string, "i") },
+      ],
+    });
+
+    return res.json({
+      success: true,
+      message: "user successfully fretched",
+      user: result,
+    });
+  } catch (error) {
+    console.log("Failed to fetch seach " + error);
+    return res.json({ success: false, message: "Error" });
+  }
+};
+
 // Server socket export
 export const getUsersFolowers = async (userId: string) => {
   try {

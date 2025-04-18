@@ -9,6 +9,7 @@ interface ProfileProp {
 
 const Profile: React.FC<ProfileProp> = ({ data }) => {
   const [showEdit, setShowEidt] = useState(false);
+  const [followStyleId, setFollowStyleId] = useState("follow-button");
 
   const toggleEdit = () => {
     setShowEidt(!showEdit);
@@ -30,7 +31,11 @@ const Profile: React.FC<ProfileProp> = ({ data }) => {
             <span>{data.bio}</span>
           </div>
         </div>
-        <button onClick={toggleEdit}>Edit Profile</button>
+        {false ? (
+          <button onClick={toggleEdit}>Edit Profile</button>
+        ) : (
+          <button id={followStyleId}>+ Follow</button>
+        )}
       </div>
     </>
   );

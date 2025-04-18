@@ -27,3 +27,18 @@ export const selectPostById = createSelector(
   [byId, (_, postId: string) => postId],
   (postById, postId) => postById[postId] || ({} as FetchPostType)
 );
+
+export const selectPostsByUserId = createSelector(
+  [postLoading, userLoading, byId, allIds, (_, userId: string) => userId],
+  (pLoading, uLoading, byId, allIds, userId) => {
+    const postByUserId = allIds
+      .filter((id) => byId[id].user === userId)
+      .map((id) => byId[id]);
+
+    return {
+      userPosts:
+        postByUserId.length > 0 ? postByUserId : ({} as FetchPostType[]),
+      loading: pLoading || uLoading,
+    };
+  }
+);

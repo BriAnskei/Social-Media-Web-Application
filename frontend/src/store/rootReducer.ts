@@ -4,19 +4,15 @@ import authReducer from "../features/auth/authSlice";
 import messageReducer from "../features/messenger/messengerSlice";
 import notificationReducer from "../features/notifications/notificationsSlice";
 import postReducer from "../features/posts/postSlice";
-console.log(
-  authReducer,
-  userReducer,
-  messageReducer,
-  notificationReducer,
-  postReducer
-);
+import globalReducer from "../Components/Modal/globalSlice";
+
 const rootReducer = combineReducers({
   user: userReducer,
   auth: authReducer,
   posts: postReducer,
   chats: messageReducer,
   notification: notificationReducer,
+  global: globalReducer,
 });
 
 export default rootReducer;

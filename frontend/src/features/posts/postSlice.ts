@@ -1,9 +1,4 @@
-import {
-  createAsyncThunk,
-  createSlice,
-  current,
-  PayloadAction,
-} from "@reduxjs/toolkit";
+import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
 
 import { ApiResponse, postApi } from "../../utils/api";
 import {
@@ -172,7 +167,10 @@ export const updatePost = createAsyncThunk(
 
 export const deletePost = createAsyncThunk(
   "post/delete",
-  async (postId: string, { getState, rejectWithValue, dispatch }) => {
+  async (
+    { postId, fileName }: { postId: string; fileName: string },
+    { getState, rejectWithValue, dispatch }
+  ) => {
     try {
       const { auth } = getState() as RootState;
       const token = auth.accessToken;
@@ -182,7 +180,7 @@ export const deletePost = createAsyncThunk(
           "No access token/postId to procces this request"
         );
 
-      const res = await postApi.delete(postId, token);
+      const res = await postApi.delete(postId, fileName, token);
 
       if (res.success) {
         dispatch(dropPost(postId));

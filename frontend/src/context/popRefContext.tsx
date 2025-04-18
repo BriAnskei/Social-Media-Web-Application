@@ -18,7 +18,7 @@ interface PopoverProp {
   target: React.MutableRefObject<null>;
   postId: string;
   popOverToggle: (postId: string, target: React.MutableRefObject<null>) => void;
-  popoverEventMenu: (id: string, type: string) => void;
+  popOverClose: () => void;
 }
 
 interface EditPostModal {
@@ -119,6 +119,7 @@ export const GlobalProvider: React.FC<ModalProviderProps> = ({ children }) => {
         setPopoverData((prev) => ({ ...prev, show: !prev.show, postId: "" }));
       }
     } else {
+      console.log("popover toggled: ", postId, target);
       setPopoverData((prev) => ({
         ...prev,
         target: target,
@@ -127,18 +128,8 @@ export const GlobalProvider: React.FC<ModalProviderProps> = ({ children }) => {
       }));
     }
   };
-  const popoverEventMenu = (postId: string, type: string) => {
-    switch (type) {
-      case "edit":
-        toggleEditModal(postId);
 
-        break;
-      case "delete":
-        toggleDeleteModal(postId);
-        break;
-      default:
-        return type;
-    }
+  const popOverClose = () => {
     setPopoverData((prev) => ({ ...prev, show: false }));
   };
 
@@ -177,7 +168,7 @@ export const GlobalProvider: React.FC<ModalProviderProps> = ({ children }) => {
       target: popoverData.target,
       postId: popoverData.postId,
       popOverToggle,
-      popoverEventMenu,
+      popOverClose,
     },
     editPostModal: {
       postId: postEditModal.postId,

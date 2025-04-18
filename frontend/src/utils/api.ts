@@ -141,14 +141,19 @@ export const postApi = {
     }
   },
 
-  delete: async (postId: string, token: string): Promise<ApiResponse> => {
+  delete: async (
+    postId: string,
+    fileName: string,
+    token: string
+  ): Promise<ApiResponse> => {
     try {
       if (!postId) {
         throw new Error("No PostId provided");
       }
+
       const response = await api.post(
         "api/posts/delete",
-        { postId },
+        { postId, fileName },
         {
           headers: {
             token,
@@ -241,6 +246,19 @@ export const userApi = {
         }
       );
 
+      return response.data;
+    } catch (error) {
+      return {
+        success: false,
+        message: "Api error response",
+      };
+    }
+  },
+
+  searchRedex: async (query: string): Promise<ApiResponse> => {
+    try {
+      const response = await api.post(`/api/users/search?query=${query}`);
+      console.log(query, response.data);
       return response.data;
     } catch (error) {
       return {

@@ -12,12 +12,12 @@ import { updatePost } from "../../../features/posts/postSlice";
 interface EditPostProp {
   postId: string;
   show: boolean;
+  onClose: () => void;
 }
 
-const EditPostModal: React.FC<EditPostProp> = ({ postId, show }) => {
+const EditPostModal: React.FC<EditPostProp> = ({ postId, show, onClose }) => {
   const dispatch = useDispatch<AppDispatch>();
   const postData = usePostById(postId);
-  const { editPostModal } = useGlobal();
 
   const { currentUser } = useCurrentUser();
   const { profilePicture, _id, fullName } = currentUser;
@@ -40,11 +40,6 @@ const EditPostModal: React.FC<EditPostProp> = ({ postId, show }) => {
 
     setPostInputData(postData);
   }, [postData]);
-
-  useEffect(() => {
-    if (!postInputData) return;
-    console.log("IMAGE URL", postInputData.image && isValidUrl(photoUrl!));
-  }, [postInputData]);
 
   const onChangeHandler = (e: any) => {
     const { name, value } = e.target;
@@ -88,7 +83,12 @@ const EditPostModal: React.FC<EditPostProp> = ({ postId, show }) => {
   const onCloseModal = () => {
     setPhotoUrl(null);
     setPostInputData(null);
-    editPostModal.toggleEditModal(null);
+    setDeletedField((prev) => ({
+      ...prev,
+      contentDeleted: false,
+      imageDeleted: false,
+    }));
+    onClose();
   };
 
   function isValidUrl(str: string) {
@@ -148,7 +148,7 @@ const EditPostModal: React.FC<EditPostProp> = ({ postId, show }) => {
 
       const res = await dispatch(updatePost(data)).unwrap();
 
-      if (res?.success) {
+      if (res && res.success) {
         onCloseModal();
       }
     } catch (error) {

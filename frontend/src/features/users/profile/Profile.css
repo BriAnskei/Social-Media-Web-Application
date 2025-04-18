@@ -1,4 +1,3 @@
-
 .profile-main {
   margin-top: 1.2rem;
   display: flex;
@@ -67,4 +66,44 @@
   cursor: pointer;
   position: sticky;
   left: 78%;
+}
+
+.profile-main #follow-button {
+  color: #3399ff;
+  font-family: "Helvetica";
+  font-size: 10pt;
+  background-color: #ffffff;
+  border: 1px solid;
+  border-color: #3399ff;
+  border-radius: 3px;
+  width: 80px;
+  height: 25px;
+  cursor: pointer;
+}
+
+/* Follow style */
+
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+
+.post-info-act #followed {
+  color: green;
+  font-family: "Helvetica";
+  font-size: 10pt;
+  font-weight: bolder;
+  background-color: #ffffff;
+  border: 3px solid green;
+  border-radius: 3px;
+  width: 80px;
+  height: 25px;
+  cursor: pointer;
+
+  animation: fadeOut 2s ease-out forwards;
 }

@@ -32,6 +32,24 @@ const storage = {
   temporary: multer.memoryStorage(), // Temporary memory for registration
 };
 
+async function deleteFileAndEmptyDir(filePath: string): Promise<void> {
+  if (fs.existsSync(filePath)) {
+    // Delete the file
+    await unlinkAsync(filePath);
+    console.log(`Deleted file: ${filePath}`);
+
+    // Check if parent directory is empty and remove if so
+    const dirPath = path.dirname(filePath);
+    const files = await fs.promises.readdir(dirPath);
+    if (files.length === 0) {
+      await fs.promises.rmdir(dirPath);
+      console.log(`Removed empty directory: ${dirPath}`);
+    }
+  } else {
+    console.log(`File not found: ${filePath}`);
+  }
+}
+
 // File upload with replacement middleware
 function updateImageMiddleware(fieldName: string) {
   return function (req: MulterRequest, res: any, next: any) {
@@ -45,7 +63,14 @@ function updateImageMiddleware(fieldName: string) {
         if (oldFileName || deletedImage === "true") {
           const userId = req.userId;
 
-          if (!userId) return next("No user id recieved from the req.");
+          if (!userId)
+            throw new Error(
+              "No user Id recieved in the request to process this"
+            );
+
+          if (oldFileName.includes("..")) {
+            throw new Error("Invalid file path.");
+          }
 
           const filePath = path.join(
             "uploads/posts",
@@ -53,13 +78,7 @@ function updateImageMiddleware(fieldName: string) {
             oldFileName
           );
 
-          // Check if file exists before deleting
-          if (fs.existsSync(filePath)) {
-            await unlinkAsync(filePath);
-            console.log(`Deleted old file: ${filePath}`);
-          } else {
-            console.log(`Old file not found: ${filePath}`);
-          }
+          await deleteFileAndEmptyDir(filePath);
         }
         next();
       } catch (error) {
@@ -70,12 +89,51 @@ function updateImageMiddleware(fieldName: string) {
   };
 }
 
+function deleteImageMiddleWare() {
+  return function (req: MulterRequest, res: any, next: any) {
+    try {
+      // Process the file deletion
+      const { fileName } = req.body;
+      if (!fileName) {
+        return next();
+      }
+
+      const userId = req.userId;
+      if (!userId) {
+        throw new Error("No user Id received in the request to process this");
+      }
+
+      // Security check to prevent directory traversal
+      if (fileName.includes("..")) {
+        throw new Error("Invalid file path.");
+      }
+
+      const filePath = path.join("uploads/posts", userId.toString(), fileName);
+
+      deleteFileAndEmptyDir(filePath)
+        .then(() => {
+          console.log("File succesfully deleted");
+          next();
+        })
+        .catch((error) => {
+          console.error("Error during file deletion:", error);
+          next(error);
+        });
+    } catch (error) {
+      console.error("Error handling file deletion:", error);
+      next(error);
+    }
+  };
+}
 // Regular upload middleware
 const upload = {
   post: {
-    save: multer({ storage: storage.save }),
+    save: multer({ storage: storage.save }), // used for updating
     updateImage: {
       single: (field: string) => updateImageMiddleware(field),
+    },
+    delete: {
+      single: () => deleteImageMiddleWare(),
     },
   },
   profile: multer({

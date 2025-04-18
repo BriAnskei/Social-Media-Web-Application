@@ -21,7 +21,12 @@ const DeletePostModal = () => {
   }, [postData]);
 
   const handleDelete = async () => {
-    await dispatch(deletePost(postId));
+    const dataToDelete = {
+      postId,
+      fileName: (postData.image as string) || "",
+    };
+
+    await dispatch(deletePost(dataToDelete));
     await dispatch(removeNotifList(postId));
     toggleDeleteModal(null);
   };
