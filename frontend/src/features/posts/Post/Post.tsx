@@ -10,6 +10,7 @@ import { useGlobal } from "../../../hooks/useModal";
 
 import { useCurrentUser, useUserById } from "../../../hooks/useUsers";
 import { followToggled, updateFollow } from "../../users/userSlice";
+import { openPostModal } from "../../../Components/Modal/globalSlice";
 
 interface Post {
   post: FetchPostType;
@@ -18,12 +19,11 @@ interface Post {
 
 const Post = ({ post, ownerId }: Post) => {
   const { currentUser } = useCurrentUser();
-  const { postModal, popover } = useGlobal();
+  const { popover } = useGlobal();
   const { emitLike, emitFollow } = useSocket();
 
   const postOwnerData = useUserById(ownerId);
 
-  const { openPostModal } = postModal;
   const dispatch = useDispatch<AppDispatch>();
 
   const target = useRef(null);
@@ -68,7 +68,7 @@ const Post = ({ post, ownerId }: Post) => {
   };
 
   const toggleComments = () => {
-    openPostModal(post._id);
+    dispatch(openPostModal(post._id));
   };
 
   const handleLike = async () => {

@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import "./Navbar.css";
 import { useState } from "react";
 import ChatModal from "../Modal/ChatModal/ChatModal";
@@ -9,9 +9,12 @@ import LogoutModal from "../Modal/LogoutModal/LogoutModal";
 import { useUnreadNotif } from "../../hooks/useUnreadNotif";
 import { markAllRead } from "../../features/notifications/notificationsSlice";
 import SuggestionInput from "../SuggestionInput/suggestionInput";
+import { FetchedUserType } from "../../types/user";
+import { viewProfile } from "../Modal/globalSlice";
 
 const Navbr = () => {
   const dispatch = useDispatch<AppDispatch>();
+  const navigate = useNavigate();
   const [showMessageModal, setShowMessageModal] = useState(false);
   const [showNotifModal, setShowNotifModal] = useState(false);
   const [showLogout, setShowLogout] = useState(false);
@@ -38,13 +41,18 @@ const Navbr = () => {
     setShowLogout(!showLogout);
   };
 
+  const handleOnSeach = (data: FetchedUserType) => {
+    dispatch(viewProfile(data));
+    navigate("/view/profile");
+  };
+
   return (
     <>
       <div className="navbar">
         <div className="logo">
           <span>Social App</span>
 
-          <SuggestionInput />
+          <SuggestionInput onSelect={handleOnSeach} />
         </div>
         <div className="navbar-act">
           <ul className="navbar-menu">

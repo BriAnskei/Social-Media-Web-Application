@@ -1,18 +1,18 @@
 import "./NotificationList.css";
-import { useSelector } from "react-redux";
-import { RootState } from "../../store/store";
-import { useGlobal } from "../../hooks/useModal";
+import { useDispatch, useSelector } from "react-redux";
+import { AppDispatch, RootState } from "../../store/store";
+
 import { useNavigate } from "react-router";
+import { viewPost } from "../../Components/Modal/globalSlice";
 
 const NotificationList = () => {
   const navigate = useNavigate();
+  const dispatch = useDispatch<AppDispatch>();
 
   const { allIds, byId, loading } = useSelector(
     (state: RootState) => state.notification
   );
   const userById = useSelector((state: RootState) => state.user.byId);
-
-  const { postData } = useGlobal();
 
   const displayLogoType = (notificationType: string): string => {
     switch (notificationType) {
@@ -33,7 +33,7 @@ const NotificationList = () => {
     if (!postId) throw new Error("No post Id to view post");
 
     if (type === "upload" || type === "comment" || type === "like") {
-      postData.viewPost(postId);
+      dispatch(viewPost(postId));
       navigate("/viewpost");
     }
   };

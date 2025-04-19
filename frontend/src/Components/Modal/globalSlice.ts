@@ -1,17 +1,13 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { FetchedUserType } from "../../types/user";
 
-// Define state types
+// post states
 export interface PostModalState {
   postId: string;
   showPostModal: boolean;
 }
 
 export interface PostDataState {
-  postId: string;
-}
-
-export interface PopoverState {
-  show: boolean;
   postId: string;
 }
 
@@ -25,12 +21,24 @@ export interface DeletePostModalState {
   show: boolean;
 }
 
+// profile states
+export interface EditProfileModalState {
+  data: FetchedUserType;
+  show: boolean;
+}
+
+export interface ViewProfileState {
+  userData: FetchedUserType;
+}
+
 export interface GlobalState {
   postModal: PostModalState;
   postData: PostDataState;
-  popover: PopoverState;
   editPostModal: EditPostModalState;
   deletePostModal: DeletePostModalState;
+
+  editProfileModal: EditProfileModalState;
+  viewProfile: ViewProfileState;
 }
 
 // Initialize state
@@ -42,10 +50,7 @@ const initialState: GlobalState = {
   postData: {
     postId: "",
   },
-  popover: {
-    show: false,
-    postId: "",
-  },
+
   editPostModal: {
     postId: "",
     show: false,
@@ -54,23 +59,25 @@ const initialState: GlobalState = {
     postId: "",
     show: false,
   },
+
+  editProfileModal: {
+    data: {} as FetchedUserType,
+    show: false,
+  },
+
+  viewProfile: {
+    userData: {} as FetchedUserType,
+  },
 };
 
 // Define payload types for actions that need complex data
-interface PopoverTogglePayload {
-  postId: string;
-}
-
-interface PopoverEventMenuPayload {
-  postId: string;
-  eventType: string;
-}
 
 // Create the slice
 const globalSlice = createSlice({
   name: "global",
   initialState,
   reducers: {
+    // post reducers
     openPostModal: (state, action: PayloadAction<string>) => {
       state.postModal.showPostModal = true;
       state.postModal.postId = action.payload;
@@ -82,28 +89,7 @@ const globalSlice = createSlice({
       if (!action.payload) throw new Error("Error: No Id received");
       state.postData.postId = action.payload;
     },
-    popOverToggle: (state, action: PayloadAction<PopoverTogglePayload>) => {
-      console.log("popover toggled:", action.payload);
-      const { postId } = action.payload;
-      const currentShow = state.popover.show;
-      const currenetPostId = state.popover.postId;
 
-      // Logic matching the original context implementation
-      if (postId && currentShow) {
-        if (postId !== currenetPostId) {
-          state.popover.postId = postId;
-        } else {
-          state.popover.postId = "";
-          state.popover.show = false;
-        }
-      } else {
-        state.popover.show = true;
-        state.popover.postId = postId;
-      }
-    },
-    closePopover: (state) => {
-      state.popover.show = false;
-    },
     toggleEditModal: (state, action: PayloadAction<string | null>) => {
       console.log("toggle edit: ", action.payload);
       state.editPostModal.show = !state.editPostModal.show;
@@ -113,6 +99,18 @@ const globalSlice = createSlice({
       state.deletePostModal.show = !state.deletePostModal.show;
       state.deletePostModal.postId = action.payload || "";
     },
+
+    // profile reducers
+    openEditProfileModal: (state, action: PayloadAction<FetchedUserType>) => {
+      state.editProfileModal.data = action.payload;
+      state.editProfileModal.show = true;
+    },
+    closeEditProfileModal: (state) => {
+      state.editProfileModal.show = false;
+    },
+    viewProfile: (state, action: PayloadAction<FetchedUserType>) => {
+      state.viewProfile.userData = action.payload;
+    },
   },
 });
 
@@ -121,9 +119,11 @@ export const {
   openPostModal,
   closePostModal,
   viewPost,
-  popOverToggle,
-  closePopover,
+  closeEditProfileModal,
   toggleEditModal,
   toggleDeleteModal,
+
+  openEditProfileModal,
+  viewProfile,
 } = globalSlice.actions;
 export default globalSlice.reducer;

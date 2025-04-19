@@ -9,10 +9,14 @@ import { AppDispatch } from "../../../store/store";
 import { removeNotifList } from "../../../features/notifications/notificationsSlice";
 import { deletePost } from "../../../features/posts/postSlice";
 
-const DeletePostModal = () => {
+interface DeletePostProp {
+  postId: string;
+  show: boolean;
+  onClose: () => void;
+}
+
+const DeletePostModal = ({ postId, show, onClose }: DeletePostProp) => {
   const dispatch = useDispatch<AppDispatch>();
-  const { deletePostModal } = useGlobal();
-  const { toggleDeleteModal, show, postId } = deletePostModal;
 
   const postData = usePostById(postId);
 
@@ -28,7 +32,7 @@ const DeletePostModal = () => {
 
     await dispatch(deletePost(dataToDelete));
     await dispatch(removeNotifList(postId));
-    toggleDeleteModal(null);
+    onClose();
   };
 
   return (
@@ -49,7 +53,7 @@ const DeletePostModal = () => {
             <div className="modal-footer">
               <span onClick={handleDelete}>Yes</span>
 
-              <span onClick={() => toggleDeleteModal(null)}>Cancel</span>
+              <span onClick={() => onClose()}>Cancel</span>
             </div>
           </div>
         </div>

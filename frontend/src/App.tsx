@@ -15,14 +15,18 @@ import ProfilePage from "./pages/Profile/ProfilePage";
 import { useEffect } from "react";
 import { fetchCurrentUser } from "./features/users/userSlice";
 import ViewPost from "./features/posts/ViewPost/Viewpost";
-import { useGlobal } from "./hooks/useModal";
 
+import ViewProfilePage from "./pages/ViewProfilePage/ViewProfilePage";
 function App() {
   const dispatch = useDispatch<AppDispatch>();
-  const { postData } = useGlobal();
 
   const { isAuthenticated, accessToken } = useSelector(
     (state: RootState) => state.auth
+  );
+
+  const { postId } = useSelector((state: RootState) => state.global.postData);
+  const userData = useSelector(
+    (state: RootState) => state.global.viewProfile.userData
   );
 
   useEffect(() => {
@@ -49,9 +53,10 @@ function App() {
             <Route path="/" element={<Feed />} />
             <Route path="/profile" element={<ProfilePage />} />
             <Route
-              path="/viewpost"
-              element={<ViewPost postId={postData.postId} />}
+              path="/view/profile"
+              element={<ViewProfilePage data={userData} />}
             />
+            <Route path="/viewpost" element={<ViewPost postId={postId} />} />
           </Route>
           {/* Catch-All Route */}
           <Route

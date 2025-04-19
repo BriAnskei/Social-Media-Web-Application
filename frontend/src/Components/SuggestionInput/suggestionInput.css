@@ -44,6 +44,11 @@
   object-fit: cover;
 }
 
+.list-group-user.active {
+  border: 1px solid rgb(33, 32, 32);
+  border-radius: 6px;
+}
+
 .search-loading {
   position: absolute;
   top: 100%;
