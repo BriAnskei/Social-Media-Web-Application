@@ -1,3 +1,7 @@
+# This will just fucos on the key takeaways
+
+---
+
 # Notes on Uploading and Deleting Files with Node.js
 
 ## Uploading Directory
@@ -82,201 +86,140 @@ for (const [key, value] of entries) {
 }
 ```
 
-````md
-# 🎯 CSS & React + MongoDB Cheat Sheet
+---
+
+# 📘 Redux Toolkit: Async Thunk & Loading State
+
+## 🧩 Topic
+
+Managing the loading state during an `asyncThunk` that also dispatches synchronous reducers like `deleteList`.
 
 ---
 
-## 🎯 Why Use `position: relative`
+## ✅ How `createAsyncThunk` Works
 
-`position: relative` is used to establish a positioning context for child elements with `position: absolute`.
+When you dispatch an `asyncThunk` (e.g., `removeNotifList`), Redux Toolkit automatically dispatches **three lifecycle actions**:
 
-- It **doesn't move the element itself** unless you add `top`, `left`, etc.
-- It **tells child elements**: "You can use me as your positioning reference."
+- **`pending`** – Dispatched immediately when the thunk starts  
+  → `state.loading = true`
 
-### 💡 Example:
+- **`fulfilled`** – Dispatched when the async function completes successfully  
+  → `state.loading = false`
 
-```tsx
-<div className="suggestion-wrapper">
-  <input type="text" />
-  <div className="suggestions-dropdown">...</div>
-</div>
+- **`rejected`** – Dispatched when the async function throws or uses `rejectWithValue`  
+  → `state.loading = false`
+
+### 🔍 Internal Flow
+
+- All async logic is handled inside a `try/catch` block.
+- You can dispatch **synchronous reducers** (e.g., `deleteList`) **inside** the thunk.
+- The loading state remains `true` until the thunk resolves (either fulfilled or rejected).
+- Even if local state updates are synchronous, the `loading` flag is not reset until the async operation ends.
+
+---
+
+## 🔁 Example Flow
+
+```ts
+dispatch(removeNotifList("123"));
+// → state.loading = true  (pending)
+
+await API call...
+
+dispatch(deleteList("123"));
+// → updates local state (e.g., remove item from UI)
+
+return result;
+// → state.loading = false (fulfilled)
 ```
-````
 
-```css
-.suggestion-wrapper {
-  position: relative;
+---
+
+## 🧠 Important Notes
+
+- The `loading` state is **tied to the async thunk’s lifecycle**, not the time taken by internal reducers.
+- Synchronous reducers like `deleteList` **do not affect** the timing of `pending` or `fulfilled` actions.
+- If a reducer is **computationally expensive** (e.g., `O(n)` or more), it might still cause a **UI freeze** unless:
+  - It’s optimized (e.g., batched updates, memoization)
+  - Or offloaded (e.g., to a web worker)
+
+---
+
+💡 Use this structure to confidently manage async and sync logic together while keeping your UI responsive and predictable.
+
+# Key Notes on React, Redux & MongoDB
+
+## 🎯 `position: relative`
+
+- Establishes positioning context for `absolute` children.
+- Example:
+  ```css
+  .suggestions-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+  }
+  Without it, absolute elements use nearest positioned ancestor or viewport.
+  ```
+
+overflow: visible
+Allows child elements to extend beyond parent boundaries.
+
+Useful for dropdowns/tooltips that need to "escape" their container.
+
+MongoDB Collection
+ts
+const collection: Collection = db.collection('yourCollection');
+collection: Represents a MongoDB "table" (document group)
+
+Methods: .find(), .insertOne(), etc.
+
+Example query:
+
+ts
+.find({
+name: { $regex: query, $options: 'i' } // Case-insensitive search
+})
+.limit(10)
+Redux Best Practices
+✅ Do:
+Store serializable data only
+
+Dispatch from components
+
+For modals:
+
+tsx
+// Option 1 (Recommended):
+const Modal = ({ postId, show }) => {...}
+
+// Option 2:
+const Modal = () => {
+const { postId, show } = useSelector(...);
 }
+❌ Don't:
+Store refs in Redux (breaks serializability)
 
-.suggestions-dropdown {
-  position: absolute;
-  top: 100%;
-  left: 0;
+Dispatch in reducers
+
+Example of bad practice:
+
+ts
+// Avoid:
+state.popover.target = ref; // MutableRefObject isn't serializable
+Component Placement
+Component Mount Location Recommendation
+Modal ❌ Deep in tree Use Portal
+Popover ✅ Near trigger Watch overflow
+TypeScript Error Fix
+ts
+// Error: MutableRefObject in Redux state
+// Solution:
+interface PopoverState {
+show: boolean;
+postId: string;
+// Remove target: MutableRefObject
 }
-```
-
-- The dropdown appears just below the input.
-- `.suggestion-wrapper` is the anchor.
-
-✅ Without `position: relative`, the child uses the **nearest positioned ancestor** or **the page**.
-
----
-
-## 📌 `overflow: visible`
-
-```css
-overflow: visible; /* allow children to overflow */
-```
-
-- Lets child elements overflow outside the bounds of the parent.
-- Useful for dropdowns, tooltips, popovers, etc.
-
----
-
-## 📦 MongoDB: Collection and Search Query
-
-### 🧾 What is `collection`?
-
-```ts
-const collection: Collection = db.collection("yourCollection");
-```
-
-- `collection`: Accesses a MongoDB collection (like a SQL table).
-- `Collection` (capital C): A TypeScript type from MongoDB driver.
-
-### 🔍 Purpose of the Query
-
-```ts
-const results = await collection
-  .find({ name: { $regex: query, $options: "i" } })
-  .limit(10)
-  .toArray();
-```
-
-- **Searches `name` field** using regex (case-insensitive).
-- Limits results to 10.
-- Converts MongoDB cursor to a plain array.
-
-### 📄 Example:
-
-If query = "al", and collection has:
-
-```json
-{ "name": "Alice" }
-{ "name": "Alina" }
-{ "name": "Bob" }
-```
-
-Only Alice and Alina match.
-
----
-
-## 🧠 Redux and Non-Serializable State
-
-- **Refs (`useRef`) should not be stored in Redux**.
-- Redux state should stay serializable for features like time-travel debugging.
-
-### ✅ Solution:
-
-Handle refs locally inside components, not in Redux:
-
-```ts
+tsx
+// Handle ref locally instead:
 const targetRef = useRef<HTMLSpanElement>(null);
-```
-
----
-
-## 🎛️ Modals vs Popovers in React
-
-| Component | Mount Anywhere? | Best Practice                              |
-| --------- | --------------- | ------------------------------------------ |
-| Modal     | ❌ No           | Use `ReactDOM.createPortal()`              |
-| Popover   | ✅ Yes          | Mount near trigger or use Portal if needed |
-
-### ✅ Modals:
-
-Mount near top of the tree to avoid `z-index`/`overflow` issues.
-
-```tsx
-ReactDOM.createPortal(<MyModal />, document.getElementById("modal-root"));
-```
-
-### ✅ Popovers:
-
-Can be nested, but watch out for `overflow: hidden` or layout issues.
-
----
-
-## 🔄 Dispatching Redux Actions From Components
-
-### ✅ Allowed:
-
-```tsx
-const Popover = ({ postId }) => {
-  const dispatch = useDispatch();
-
-  const handleClick = () => {
-    dispatch(yourReduxAction(postId));
-  };
-
-  return <button onClick={handleClick}>Click Me</button>;
-};
-```
-
-### ❌ Not Allowed:
-
-Don't dispatch actions **inside reducers**:
-
-```ts
-someReducer(state, action) {
-  dispatch(anotherAction()); // ❌ Invalid
-  return newState;
-}
-```
-
-Reducers must be **pure functions**.
-
----
-
-## 🎛️ Props-Based vs Redux-Based Modals
-
-### Props-Based
-
-```tsx
-const EditPostModal: React.FC<{ postId: string; show: boolean }> = ({ postId, show }) => { ... }
-```
-
-✅ Good for separation, testing, reusability.
-❌ Slightly more verbose.
-
-### Redux-Based
-
-```tsx
-const EditPostModal: React.FC = () => {
-  const { show, postId } = useSelector(
-    (state: RootState) => state.global.editPostModal
-  );
-};
-```
-
-✅ Less boilerplate.
-❌ Harder to test/reuse, hidden dependencies.
-
-🏆 **Recommendation**: Use **Props-based** for scalable apps.
-
----
-
-## 🧠 Bonus
-
-If you must store a ref in Redux (not recommended):
-
-```ts
-(state as Draft<typeof initialState>).popover.target = target;
-```
-
-But again — **not recommended**.
-
-```
-
-```
