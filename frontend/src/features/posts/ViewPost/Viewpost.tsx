@@ -1,5 +1,5 @@
 import "./Viewpost.css";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "../../../store/store";
 import { addComment, fetchPost, toggleLike } from "../postSlice";
@@ -14,6 +14,7 @@ import { useSocket } from "../../../hooks/socket/useSocket";
 import AutoResizeTextarea from "../../../utils/AutoResizeTextaria";
 import { CommentEventPayload } from "../../../types/PostType";
 import { useNavigate } from "react-router";
+import { useGlobal } from "../../../hooks/useModal";
 
 interface Post {
   postId: string;
@@ -24,7 +25,10 @@ const ViewPost = ({ postId }: Post) => {
   const dispatch = useDispatch<AppDispatch>();
   const { loading } = useSelector((state: RootState) => state.posts);
   const { currentUser } = useCurrentUser();
+
   const { emitLike, emitComment } = useSocket();
+  const { popover } = useGlobal();
+
   const postData = usePostById(postId);
   const postOwnerData = useUserById(postData.user);
 
@@ -32,6 +36,19 @@ const ViewPost = ({ postId }: Post) => {
 
   const [isLiked, setIsLiked] = useState(false);
   const [commentInput, setCommentInput] = useState("");
+
+  // scroll top ref
+  const commentContRef = useRef<HTMLDivElement>(null);
+  // popover ref
+  const target = useRef(null);
+
+  useEffect(() => {
+    // ScrollHeight: The total height of the scrollable content inside the container, including any overflow that is not visible in the viewport.
+    // ScrollTop: The current vertical scroll position of the container (how far it is scrolled down from the top).
+    if (commentContRef.current) {
+      commentContRef.current!.scrollTop = commentContRef.current!.scrollHeight;
+    }
+  }, [postData, postData.comments]);
 
   const commentUserIds: string[] = useMemo(
     () =>
@@ -42,14 +59,16 @@ const ViewPost = ({ postId }: Post) => {
 
   useEffect(() => {
     const getPostData = async (postId: string) => {
-      if (!postId) navigate("/");
-      console.log("Get Data function runnning");
+      if (!postId || Object.keys(postData).length === 0) {
+        navigate("/");
+        return;
+      }
 
       const res = await dispatch(fetchPost(postId)).unwrap();
       setIsSucess(res.success);
     };
     getPostData(postId);
-  }, [dispatch, postId]);
+  }, [dispatch, postId, postData]);
 
   useEffect(() => {
     if (!postData.likes) return;
@@ -120,10 +139,16 @@ const ViewPost = ({ postId }: Post) => {
     setCommentInput(inputValue);
   };
 
+  const isLoading =
+    loading ||
+    Object.keys(postData).length === 0 ||
+    !isSuccess ||
+    !postOwnerData;
+
   return (
     <>
       <div className="view-post-con">
-        {loading || !postData || !isSuccess || !postOwnerData ? (
+        {isLoading ? (
           <Spinner />
         ) : (
           <div className="post-container">
@@ -140,7 +165,15 @@ const ViewPost = ({ postId }: Post) => {
               </div>
 
               <div className="post-info-act">
-                <span className="material-symbols-outlined more-icon">
+                <span
+                  className="material-symbols-outlined more-icon"
+                  ref={target}
+                  onClick={() => {
+                    postData.user !== currentUser._id
+                      ? undefined
+                      : popover.popOverToggle(postId, target);
+                  }}
+                >
                   more_horiz
                 </span>
               </div>
@@ -194,7 +227,10 @@ const ViewPost = ({ postId }: Post) => {
                 <span>Comment</span>
               </div>
             </div>
-            <div className="comment-list-container comment-list-viewpost">
+            <div
+              className="comment-list-container comment-list-viewpost"
+              ref={commentContRef}
+            >
               {!postData.comments || postData.comments.length == 0 ? (
                 <>Write a comment</>
               ) : (
@@ -219,32 +255,32 @@ const ViewPost = ({ postId }: Post) => {
                     </div>
                   );
                 })
-              )}
-              <div className="comment-con-inputs">
-                <div className="post-modal-profile">
-                  <img
-                    src={`http://localhost:4000/uploads/profile/${currentUser._id}/${currentUser.profilePicture}`}
-                    alt=""
+              )}{" "}
+            </div>
+            <div className="comment-con-inputs">
+              <div className="post-modal-profile">
+                <img
+                  src={`http://localhost:4000/uploads/profile/${currentUser._id}/${currentUser.profilePicture}`}
+                  alt=""
+                />
+              </div>
+              <div className="modal-input-con">
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    submitComment();
+                  }}
+                >
+                  <AutoResizeTextarea
+                    onChange={onChangeHandler}
+                    value={commentInput}
+                    onKeyEvent={onKeyEvent}
                   />
-                </div>
-                <div className="modal-input-con">
-                  <form
-                    onSubmit={(e) => {
-                      e.preventDefault();
-                      submitComment();
-                    }}
-                  >
-                    <AutoResizeTextarea
-                      onChange={onChangeHandler}
-                      value={commentInput}
-                      onKeyEvent={onKeyEvent}
-                    />
 
-                    <button type="submit">
-                      <span className="material-symbols-outlined">send</span>
-                    </button>
-                  </form>
-                </div>
+                  <button type="submit">
+                    <span className="material-symbols-outlined">send</span>
+                  </button>
+                </form>
               </div>
             </div>
           </div>

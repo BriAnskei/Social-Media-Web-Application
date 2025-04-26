@@ -3,6 +3,7 @@ import React, { useState, useRef, useEffect } from "react";
 import Spinner from "../Spinner/Spinner";
 import { FetchedUserType } from "../../types/user";
 import { userApi } from "../../utils/api";
+import { useCurrentUser } from "../../hooks/useUsers";
 
 interface Prop {
   onSelect?: (item: FetchedUserType) => void;
@@ -13,6 +14,8 @@ const SuggestionInput: React.FC<Prop> = ({
   onSelect,
   placeholder = "Search...",
 }) => {
+  const { currentUser } = useCurrentUser();
+
   const [query, setQuery] = useState<string>("");
   const [suggestions, setSuggestions] = useState<FetchedUserType[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
@@ -49,7 +52,6 @@ const SuggestionInput: React.FC<Prop> = ({
       const res = await userApi.searchRedex(searchQuery);
 
       if (res.success) {
-        console.log("searched user: ", res.user!);
         setSuggestions(res.user! as FetchedUserType[]);
         setLoading(false);
       }
@@ -103,10 +105,7 @@ const SuggestionInput: React.FC<Prop> = ({
 
     // Handle escape to close suggestions
     else if (e.key === "Escape") {
-      setQuery("");
-      setSuggestions([]);
-      setActiveIndex(-1);
-      inputRef.current?.blur(); // remmove the fucos in the input
+      onBlur();
     }
   };
 
@@ -138,6 +137,12 @@ const SuggestionInput: React.FC<Prop> = ({
     inputRef.current?.blur(); // remmove the fucos in the input
   };
 
+  const handleUnfucosedInput = () => {
+    if (activeIndex < 0) {
+      onBlur();
+    }
+  };
+
   return (
     <div className="suggestion-wrapper">
       <div className="input-group mb-1">
@@ -147,9 +152,10 @@ const SuggestionInput: React.FC<Prop> = ({
             type="text"
             placeholder={placeholder}
             value={query}
-            onBlur={onBlur}
+            onBlur={handleUnfucosedInput}
             onKeyDown={handleKeyDown}
             onChange={handleInputChange}
+            //  this is for screen reader
             aria-label="Search"
             aria-expanded={suggestions.length > 0}
             aria-autocomplete="list"
@@ -192,7 +198,13 @@ const SuggestionInput: React.FC<Prop> = ({
                     src={`http://localhost:4000/uploads/profile/${user._id}/${user.profilePicture}`}
                     alt=""
                   />
-                  {user.fullName} ({user.username})
+                  {currentUser._id === user._id ? (
+                    <>You</>
+                  ) : (
+                    <>
+                      {user.fullName} ({user.username})
+                    </>
+                  )}
                 </div>
               </li>
             ))}

@@ -2,6 +2,7 @@ import { useSelector } from "react-redux";
 import {
   selectCurrentUserPost,
   selectPostById,
+  selectPostsByUserId,
 } from "../features/posts/postSelector";
 import { RootState } from "../store/store";
 
@@ -15,4 +16,11 @@ export const usePostById = (postId: string) => {
     selectPostById(state, postId)
   );
   return postData;
+};
+
+export const usePostsByUserId = (userId: string) => {
+  const postsData = useSelector((state: RootState) =>
+    selectPostsByUserId(state, userId)
+  );
+  return postsData;
 };

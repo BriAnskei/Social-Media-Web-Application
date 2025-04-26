@@ -1,0 +1,38 @@
+.view-image-modal {
+  width: 30rem;
+}
+
+.view-image-body {
+  padding: 5px 10px 10px 10px;
+}
+
+.view-image-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 2px;
+}
+
+.view-image-header h5 {
+  font-size: 15px;
+  margin: 0;
+}
+
+.view-box-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: black;
+  border-radius: 4px;
+
+  width: 100%;
+  height: 82vh;
+}
+
+.view-box-container img {
+  width: auto;
+  max-width: 100%;
+  height: auto;
+  max-height: 100%;
+  object-fit: contain;
+  flex-shrink: 0;
+}

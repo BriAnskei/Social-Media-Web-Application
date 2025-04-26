@@ -46,7 +46,8 @@ app.get("/", (req: Request, res: Response) => {
 });
 
 // wrap the express app in the httpServer
-httpServer.listen(PORT, () => {
+httpServer.listen(PORT, "0.0.0.0", () => {
   console.log(process.env.MONGO_URI);
+  console.log(`Server running on http://0.0.0.0:${PORT}`);
   console.log(`Server running on port http://localhost:${PORT}`);
 });

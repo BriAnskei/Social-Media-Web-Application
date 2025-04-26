@@ -1,13 +1,14 @@
 import "./DeletePostModal.css";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faTrash } from "@fortawesome/free-solid-svg-icons";
-import { useGlobal } from "../../../hooks/useModal";
+
 import { usePostById } from "../../../hooks/usePost";
-import { useEffect } from "react";
+
 import { useDispatch } from "react-redux";
 import { AppDispatch } from "../../../store/store";
 import { removeNotifList } from "../../../features/notifications/notificationsSlice";
 import { deletePost } from "../../../features/posts/postSlice";
+import { useSocket } from "../../../hooks/socket/useSocket";
 
 interface DeletePostProp {
   postId: string;
@@ -17,22 +18,26 @@ interface DeletePostProp {
 
 const DeletePostModal = ({ postId, show, onClose }: DeletePostProp) => {
   const dispatch = useDispatch<AppDispatch>();
+  const { emitPostDelete } = useSocket();
 
   const postData = usePostById(postId);
 
-  useEffect(() => {
-    console.log("post to delete: ", postData);
-  }, [postData]);
-
   const handleDelete = async () => {
-    const dataToDelete = {
-      postId,
-      fileName: (postData.image as string) || "",
-    };
+    try {
+      const dataToDelete = {
+        postId,
+        fileName: (postData.image as string) || "",
+      };
 
-    await dispatch(deletePost(dataToDelete));
-    await dispatch(removeNotifList(postId));
-    onClose();
+      await dispatch(deletePost(dataToDelete));
+      await dispatch(removeNotifList(postId));
+
+      emitPostDelete(postId);
+
+      onClose();
+    } catch (error) {
+      console.error("Failed to delete: ", error);
+    }
   };
 
   return (

@@ -23,6 +23,8 @@
   height: 2rem;
   width: 9.6rem;
   text-align: center;
+
+  cursor: pointer;
 }
 
 .uploads div span {

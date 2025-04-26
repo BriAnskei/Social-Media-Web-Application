@@ -267,6 +267,32 @@ export const userApi = {
       };
     }
   },
+  getUserImages: async (
+    userId: string,
+    path: string
+  ): Promise<ApiResponse & { images?: string[]; userId: string }> => {
+    //&  -> intersection.
+    try {
+      const response = await api.post(
+        "/api/users/images",
+
+        { userId, path },
+
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      return response.data;
+    } catch (error) {
+      return {
+        success: false,
+        message: "Api error response",
+      };
+    }
+  },
 };
 
 export const authApi = {

@@ -1,15 +1,9 @@
-import {
-  createAsyncThunk,
-  createSlice,
-  current,
-  PayloadAction,
-} from "@reduxjs/toolkit";
+import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import { FetchedUserType, FollowPayload } from "../../types/user";
 import { ApiResponse, userApi } from "../../utils/api";
 import { RootState } from "../../store/store";
 import { NormalizeState } from "../../types/NormalizeType";
 import normalizeResponse from "../../utils/normalizeResponse";
-import { data } from "react-router";
 
 export const getUsersData = createAsyncThunk(
   "user/getUsersData",
@@ -92,6 +86,29 @@ export const followToggled = createAsyncThunk(
   }
 );
 
+export const getImages = createAsyncThunk(
+  "user/images",
+  async (data: { userId: string; path: string }, { rejectWithValue }) => {
+    try {
+      console.log("dala", data);
+
+      const { userId, path } = data;
+      if (!userId || !path)
+        return rejectWithValue("No userId or path to dispatch this request");
+
+      const res = await userApi.getUserImages(userId, path);
+
+      if (!res.success) {
+        return rejectWithValue(res.message || "Failed to fecth images");
+      }
+
+      return res;
+    } catch (error) {
+      return rejectWithValue("Failed to fetch images: " + error);
+    }
+  }
+);
+
 interface UserState extends NormalizeState<FetchedUserType> {
   currentUserId: string | null;
 }
@@ -104,11 +121,6 @@ const initialState: UserState = {
   error: null,
 };
 
-// How Redux handles state updates:
-// Your reducer function receives the current state and an action.
-// If you return a new object, Redux replaces the old state with the new one.
-// If you mutate the existing state but don't return anything, Redux won't detect the change
-
 const userSlice = createSlice({
   name: "user",
   initialState,
@@ -119,11 +131,16 @@ const userSlice = createSlice({
       state.currentUserId = null;
     },
     updateFollow: (state, action) => {
+      console.log("Follow payload");
       const { userId, followerId } = action.payload;
       const userToBeFollowed = state.byId[userId];
       const userWhoFollowed = state.byId[followerId];
+      console.log("data: ", userId, followerId);
 
-      if (!userToBeFollowed || !userWhoFollowed) return; // Ensure users exist
+      if (!userToBeFollowed || !userWhoFollowed) {
+        console.log("user doesnt exist");
+        return;
+      } // Ensure users exist
 
       // Use Set to avoid duplicates efficiently
       const updatedFollowers = new Set(userToBeFollowed.followers);
@@ -194,6 +211,26 @@ const userSlice = createSlice({
       .addCase(fetchCurrentUser.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
+      })
+
+      .addCase(followToggled.fulfilled, (state, action) => {
+        if (!action.payload.success) {
+          // Handle API failure - roll back the state
+          const { userId, followerId } = action.meta.arg; // accessing the payload in the follow toggle
+          const userToBeFollowed = state.byId[userId];
+          const userWhoFollowed = state.byId[followerId];
+
+          if (userToBeFollowed && userWhoFollowed) {
+            const updatedFollowers = new Set(userToBeFollowed.followers);
+            const updatedFollowing = new Set(userWhoFollowed.following);
+
+            updatedFollowers.delete(followerId);
+            updatedFollowing.delete(userId);
+
+            userToBeFollowed.followers = Array.from(updatedFollowers);
+            userWhoFollowed.following = Array.from(updatedFollowing);
+          }
+        }
       });
   },
 });

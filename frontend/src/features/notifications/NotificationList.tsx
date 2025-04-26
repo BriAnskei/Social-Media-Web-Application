@@ -30,9 +30,11 @@ const NotificationList = () => {
   };
 
   const listOnClick = async (postId: string | undefined, type: string) => {
-    if (!postId) throw new Error("No post Id to view post");
+    if (!type) throw new Error("No type to dispatch this action");
 
     if (type === "upload" || type === "comment" || type === "like") {
+      if (!postId) throw new Error("No postId to dispatch this action");
+
       dispatch(viewPost(postId));
       navigate("/viewpost");
     }

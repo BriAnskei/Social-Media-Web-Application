@@ -72,10 +72,6 @@ const ViewPostModal: React.FC<PostModal> = ({ showModal, onClose, postId }) => {
     }
   }, [postOwnerData, currentUser, postId]);
 
-  useEffect(() => {
-    console.log("SHowMLal View: ", showModal);
-  }, [showModal]);
-
   const setButtonDisplay = () => {
     // if classID is setted to followed, the follow is being toggled in modal, otherwise in posts
     if (followToggleClass !== "followed") {

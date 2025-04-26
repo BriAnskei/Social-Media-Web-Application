@@ -2,12 +2,12 @@ import "./EditPostModal.css";
 import React, { useEffect, useRef, useState } from "react";
 import { FetchPostType } from "../../../types/PostType";
 import { useCurrentUser } from "../../../hooks/useUsers";
-import { useGlobal } from "../../../hooks/useModal";
 import { usePostById } from "../../../hooks/usePost";
 import Spinner from "../../Spinner/Spinner";
 import { useDispatch } from "react-redux";
 import { AppDispatch } from "../../../store/store";
 import { updatePost } from "../../../features/posts/postSlice";
+import { PostUpdateEvent, useSocket } from "../../../hooks/socket/useSocket";
 
 interface EditPostProp {
   postId: string;
@@ -17,6 +17,7 @@ interface EditPostProp {
 
 const EditPostModal: React.FC<EditPostProp> = ({ postId, show, onClose }) => {
   const dispatch = useDispatch<AppDispatch>();
+  const { emitPostUpdate } = useSocket();
   const postData = usePostById(postId);
 
   const { currentUser } = useCurrentUser();
@@ -65,7 +66,6 @@ const EditPostModal: React.FC<EditPostProp> = ({ postId, show, onClose }) => {
     const file = e.target?.files;
     if (file && file.length > 0) {
       const imageUrl = URL.createObjectURL(file[0]);
-      console.log(imageUrl, isValidUrl(imageUrl));
 
       setPhotoUrl(imageUrl);
       setPostInputData((prev) => {
@@ -148,9 +148,21 @@ const EditPostModal: React.FC<EditPostProp> = ({ postId, show, onClose }) => {
 
       const res = await dispatch(updatePost(data)).unwrap();
 
-      if (res && res.success) {
-        onCloseModal();
+      if (!res || !res.success) {
+        console.error(
+          "Response to update post might be empty, or failed to updated it"
+        );
+        return;
       }
+
+      const updateData = res.posts as FetchPostType;
+
+      const emitPayload: PostUpdateEvent = {
+        data: updateData,
+      };
+
+      emitPostUpdate(emitPayload);
+      onClose();
     } catch (error) {
       console.log("Error submiting changes: " + error);
     }

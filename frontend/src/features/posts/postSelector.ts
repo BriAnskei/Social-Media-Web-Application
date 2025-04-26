@@ -16,7 +16,10 @@ export const selectCurrentUserPost = createSelector(
       .map((id) => postById[id]);
 
     return {
-      currentUserPosts: currentUsersPost.length > 0 ? currentUsersPost : null,
+      currentUserPosts:
+        currentUsersPost.length > 0
+          ? currentUsersPost
+          : ({} as FetchPostType[]),
       loading: postLoading || userLoading,
     };
   }

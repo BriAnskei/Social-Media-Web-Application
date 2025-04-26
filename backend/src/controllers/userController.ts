@@ -6,7 +6,7 @@ import jwt from "jsonwebtoken";
 import path from "path";
 import fs from "fs";
 
-import { generateNameSuffix } from "../middleware/upload";
+import { generateNameSuffix, getImages } from "../middleware/upload";
 
 const createToken = (userId: string) => {
   if (!process.env.ACCESS_SECRET || !process.env.REFRESH_SECRET) {
@@ -345,7 +345,6 @@ export const profileSearch = async (
 ): Promise<any> => {
   try {
     const { query } = req.query;
-    console.log("recieved query: ", query);
 
     if (!query || (query as string).trim() === "") {
       return res.json({
@@ -362,13 +361,43 @@ export const profileSearch = async (
       ],
     });
 
-    return res.json({
+    res.json({
       success: true,
       message: "user successfully fretched",
       user: result,
     });
   } catch (error) {
     console.log("Failed to fetch seach " + error);
+    return res.json({ success: false, message: "Error" });
+  }
+};
+
+export const getUserImages = async (
+  req: Request,
+  res: Response
+): Promise<any> => {
+  try {
+    const { path, userId } = req.body;
+
+    console.log("To fetch:", path, userId);
+    const baseUrl = `http://${req.get("host")}`;
+
+    if (!userId) {
+      throw new Error("No user id to proccess this request");
+    }
+
+    const imageUrls = await getImages(userId, path, baseUrl);
+
+    console.log("response url: ", imageUrls);
+
+    res.json({
+      success: true,
+      message: "Image succesfully fetched",
+      images: imageUrls,
+      userId,
+    });
+  } catch (error) {
+    console.error("Failed to fetch  images " + error);
     return res.json({ success: false, message: "Error" });
   }
 };

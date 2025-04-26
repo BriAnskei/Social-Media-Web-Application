@@ -10,7 +10,6 @@ import {
 } from "../controllers/postController";
 import upload from "../middleware/upload";
 import authMiddleware from "../middleware/auth";
-import { profileSearch } from "../controllers/userController";
 
 const postRouter = express.Router();
 
@@ -37,6 +36,5 @@ postRouter.post(
   deletePost
 );
 // search
-postRouter.post("/search", profileSearch);
 
 export default postRouter;

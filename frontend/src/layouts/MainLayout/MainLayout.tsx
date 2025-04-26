@@ -25,6 +25,7 @@ import {
   toggleEditModal,
 } from "../../Components/Modal/globalSlice";
 import EditProfileModal from "../../Components/Modal/EditProfileModal/EditProfileModal";
+import ViewImage from "../../Components/Modal/ViewImage/ViewImage";
 
 const MainLayout = () => {
   const dispatch = useDispatch<AppDispatch>();
@@ -44,6 +45,10 @@ const MainLayout = () => {
 
   const { showPostModal, postId: viewPostModalId } = useSelector(
     (state: RootState) => state.global.postModal
+  );
+
+  const { show: viewImageShow, src } = useSelector(
+    (state: RootState) => state.global.viewImageModal
   );
 
   const { popover } = useGlobal();
@@ -134,6 +139,8 @@ const MainLayout = () => {
         show={showDeleteModal}
         onClose={closeDeleteModal}
       />
+
+      <ViewImage show={viewImageShow} src={src} />
     </>
   );
 };

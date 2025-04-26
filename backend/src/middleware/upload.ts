@@ -43,7 +43,6 @@ async function deleteFileAndEmptyDir(filePath: string): Promise<void> {
     const files = await fs.promises.readdir(dirPath);
     if (files.length === 0) {
       await fs.promises.rmdir(dirPath);
-      console.log(`Removed empty directory: ${dirPath}`);
     }
   } else {
     console.log(`File not found: ${filePath}`);
@@ -125,6 +124,7 @@ function deleteImageMiddleWare() {
     }
   };
 }
+
 // Regular upload middleware
 const upload = {
   post: {
@@ -142,3 +142,40 @@ const upload = {
 };
 
 export default upload;
+
+//  utility function
+export async function getImages(
+  userId: string,
+  filePath: string,
+  baseUrl: string
+): Promise<String[]> {
+  try {
+    // Security check
+    if (userId.includes("..")) {
+      throw new Error("Invalid user ID format");
+    }
+
+    const uploadPath = path.join("uploads", filePath, userId);
+
+    console.log("File path", uploadPath);
+
+    // Check if directory exists
+    if (!fs.existsSync(uploadPath)) {
+      return [];
+    }
+
+    // Read files
+    const files = await fs.promises.readdir(uploadPath);
+
+    // Generate URLs
+    return files.map(
+      (file) =>
+        `${baseUrl}/${
+          filePath === "posts" ? "images" : "uploads"
+        }/${filePath}/${userId}/${file}`
+    );
+  } catch (error) {
+    console.error("Error getting images: ", error);
+    throw error;
+  }
+}

@@ -10,7 +10,11 @@ import { useGlobal } from "../../../hooks/useModal";
 
 import { useCurrentUser, useUserById } from "../../../hooks/useUsers";
 import { followToggled, updateFollow } from "../../users/userSlice";
-import { openPostModal } from "../../../Components/Modal/globalSlice";
+import {
+  openPostModal,
+  viewProfile,
+} from "../../../Components/Modal/globalSlice";
+import { useNavigate } from "react-router";
 
 interface Post {
   post: FetchPostType;
@@ -21,22 +25,27 @@ const Post = ({ post, ownerId }: Post) => {
   const { currentUser } = useCurrentUser();
   const { popover } = useGlobal();
   const { emitLike, emitFollow } = useSocket();
+  const navigate = useNavigate();
 
   const postOwnerData = useUserById(ownerId);
 
   const dispatch = useDispatch<AppDispatch>();
 
+  // popover menu
   const target = useRef(null);
 
+  // like state
   const [liked, setLiked] = useState(false);
-  const [validTime, setValidTIme] = useState(true); // validation for like function(multiple triggering)
+  const [likeProgress, setLikeProgress] = useState(false);
 
+  // follow satte
   const [isOwnerFollowed, setIsOwnerFollowed] = useState(false);
   const [followToggleClass, setFollowToggleClass] = useState("follow-button");
   const [toggleFollow, setToggleFollow] = useState(false);
+  const [followingProgress, setFollowingProgress] = useState(false);
 
+  // Validate if current post is liked
   useEffect(() => {
-    // if current user is included in the like(current user liked this post)
     const isLiked = post.likes.includes(currentUser._id!);
     setLiked(isLiked);
   }, [post, currentUser._id]);
@@ -47,13 +56,23 @@ const Post = ({ post, ownerId }: Post) => {
     }
   }, [postOwnerData.followers, currentUser.following]);
 
+  const viewPostOwnerProf = () => {
+    if (!(Object.keys(postOwnerData).length > 0))
+      throw new Error("Failed to view postowner, object is empty");
+
+    dispatch(viewProfile(postOwnerData));
+
+    const nav =
+      postOwnerData._id !== currentUser._id ? "/view/profile" : "/profile";
+
+    navigate(nav);
+  };
+
   const validateFollow = () => {
     if (!postOwnerData.followers || !currentUser._id) return;
 
     // check if the current user follows the post owner, this will prevent to show the follow button
     if (postOwnerData.followers.includes(currentUser._id)) {
-      console.log("currentuser followed the postOwner");
-
       // check if this component triggered the follow. if so, wait for 3 sec before removing the follow button
       if (!toggleFollow) {
         setFollowToggleClass("");
@@ -64,43 +83,17 @@ const Post = ({ post, ownerId }: Post) => {
           setFollowToggleClass("");
         }, 3000);
       }
-    }
-  };
-
-  const toggleComments = () => {
-    dispatch(openPostModal(post._id));
-  };
-
-  const handleLike = async () => {
-    if (validTime) {
-      setValidTIme(false);
-      try {
-        const res = await dispatch(toggleLike(post._id)).unwrap();
-
-        // emit after succesfully saved itto DB
-        const data = {
-          postId: post._id,
-          postOwnerId: postOwnerData._id,
-          userId: currentUser._id!,
-        };
-        emitLike(data);
-        if (res.success) {
-          setLiked(!liked);
-        }
-      } catch (error) {
-        console.error(error);
-      }
     } else {
-      console.log("validation not complemete");
+      setIsOwnerFollowed(false);
+      setFollowToggleClass("follow-button");
     }
-
-    setTimeout(() => {
-      setValidTIme(true);
-    }, 5000);
   };
 
   const handleFollow = async () => {
     try {
+      if (followingProgress) return;
+      setFollowingProgress(true);
+
       if (toggleFollow || postOwnerData.followers.includes(currentUser._id)) {
         return;
       }
@@ -112,13 +105,16 @@ const Post = ({ post, ownerId }: Post) => {
         userId: post.user,
         followerId: currentUser._id,
       };
+      dispatch(updateFollow(data));
       const res = await dispatch(followToggled(data)).unwrap();
 
       if (!res.success) {
+        dispatch(updateFollow(data)); // This will toggle back since it's the same function
+        setFollowToggleClass("");
+        setToggleFollow(false);
         console.error(res.message || "Error handling follow");
         return;
       }
-      dispatch(updateFollow(data));
 
       const emitPayload = {
         userId: post.user,
@@ -129,8 +125,45 @@ const Post = ({ post, ownerId }: Post) => {
       emitFollow(emitPayload);
     } catch (error) {
       console.error(error);
+    } finally {
+      setFollowingProgress(false);
     }
   };
+
+  const toggleComments = () => {
+    dispatch(openPostModal(post._id));
+  };
+
+  const handleLike = async () => {
+    try {
+      if (likeProgress) return;
+      setLikeProgress(true);
+      const res = await dispatch(toggleLike(post._id)).unwrap();
+
+      if (!res.success) {
+        console.error("Failed to like the post: ", res.message);
+        return;
+      }
+
+      // emit after succesfully saved itto DB
+      const data = {
+        postId: post._id,
+        postOwnerId: postOwnerData._id,
+        userId: currentUser._id!,
+      };
+      setLiked(!liked);
+      emitLike(data);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLikeProgress(false);
+    }
+  };
+
+  const isFollowedShow =
+    !isOwnerFollowed &&
+    followToggleClass !== "" &&
+    post.user !== currentUser._id;
 
   return (
     <>
@@ -139,22 +172,23 @@ const Post = ({ post, ownerId }: Post) => {
           <div className="profile-name">
             <img
               src={`http://localhost:4000/uploads/profile/${postOwnerData._id}/${postOwnerData.profilePicture}`}
-              alt=""
+              style={{ cursor: "pointer" }}
+              onClick={viewPostOwnerProf}
             />
             <div className="name-date">
-              <h3>{postOwnerData.fullName}</h3>
+              <h3 style={{ cursor: "pointer" }} onClick={viewPostOwnerProf}>
+                {postOwnerData.fullName}
+              </h3>
               <span>{new Date(post.createdAt).toLocaleString()}</span>
             </div>
           </div>
 
           <div className="post-info-act">
-            {!isOwnerFollowed &&
-              post.user !== currentUser._id &&
-              followToggleClass !== "" && (
-                <button id={followToggleClass} onClick={handleFollow}>
-                  {followToggleClass === "followed" ? "✔ Followed" : "+ Follow"}
-                </button>
-              )}
+            {isFollowedShow && (
+              <button id={followToggleClass} onClick={handleFollow}>
+                {followToggleClass === "followed" ? "✔ Followed" : "+ Follow"}
+              </button>
+            )}
             <span
               className={`material-symbols-outlined ${
                 post.user === currentUser._id ? "more-icon" : ""

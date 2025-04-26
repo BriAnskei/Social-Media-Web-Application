@@ -262,11 +262,17 @@ const postsSlice = createSlice({
         image: postData.image || "",
       };
     },
-    dropPost: (state, action) => {
-      const postId = action.payload;
 
-      delete state.byId[postId];
-      state.allIds = state.allIds.filter((id) => id !== postId);
+    dropPost: (state, action) => {
+      try {
+        const postId = action.payload;
+
+        delete state.byId[postId];
+        state.allIds = state.allIds.filter((id) => id !== postId);
+        console.log("Post succesfully deleted");
+      } catch (error) {
+        console.error("failed to delete", error);
+      }
     },
   },
   extraReducers: (builder) => {
@@ -359,14 +365,6 @@ const postsSlice = createSlice({
         state.error = action.payload as string;
       })
       // delete
-      .addCase(deletePost.pending, (state) => {
-        state.error = null;
-        state.loading = true;
-      })
-      .addCase(deletePost.fulfilled, (state) => {
-        state.error = null;
-        state.loading = false;
-      })
       .addCase(deletePost.rejected, (state, action) => {
         state.error = action.payload as string;
         state.loading = false;

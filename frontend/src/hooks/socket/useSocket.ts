@@ -3,16 +3,34 @@ import { useCallback, useContext, useEffect, useRef } from "react";
 import { SocketContext } from "../../context/SocketContext";
 import { getToken } from "../../features/auth/authSlice";
 import { AppDispatch, RootState } from "../../store/store";
-import { CommentEventPayload, LikeHandlerTypes } from "../../types/PostType";
-import { commentOnPost, postLiked } from "../../features/posts/postSlice";
-import { addNotification } from "../../features/notifications/notificationsSlice";
+import {
+  CommentEventPayload,
+  FetchPostType,
+  LikeHandlerTypes,
+} from "../../types/PostType";
+import {
+  commentOnPost,
+  dropPost,
+  postLiked,
+  update,
+} from "../../features/posts/postSlice";
+import {
+  addNotification,
+  deleteList,
+} from "../../features/notifications/notificationsSlice";
 import { NotificationType } from "../../types/NotificationTypes";
 import { updateFollow } from "../../features/users/userSlice";
+import { viewPost } from "../../Components/Modal/globalSlice";
 
 export interface DataOutput {
   // for post-like notification
   isExist: boolean;
   data: NotificationType;
+}
+
+// post update
+export interface PostUpdateEvent {
+  data: FetchPostType; // new data updated
 }
 
 export const SOCKET_EVENTS = {
@@ -31,8 +49,15 @@ export const SOCKET_EVENTS = {
 
     // post upload
     UPLOAD_POST: "upload-post",
-
     POST_UPLOADED: "post-uploaded",
+
+    // postUpdate
+    POST_ON_UPDATE: "post-update",
+    POST_UPDATE: "post-updated",
+
+    // Delete Event
+    POST_DELETED: "post-deleted",
+    POST_DELETE: "post-delete",
   },
 };
 
@@ -59,7 +84,23 @@ export const useSocket = () => {
     [dispatch]
   );
 
-  // postOwner
+  // updated post event
+  const handlePostUpdateEvent = useCallback(
+    (data: PostUpdateEvent) => {
+      dispatch(update(data.data));
+    },
+    [dispatch]
+  );
+
+  const handlePostDelete = useCallback(
+    (postId: string) => {
+      dispatch(dropPost(postId));
+      dispatch(deleteList(postId)); // delete the notification list of other users
+    },
+    [dispatch]
+  );
+
+  // postOwner, and notification
   const likeNotifEvents = useCallback((data: DataOutput) => {
     dispatch(addNotification(data));
   }, []);
@@ -107,6 +148,13 @@ export const useSocket = () => {
       }
 
       //  Ensures only one event listener exists per socket event.
+
+      // update event
+      socket.off(SOCKET_EVENTS.posts.POST_UPDATE);
+
+      //delete event
+      socket.off(SOCKET_EVENTS.posts.POST_DELETE);
+
       socket.off("postLiked");
       socket.off("likeNotify");
 
@@ -120,6 +168,7 @@ export const useSocket = () => {
       // global event
       socket.on("postLiked", handleLikeEvent);
       socket.on("postCommented", handleCommentEvent);
+      socket.on(SOCKET_EVENTS.posts.POST_UPDATE, handlePostUpdateEvent);
 
       // owner event
       socket.on("likeNotify", likeNotifEvents);
@@ -129,6 +178,9 @@ export const useSocket = () => {
       socket.on("followed-user", handleFollowEvent);
 
       socket.on(SOCKET_EVENTS.posts.UPLOAD_POST, uploadNotifEvent);
+
+      //delete event
+      socket.on(SOCKET_EVENTS.posts.POST_DELETE, handlePostDelete);
 
       socket.on("error", (error: Error) => {
         console.error("Socket error:", error);
@@ -147,6 +199,12 @@ export const useSocket = () => {
 
         socket.off("postCommented");
         socket.off(SOCKET_EVENTS.posts.COMMENT_NOTIF);
+
+        // post update
+        socket.off(SOCKET_EVENTS.posts.POST_UPDATE, handlePostUpdateEvent);
+
+        // post delete
+        socket.off(SOCKET_EVENTS.posts.POST_DELETE, handlePostDelete);
 
         socket.off("followed-user", handleFollowEvent);
         socket.off(SOCKET_EVENTS.posts.UPLOAD_POST, uploadNotifEvent);
@@ -193,10 +251,26 @@ export const useSocket = () => {
   const emitUpload = useCallback(
     (data: any) => {
       if (socket && isConnected) {
-        console.log("emiting post event");
         socket.emit(SOCKET_EVENTS.posts.POST_UPLOADED, data);
-      } else {
-        console.log("ERROR user not conntected");
+      }
+    },
+    [socket, isConnected]
+  );
+
+  // emiting post update
+  const emitPostUpdate = useCallback(
+    (data: PostUpdateEvent) => {
+      if (socket && isConnected) {
+        socket.emit(SOCKET_EVENTS.posts.POST_ON_UPDATE, data);
+      }
+    },
+    [socket, isConnected]
+  );
+
+  const emitPostDelete = useCallback(
+    (data: string) => {
+      if (socket && isConnected) {
+        socket.emit(SOCKET_EVENTS.posts.POST_DELETED, data);
       }
     },
     [socket, isConnected]
@@ -205,9 +279,11 @@ export const useSocket = () => {
   return {
     socket,
     isConnected,
+    emitUpload,
+    emitPostUpdate,
+    emitPostDelete,
     emitLike,
     emitComment,
     emitFollow,
-    emitUpload,
   };
 };

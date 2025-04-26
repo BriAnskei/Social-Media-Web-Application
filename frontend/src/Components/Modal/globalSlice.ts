@@ -31,6 +31,11 @@ export interface ViewProfileState {
   userData: FetchedUserType;
 }
 
+export interface ViewImageState {
+  show: boolean;
+  src: string;
+}
+
 export interface GlobalState {
   postModal: PostModalState;
   postData: PostDataState;
@@ -39,6 +44,9 @@ export interface GlobalState {
 
   editProfileModal: EditProfileModalState;
   viewProfile: ViewProfileState;
+
+  // image(profile photos) display modal
+  viewImageModal: ViewImageState;
 }
 
 // Initialize state
@@ -67,6 +75,11 @@ const initialState: GlobalState = {
 
   viewProfile: {
     userData: {} as FetchedUserType,
+  },
+
+  viewImageModal: {
+    show: false,
+    src: "",
   },
 };
 
@@ -111,6 +124,16 @@ const globalSlice = createSlice({
     viewProfile: (state, action: PayloadAction<FetchedUserType>) => {
       state.viewProfile.userData = action.payload;
     },
+
+    viewImage: (state, action) => {
+      const { src } = action.payload;
+      state.viewImageModal.show = true;
+      state.viewImageModal.src = src;
+    },
+    viewImageClose: (state) => {
+      state.viewImageModal.show = false;
+      state.viewImageModal.src = "";
+    },
   },
 });
 
@@ -125,5 +148,8 @@ export const {
 
   openEditProfileModal,
   viewProfile,
+
+  viewImage,
+  viewImageClose,
 } = globalSlice.actions;
 export default globalSlice.reducer;

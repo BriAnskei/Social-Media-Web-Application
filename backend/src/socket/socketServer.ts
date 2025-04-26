@@ -3,6 +3,7 @@ import { Server as HttpServer } from "http"; // http server module from node.js
 import { verifyToken } from "../middleware/auth";
 
 import {
+  bulkSave,
   NotifData,
   saveCommentNotif,
   saveFollowNotif,
@@ -12,28 +13,19 @@ import { getUserById, getUsersFolowers } from "../controllers/userController";
 import mongoose from "mongoose";
 import notificationModel from "../models/notificationModel";
 import { getAllCommenter } from "../controllers/postController";
+import { IPost } from "../models/postModel";
+import {
+  CommentEventPayload,
+  LikeEventPayload,
+  PostUpdateEvent,
+  PostUploadNotifEvent,
+} from "./EventsTypes/PostEvents";
+import { FollowEvent } from "./EventsTypes/UserEvents";
 
 interface ConnectedUser {
   userId: string;
   socketId: string;
   username?: string;
-}
-
-interface LikeEventPayload {
-  postId: string;
-  postOwnerId: string;
-  userId: string;
-  username: string;
-}
-
-interface CommentEventPayload {
-  postId: string;
-  postOwnerId: string;
-  data: {
-    user: string;
-    content: string;
-    createdAt: Date;
-  };
 }
 
 // Define events
@@ -54,6 +46,14 @@ const SOCKET_EVENTS = {
     // server
     POST_COMMENTED: "postCommented",
     COMMENT_NOTIF: "commentNotify",
+
+    // postUpdate
+    POST_ON_UPDATE: "post-update",
+    POST_UPDATE: "post-updated",
+
+    // Delete Event
+    POST_DELETED: "post-deleted",
+    POST_DELETE: "post-delete",
   },
 
   user: {
@@ -147,13 +147,26 @@ export class SocketServer {
       );
 
       // user event
-      socket.on(SOCKET_EVENTS.user.USER_FOLLOW, (data: any) => {
+      socket.on(SOCKET_EVENTS.user.USER_FOLLOW, (data: FollowEvent) => {
         this.handleFollowEvent(socket, data);
       });
 
       // post notfication
-      socket.on(SOCKET_EVENTS.notification.POST_UPLOADED, (data: any) => {
-        this.handlePostUploadEvent(socket, data);
+      socket.on(
+        SOCKET_EVENTS.notification.POST_UPLOADED,
+        (data: PostUploadNotifEvent) => {
+          this.handlePostUploadEvent(socket, data);
+        }
+      );
+
+      // on post update
+      socket.on(SOCKET_EVENTS.posts.POST_ON_UPDATE, (data: PostUpdateEvent) => {
+        this.postUpdateEvent(socket, data);
+      });
+
+      // on post delete
+      socket.on(SOCKET_EVENTS.posts.POST_DELETED, (data: string) => {
+        this.handlePostDeleteEvent(socket, data);
       });
 
       // Handle Error
@@ -198,6 +211,7 @@ export class SocketServer {
     }
   }
 
+  // Post Events
   private async handleLikePost(
     socket: any,
     data: LikeEventPayload
@@ -237,7 +251,6 @@ export class SocketServer {
       socket.emit("error", "Failed to process like action");
     }
   }
-
   private async handleCommentEvent(
     socket: any,
     data: CommentEventPayload
@@ -254,6 +267,7 @@ export class SocketServer {
       // broadcast commend data to all users in the room(except to sender), this will add the comment data in there ui
       socket.broadcast.emit(SOCKET_EVENTS.posts.POST_COMMENTED, data);
 
+      // get all user ids in the comment list of the post
       const allIds = await getAllCommenter(data.postId);
 
       if (allIds) {
@@ -268,7 +282,6 @@ export class SocketServer {
       socket.emit("error", "Failed to process comment action");
     }
   }
-
   private async onCommentEventGlobal(
     data: CommentEventPayload,
     allIds: mongoose.Types.ObjectId[]
@@ -314,7 +327,12 @@ export class SocketServer {
         createdAt: data.data.createdAt,
       }));
 
-      const res = await notificationModel.insertMany(bulkedData);
+      const response = await bulkSave(bulkedData);
+      const { success, bulkResData } = response;
+
+      if (!success) {
+        console.error("Failed to save bulk notif");
+      }
 
       for (let i = 0; i < commenterBatch.length; i++) {
         const commenterId = commenterBatch[i];
@@ -322,7 +340,7 @@ export class SocketServer {
 
         const notifEmitData = {
           isExist: false,
-          data: res[i],
+          data: bulkResData[i],
         };
 
         if (userSocket) {
@@ -333,7 +351,6 @@ export class SocketServer {
       }
     }
   }
-
   private async notifyOwnerOnComment(
     socket: any,
     data: CommentEventPayload
@@ -370,34 +387,7 @@ export class SocketServer {
     }
   }
 
-  private async handleFollowEvent(
-    socket: any,
-    data: { followerId: string; followingName: string; userId: string }
-  ): Promise<void> {
-    try {
-      const { followerId, userId } = data;
-
-      const followEventPayload: NotifData = {
-        receiver: userId,
-        sender: followerId,
-        message: "started following you",
-        type: "follow",
-      };
-
-      const notifData = await saveFollowNotif(followEventPayload);
-
-      const ownerSocket = this.connectedUSers.get(userId);
-      if (ownerSocket) {
-        this.io
-          .to(ownerSocket.socketId)
-          .emit(SOCKET_EVENTS.user.FOLLOWED_USER, notifData);
-      }
-    } catch (error) {
-      console.error(error);
-      socket.emit("error", "Failed to process comment action");
-    }
-  }
-
+  // Notify followers, whne uploading a post
   private async handlePostUploadEvent(socket: any, data: any): Promise<void> {
     try {
       const { userId, postId } = data;
@@ -468,6 +458,58 @@ export class SocketServer {
     } catch (error) {
       console.error("Error handling post upload event: ", error);
       socket.emit("error", "Failed to process post upload notifications");
+    }
+  }
+
+  private async postUpdateEvent(
+    socket: any,
+    data: PostUpdateEvent
+  ): Promise<void> {
+    try {
+      socket.broadcast.emit(SOCKET_EVENTS.posts.POST_UPDATE, data);
+    } catch (error) {
+      console.log("Error emiting updated post data: ", error);
+    }
+  }
+
+  // User Events
+  private async handleFollowEvent(
+    socket: any,
+    data: { followerId: string; followingName: string; userId: string }
+  ): Promise<void> {
+    try {
+      const { followerId, userId } = data;
+
+      const followEventPayload: NotifData = {
+        receiver: userId,
+        sender: followerId,
+        message: "started following you",
+        type: "follow",
+      };
+
+      const notifData = await saveFollowNotif(followEventPayload);
+
+      const ownerSocket = this.connectedUSers.get(userId);
+      if (ownerSocket) {
+        this.io
+          .to(ownerSocket.socketId)
+          .emit(SOCKET_EVENTS.user.FOLLOWED_USER, notifData);
+      }
+    } catch (error) {
+      console.error(error);
+      socket.emit("error", "Failed to process comment action");
+    }
+  }
+
+  private async handlePostDeleteEvent(
+    socket: any,
+    postId: string
+  ): Promise<void> {
+    try {
+      console.log("Emiting post delete: ", postId);
+      socket.broadcast.emit(SOCKET_EVENTS.posts.POST_DELETE, postId);
+    } catch (error) {
+      console.error("Failed to broadcast delete post: ", error);
     }
   }
 

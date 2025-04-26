@@ -36,6 +36,107 @@ export const messages = [
   },
 ];
 
+export const images = [
+  // Random image from Lorem Picsum
+  "https://picsum.photos/600/400",
+
+  // Specific image by ID from Lorem Picsum
+  "https://picsum.photos/id/237/600/400",
+
+  // Customized image from Placehold.co with black background and white text
+  "https://placehold.co/600x400/000000/FFFFFF.png?text=Placeholder",
+
+  // Category-specific image from LoremFlickr (e.g., nature)
+  "https://loremflickr.com/600/400/nature",
+
+  // Another category-specific image from LoremFlickr (e.g., technology)
+  "https://loremflickr.com/600/400/technology",
+  // Random image from Lorem Picsum
+  "https://picsum.photos/600/400",
+
+  // Specific image by ID from Lorem Picsum
+  "https://picsum.photos/id/237/600/400",
+
+  // Customized image from Placehold.co with black background and white text
+  "https://placehold.co/600x400/000000/FFFFFF.png?text=Placeholder",
+
+  // Category-specific image from LoremFlickr (e.g., nature)
+  "https://loremflickr.com/600/400/nature",
+
+  // Another category-specific image from LoremFlickr (e.g., technology)
+  "https://loremflickr.com/600/400/technology",
+  // Random image from Lorem Picsum
+  "https://picsum.photos/600/400",
+
+  // Specific image by ID from Lorem Picsum
+  "https://picsum.photos/id/237/600/400",
+
+  // Customized image from Placehold.co with black background and white text
+  "https://placehold.co/600x400/000000/FFFFFF.png?text=Placeholder",
+
+  // Category-specific image from LoremFlickr (e.g., nature)
+  "https://loremflickr.com/600/400/nature",
+
+  // Another category-specific image from LoremFlickr (e.g., technology)
+  "https://loremflickr.com/600/400/technology",
+  // Random image from Lorem Picsum
+  "https://picsum.photos/600/400",
+
+  // Specific image by ID from Lorem Picsum
+  "https://picsum.photos/id/237/600/400",
+
+  // Customized image from Placehold.co with black background and white text
+  "https://placehold.co/600x400/000000/FFFFFF.png?text=Placeholder",
+
+  // Category-specific image from LoremFlickr (e.g., nature)
+  "https://loremflickr.com/600/400/nature",
+
+  // Another category-specific image from LoremFlickr (e.g., technology)
+  "https://loremflickr.com/600/400/technology",
+  // Random image from Lorem Picsum
+  "https://picsum.photos/600/400",
+
+  // Specific image by ID from Lorem Picsum
+  "https://picsum.photos/id/237/600/400",
+
+  // Customized image from Placehold.co with black background and white text
+  "https://placehold.co/600x400/000000/FFFFFF.png?text=Placeholder",
+
+  // Category-specific image from LoremFlickr (e.g., nature)
+  "https://loremflickr.com/600/400/nature",
+
+  // Another category-specific image from LoremFlickr (e.g., technology)
+  "https://loremflickr.com/600/400/technology",
+  // Random image from Lorem Picsum
+  "https://picsum.photos/600/400",
+
+  // Specific image by ID from Lorem Picsum
+  "https://picsum.photos/id/237/600/400",
+
+  // Customized image from Placehold.co with black background and white text
+  "https://placehold.co/600x400/000000/FFFFFF.png?text=Placeholder",
+
+  // Category-specific image from LoremFlickr (e.g., nature)
+  "https://loremflickr.com/600/400/nature",
+
+  // Another category-specific image from LoremFlickr (e.g., technology)
+  "https://loremflickr.com/600/400/technology",
+  // Random image from Lorem Picsum
+  "https://picsum.photos/600/400",
+
+  // Specific image by ID from Lorem Picsum
+  "https://picsum.photos/id/237/600/400",
+
+  // Customized image from Placehold.co with black background and white text
+  "https://placehold.co/600x400/000000/FFFFFF.png?text=Placeholder",
+
+  // Category-specific image from LoremFlickr (e.g., nature)
+  "https://loremflickr.com/600/400/nature",
+
+  // Another category-specific image from LoremFlickr (e.g., technology)
+  "https://loremflickr.com/600/400/technology",
+];
+
 // Example data for the notificationSchema
 export const exampleNotifications = [
   {

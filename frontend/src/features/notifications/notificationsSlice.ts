@@ -82,9 +82,12 @@ export const removeNotifList = createAsyncThunk(
 
       const res = await notificationApi.removeList(postId, token);
 
-      if (true) {
-        dispatch(deleteList(postId));
+      if (!res.success) {
+        rejectWithValue(res.message || "Failed to delete notif list");
+        return;
       }
+
+      dispatch(deleteList(postId));
 
       return res;
     } catch (error) {
@@ -115,22 +118,16 @@ const notificationSlice = createSlice({
       }
     },
     deleteList: (state, action) => {
-      try {
-        const postId = action.payload;
+      const postId = action.payload;
 
-        const idListToRemove = Object.keys(state.byId).filter(
-          (id) => state.byId[id].post === postId
-        );
+      const idListToRemove = Object.keys(state.byId).filter(
+        (id) => state.byId[id].post === postId
+      );
 
-        state.allIds = state.allIds.filter(
-          (id) => !idListToRemove.includes(id)
-        );
+      state.allIds = state.allIds.filter((id) => !idListToRemove.includes(id));
 
-        for (let id of idListToRemove) {
-          delete state.byId[id];
-        }
-      } catch (error) {
-        console.log(error);
+      for (let id of idListToRemove) {
+        delete state.byId[id];
       }
     },
   },

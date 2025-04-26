@@ -1,3 +1,5 @@
+[TOC]
+
 # This will just fucos on the key takeaways
 
 ---
@@ -32,19 +34,35 @@ Instead, delete the file using Node.js’s `fs.unlink` method.
 
 Wherever you have access to `req.file`, you can do the following:
 
-```js
+- [This will just fucos on the key takeaways](#this-will-just-fucos-on-the-key-takeaways)
+- [Notes on Uploading and Deleting Files with Node.js](#notes-on-uploading-and-deleting-files-with-nodejs)
+  - [Uploading Directory](#uploading-directory)
+    - [Explanation](#explanation)
+  - [Deleting a File](#deleting-a-file)
+    - [Example](#example)
+- [📘 Redux Toolkit: Async Thunk \& Loading State](#-redux-toolkit-async-thunk--loading-state)
+  - [🧩 Topic](#-topic)
+  - [✅ How `createAsyncThunk` Works](#-how-createasyncthunk-works)
+    - [🔍 Internal Flow](#-internal-flow)
+  - [🔁 Example Flow](#-example-flow)
+  - [🧠 Important Notes](#-important-notes)
+- [Key Notes on React, Redux \& MongoDB](#key-notes-on-react-redux--mongodb)
+  - [🎯 `position: relative`](#-position-relative)
+- [MongoDB Collection](#mongodb-collection)
+
 const fs = require("fs");
 
 if (req.file) {
-  fs.unlink(req.file.path, (err) => {
-    if (err) {
-      console.error("Error deleting the file:", err);
-    } else {
-      console.log("File successfully deleted");
-    }
-  });
+fs.unlink(req.file.path, (err) => {
+if (err) {
+console.error("Error deleting the file:", err);
+} else {
+console.log("File successfully deleted");
 }
-```
+});
+}
+
+````
 
 > ✅ This is the standard and safe way to remove files using Node.js.
 
@@ -84,7 +102,7 @@ for (const [key, value] of entries) {
   console.log(`${key}: ${value}`);
   form.delete(key); // ✅ Safe mutation
 }
-```
+````
 
 ---
 
@@ -153,12 +171,15 @@ return result;
 
 - Establishes positioning context for `absolute` children.
 - Example:
+
   ```css
   .suggestions-dropdown {
     position: absolute;
     top: 100%;
     left: 0;
   }
+
+
   Without it, absolute elements use nearest positioned ancestor or viewport.
   ```
 
@@ -167,29 +188,35 @@ Allows child elements to extend beyond parent boundaries.
 
 Useful for dropdowns/tooltips that need to "escape" their container.
 
-MongoDB Collection
-ts
+# MongoDB Collection
+
+```ts
 const collection: Collection = db.collection('yourCollection');
+
 collection: Represents a MongoDB "table" (document group)
 
 Methods: .find(), .insertOne(), etc.
+```
 
 Example query:
 
-ts
+```ts
 .find({
 name: { $regex: query, $options: 'i' } // Case-insensitive search
 })
 .limit(10)
+```
+
 Redux Best Practices
 ✅ Do:
+
 Store serializable data only
 
 Dispatch from components
 
 For modals:
 
-tsx
+```ts
 // Option 1 (Recommended):
 const Modal = ({ postId, show }) => {...}
 
@@ -197,29 +224,40 @@ const Modal = ({ postId, show }) => {...}
 const Modal = () => {
 const { postId, show } = useSelector(...);
 }
+```
+
 ❌ Don't:
+
 Store refs in Redux (breaks serializability)
 
 Dispatch in reducers
 
 Example of bad practice:
 
-ts
+```ts
 // Avoid:
 state.popover.target = ref; // MutableRefObject isn't serializable
+```
+
+---
+
 Component Placement
 Component Mount Location Recommendation
 Modal ❌ Deep in tree Use Portal
 Popover ✅ Near trigger Watch overflow
 TypeScript Error Fix
-ts
+
+```ts
 // Error: MutableRefObject in Redux state
 // Solution:
 interface PopoverState {
-show: boolean;
-postId: string;
-// Remove target: MutableRefObject
+  show: boolean;
+  postId: string;
+  // Remove target: MutableRefObject
 }
-tsx
+```
+
+```ts
 // Handle ref locally instead:
 const targetRef = useRef<HTMLSpanElement>(null);
+```

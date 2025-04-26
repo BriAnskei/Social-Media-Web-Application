@@ -24,7 +24,6 @@ const EditProfileModal: React.FC<EditProp> = ({ showModal, onClose, data }) => {
     const file = e.target?.files;
     if (file && file.length > 0) {
       const imageUrl = URL.createObjectURL(file[0]);
-      console.log(imageUrl);
       setProfileUrl(imageUrl);
 
       setUpdatedData((prev) => {
