@@ -1,7 +1,7 @@
 import { Link, useNavigate } from "react-router-dom";
 import "./Navbar.css";
-import { useEffect, useState } from "react";
-import ChatModal from "../Modal/ChatModal/ChatModal";
+import { useEffect, useRef, useState } from "react";
+import ChatModal from "../../features/messenger/Chat/Chat";
 import NotifModal from "../Modal/NotificationModal/NotifModal";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "../../store/store";
@@ -15,15 +15,18 @@ import { useCurrentUser } from "../../hooks/useUsers";
 import { useLocation } from "react-router";
 import { fetchAllPost } from "../../features/posts/postSlice";
 import { useGlobal } from "../../hooks/useModal";
+import ChatList from "../../features/messenger/ChatList/ChatList";
 
 const Navbr = () => {
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
   const { currentUser } = useCurrentUser();
-  const { postListScroll } = useGlobal();
+
+  const { chatProp } = useGlobal();
+  const chatRef = useRef(null);
 
   const location = useLocation(); // validating for homepage refresh
-  const [showMessageModal, setShowMessageModal] = useState(false);
+
   const [showNotifModal, setShowNotifModal] = useState(false);
   const [showLogout, setShowLogout] = useState(false);
 
@@ -32,11 +35,6 @@ const Navbr = () => {
   const numberOfChants = useSelector(
     (state: RootState) => state.chats.chats.length
   );
-
-  const toggleChat = () => {
-    setShowMessageModal(!showMessageModal);
-  };
-
   const toggleNotif = () => {
     if (showNotifModal) {
       // trigger dispatch only if the model is being closed
@@ -99,9 +97,28 @@ const Navbr = () => {
               </span>
             </li>
 
-            <li className="chat" onClick={toggleChat}>
-              <span className="material-symbols-outlined">chat</span>
-              <span className="count">{numberOfChants}</span>
+            <li className="chat">
+              <div className="dropdown">
+                <span
+                  className="material-symbols-outlined"
+                  data-bs-toggle="dropdown"
+                  data-bs-auto-close="outside"
+                  aria-expanded="false"
+                >
+                  chat
+                </span>
+                <span
+                  className="count"
+                  data-bs-toggle="dropdown"
+                  data-bs-auto-close="outside"
+                  aria-expanded="false"
+                >
+                  {numberOfChants}
+                </span>
+                <ul className="dropdown-menu dropdown-menu-end">
+                  <ChatList />
+                </ul>
+              </div>
             </li>
             <li className="notifs" onClick={toggleNotif}>
               <span className="material-symbols-outlined .symbols">
@@ -122,7 +139,6 @@ const Navbr = () => {
       </div>
       <LogoutModal showModal={showLogout} onClose={toggleLogout} />
       <NotifModal showModal={showNotifModal} onClose={toggleNotif} />
-      <ChatModal showModal={showMessageModal} onClose={toggleChat} />
     </>
   );
 };

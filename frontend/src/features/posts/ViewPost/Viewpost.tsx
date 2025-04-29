@@ -15,6 +15,8 @@ import AutoResizeTextarea from "../../../utils/AutoResizeTextaria";
 import { CommentEventPayload } from "../../../types/PostType";
 import { useNavigate } from "react-router";
 import { useGlobal } from "../../../hooks/useModal";
+import { FetchedUserType } from "../../../types/user";
+import { viewProfile } from "../../../Components/Modal/globalSlice";
 
 interface Post {
   postId: string;
@@ -139,6 +141,13 @@ const ViewPost = ({ postId }: Post) => {
     setCommentInput(inputValue);
   };
 
+  const viewUserProfile = (user: FetchedUserType) => {
+    dispatch(viewProfile(user));
+
+    const nav = user._id !== currentUser._id ? "/view/profile" : "/profile";
+    navigate(nav);
+  };
+
   const isLoading =
     loading ||
     Object.keys(postData).length === 0 ||
@@ -238,7 +247,11 @@ const ViewPost = ({ postId }: Post) => {
                   const commentUserData = commentUsersData[comment.user];
 
                   return (
-                    <div className="comment-cont" key={index}>
+                    <div
+                      className="comment-cont"
+                      key={index}
+                      onClick={() => viewUserProfile(commentUserData)}
+                    >
                       <img
                         src={`http://localhost:4000/uploads/profile/${commentUserData._id}/${commentUserData.profilePicture}`}
                         alt=""

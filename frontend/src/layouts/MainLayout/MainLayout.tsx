@@ -26,6 +26,7 @@ import {
 } from "../../Components/Modal/globalSlice";
 import EditProfileModal from "../../Components/Modal/EditProfileModal/EditProfileModal";
 import ViewImage from "../../Components/Modal/ViewImage/ViewImage";
+import ChatModal from "../../features/messenger/Chat/Chat";
 
 const MainLayout = () => {
   const dispatch = useDispatch<AppDispatch>();
@@ -51,7 +52,7 @@ const MainLayout = () => {
     (state: RootState) => state.global.viewImageModal
   );
 
-  const { popover } = useGlobal();
+  const { popover, chatProp } = useGlobal();
 
   const closeEditProfModal = () => {
     dispatch(closeEditProfileModal());
@@ -66,7 +67,6 @@ const MainLayout = () => {
   };
 
   const closeDeleteModal = () => {
-    console.log("delete close toggled");
     dispatch(toggleDeleteModal(null));
   };
 
@@ -75,6 +75,10 @@ const MainLayout = () => {
       dispatch(fetchAllNotifs());
     }
   }, []);
+
+  useEffect(() => {
+    console.log("Chat prop update: ", chatProp.ref);
+  }, [chatProp]);
 
   return (
     <>
@@ -141,6 +145,8 @@ const MainLayout = () => {
       />
 
       <ViewImage show={viewImageShow} src={src} />
+
+      <ChatModal show={chatProp.show} target={chatProp.ref} />
     </>
   );
 };

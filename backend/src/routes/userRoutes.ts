@@ -10,6 +10,7 @@ import {
   followUser,
   profileSearch,
   getUserImages,
+  getFollow,
 } from "../controllers/userController";
 import upload from "../middleware/upload";
 import authMiddleware from "../middleware/auth";
@@ -30,6 +31,7 @@ userRouter.get("/authentication", authMiddleware, authorization);
 userRouter.post("/follow", followUser);
 //search
 userRouter.post("/search", profileSearch);
-userRouter.post("/images", getUserImages);
+userRouter.post("/images", authMiddleware, getUserImages);
+userRouter.post("/followers", authMiddleware, getFollow);
 
 export default userRouter;

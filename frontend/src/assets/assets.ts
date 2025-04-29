@@ -1,7 +1,7 @@
 export const messages = [
   {
-    sender: "64cb8ae5c7e9e3d04d7321a1", // Replace with valid ObjectId
-    receiver: "64cb8ae5c7e9e3d04d7321a2", // Replace with valid ObjectId
+    sender: "64cb8ae5c7e9e3d04d7321a1",
+    receiver: "64cb8ae5c7e9e3d04d7321a2",
     content: "Hey, how are you?",
     isRead: false,
     createdAt: new Date("2024-12-12T09:30:00Z"),
@@ -33,6 +33,49 @@ export const messages = [
     content: "Happy Birthday! 🎉",
     isRead: false,
     createdAt: new Date("2024-12-14T07:00:00Z"),
+  },
+  // --- Additional Messages ---
+  {
+    sender: "64cb8ae5c7e9e3d04d7321a2",
+    receiver: "64cb8ae5c7e9e3d04d7321a4",
+    content: "Thank you so much! 😊",
+    isRead: false,
+    createdAt: new Date("2024-12-14T07:10:00Z"),
+  },
+  {
+    sender: "64cb8ae5c7e9e3d04d7321a1",
+    receiver: "64cb8ae5c7e9e3d04d7321a4",
+    content: "Wishing you a great year ahead!",
+    isRead: true,
+    createdAt: new Date("2024-12-14T07:15:00Z"),
+  },
+  {
+    sender: "64cb8ae5c7e9e3d04d7321a3",
+    receiver: "64cb8ae5c7e9e3d04d7321a2",
+    content: "Don't forget the team lunch tomorrow.",
+    isRead: false,
+    createdAt: new Date("2024-12-15T13:00:00Z"),
+  },
+  {
+    sender: "64cb8ae5c7e9e3d04d7321a2",
+    receiver: "64cb8ae5c7e9e3d04d7321a3",
+    content: "Thanks for the reminder! See you there!",
+    isRead: false,
+    createdAt: new Date("2024-12-15T13:05:00Z"),
+  },
+  {
+    sender: "64cb8ae5c7e9e3d04d7321a4",
+    receiver: "64cb8ae5c7e9e3d04d7321a1",
+    content: "Can we reschedule our meeting?",
+    isRead: false,
+    createdAt: new Date("2024-12-16T08:30:00Z"),
+  },
+  {
+    sender: "64cb8ae5c7e9e3d04d7321a1",
+    receiver: "64cb8ae5c7e9e3d04d7321a4",
+    content: "Sure, what time works for you?",
+    isRead: false,
+    createdAt: new Date("2024-12-16T08:45:00Z"),
   },
 ];
 

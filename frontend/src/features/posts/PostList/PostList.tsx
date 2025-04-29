@@ -6,7 +6,6 @@ import { AppDispatch, RootState } from "../../../store/store";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchAllPost } from "../postSlice";
 import Spinner from "../../../Components/Spinner/Spinner";
-import { useGlobal } from "../../../hooks/useModal";
 
 const PostList = () => {
   const dispatch: AppDispatch = useDispatch();

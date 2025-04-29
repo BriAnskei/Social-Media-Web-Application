@@ -8,6 +8,7 @@ import { RootState } from "../store/store";
 
 export const useCurrentUserPosts = () => {
   const result = useSelector(selectCurrentUserPost);
+
   return result;
 };
 

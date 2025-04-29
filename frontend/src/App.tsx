@@ -17,6 +17,7 @@ import { fetchCurrentUser } from "./features/users/userSlice";
 import ViewPost from "./features/posts/ViewPost/Viewpost";
 
 import ViewProfilePage from "./pages/ViewProfilePage/ViewProfilePage";
+import { fetchAllPost } from "./features/posts/postSlice";
 function App() {
   const dispatch = useDispatch<AppDispatch>();
 
@@ -32,6 +33,7 @@ function App() {
   useEffect(() => {
     if (isAuthenticated) {
       dispatch(fetchCurrentUser(accessToken!));
+      dispatch(fetchAllPost());
     }
   }, [dispatch, isAuthenticated, accessToken]);
 

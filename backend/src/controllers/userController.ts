@@ -379,25 +379,42 @@ export const getUserImages = async (
   try {
     const { path, userId } = req.body;
 
-    console.log("To fetch:", path, userId);
     const baseUrl = `http://${req.get("host")}`;
 
     if (!userId) {
       throw new Error("No user id to proccess this request");
     }
 
-    const imageUrls = await getImages(userId, path, baseUrl);
-
-    console.log("response url: ", imageUrls);
+    const images = await getImages(userId, baseUrl);
 
     res.json({
       success: true,
       message: "Image succesfully fetched",
-      images: imageUrls,
-      userId,
+      images,
     });
   } catch (error) {
     console.error("Failed to fetch  images " + error);
+    return res.json({ success: false, message: "Error" });
+  }
+};
+
+export const getFollow = async (req: Request, res: Response): Promise<any> => {
+  try {
+    const { userId } = req.body;
+
+    if (!userId) throw new Error("No userId to proccess this request");
+
+    const userData = await UserModel.findById(userId);
+
+    if (!userData) throw new Error("User data doesnt exist");
+
+    res.json({
+      success: true,
+      message: "Image succesfully fetched",
+      data: { followers: userData.followers, following: userData.following },
+    });
+  } catch (error) {
+    console.error("Failed to fetch  user followers " + error);
     return res.json({ success: false, message: "Error" });
   }
 };

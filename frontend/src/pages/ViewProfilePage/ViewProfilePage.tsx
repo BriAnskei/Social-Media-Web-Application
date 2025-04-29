@@ -28,6 +28,13 @@ const ViewProfilePage = ({ data }: ViewProfileProp) => {
     }
   }, [data, navigate]);
 
+  // scroll to top when render
+  useEffect(() => {
+    if (window.pageYOffset > 0) {
+      window.scrollTo(0, 0);
+    }
+  }, []);
+
   return (
     <div className="profile-cont">
       <Profile data={userData} />

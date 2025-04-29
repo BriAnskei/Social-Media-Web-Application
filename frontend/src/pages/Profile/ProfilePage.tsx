@@ -4,7 +4,7 @@ import { useCurrentUser } from "../../hooks/useUsers";
 
 import { useCurrentUserPosts } from "../../hooks/usePost";
 import UserPosts from "../../features/posts/UserPosts/UserPosts";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import ImageDisplay from "../../Components/ImageDisplay/ImageDisplay";
 
 const ProfilePage = () => {
@@ -13,6 +13,13 @@ const ProfilePage = () => {
   const { loading, currentUserPosts: posts } = useCurrentUserPosts();
 
   const [view, setView] = useState("posts");
+
+  // scroll to top when render
+  useEffect(() => {
+    if (window.pageYOffset > 0) {
+      window.scrollTo(0, 0);
+    }
+  }, []);
 
   return (
     <div className="profile-cont">

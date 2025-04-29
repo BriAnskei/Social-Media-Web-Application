@@ -15,8 +15,10 @@ import AutoResizeTextarea from "../../../utils/AutoResizeTextaria";
 import { usePostById } from "../../../hooks/usePost";
 import { useSocket } from "../../../hooks/socket/useSocket";
 import { followToggled, updateFollow } from "../../../features/users/userSlice";
-import { FollowPayload } from "../../../types/user";
+import { FetchedUserType, FollowPayload } from "../../../types/user";
 import Spinner from "../../Spinner/Spinner";
+import { viewProfile } from "../globalSlice";
+import { useNavigate } from "react-router";
 
 interface PostModal extends Omit<ModalTypes, "onClose"> {
   onClose: () => void;
@@ -25,6 +27,7 @@ interface PostModal extends Omit<ModalTypes, "onClose"> {
 
 const ViewPostModal: React.FC<PostModal> = ({ showModal, onClose, postId }) => {
   const dispatch = useDispatch<AppDispatch>();
+  const navigate = useNavigate();
   const { emitComment, emitLike, emitFollow } = useSocket();
   const { currentUser } = useCurrentUser(); // ccurrent user data
 
@@ -53,7 +56,7 @@ const ViewPostModal: React.FC<PostModal> = ({ showModal, onClose, postId }) => {
     if (commentContRef.current) {
       commentContRef.current!.scrollTop = commentContRef.current!.scrollHeight;
     }
-  }, [postData, postData.comments]);
+  }, [postData, postData.comments, commentContRef]);
 
   useEffect(() => {
     if (!postData.likes || !currentUser._id || !postOwnerData) return;
@@ -170,6 +173,14 @@ const ViewPostModal: React.FC<PostModal> = ({ showModal, onClose, postId }) => {
     } catch (error) {
       console.log(error);
     }
+  };
+
+  const viewUserProfile = (user: FetchedUserType) => {
+    dispatch(viewProfile(user));
+    onClose();
+
+    const nav = user._id !== currentUser._id ? "/view/profile" : "/profile";
+    navigate(nav);
   };
 
   return (
@@ -302,7 +313,11 @@ const ViewPostModal: React.FC<PostModal> = ({ showModal, onClose, postId }) => {
                             commentUsersData[comment.user];
 
                           return (
-                            <div className="comment-cont" key={index}>
+                            <div
+                              className="comment-cont"
+                              key={index}
+                              onClick={() => viewUserProfile(commentUserData)}
+                            >
                               <img
                                 src={`http://localhost:4000/uploads/profile/${commentUserData._id}/${commentUserData.profilePicture}`}
                                 alt=""

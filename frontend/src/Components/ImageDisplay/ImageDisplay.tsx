@@ -5,6 +5,7 @@ import { AppDispatch } from "../../store/store";
 import { useDispatch } from "react-redux";
 import { viewImage } from "../Modal/globalSlice";
 import { getImages } from "../../features/users/userSlice";
+import Spinner from "../Spinner/Spinner";
 
 interface ImageDisplayProp {
   userId: string;
@@ -13,60 +14,39 @@ interface ImageDisplayProp {
 const ImageDisplay = ({ userId }: ImageDisplayProp) => {
   const [path, setPath] = useState("posts");
   const dispatch = useDispatch<AppDispatch>();
+  const [loading, setLoading] = useState(false);
 
   const [imagesData, setImagesData] = useState<{
-    userId: string;
-    profile?: string[];
-    posts?: string[];
-  }>({
-    userId: "",
-  });
+    profile: string[];
+    posts: string[];
+  }>();
 
   const viewImageModal = (src: string) => {
     dispatch(viewImage({ src }));
   };
 
-  const fetchImage = async (userId: string, path: string) => {
-    try {
-      const res = await dispatch(getImages({ userId, path })).unwrap();
-      const { images, userId: id } = res;
-
-      return { images, id };
-    } catch (error) {
-      console.log("Failed to get image: ", error);
-      return { images: [], id: userId };
-    } finally {
-    }
-  };
-
   useEffect(() => {
-    const getImageLib = async () => {
-      const { userId: currentId } = imagesData;
+    const fetchImages = async () => {
+      try {
+        setLoading(true);
+        const res = await dispatch(getImages(userId)).unwrap();
 
-      const needsFetch =
-        !currentId ||
-        currentId !== userId ||
-        (path === "profile" && !imagesData.profile?.length);
-
-      if (!needsFetch) {
-        return;
+        setImagesData((prev) => {
+          return {
+            ...prev,
+            posts: res.images?.posts!,
+            profile: res.images?.profile!,
+          };
+        });
+      } catch (error) {
+        console.log("Failed to fetch images: ", error);
+      } finally {
+        setLoading(false);
       }
-
-      const { id, images } = await fetchImage(userId, path);
-
-      setImagesData((prev) => {
-        const updated = { ...prev, userId: id };
-        if (path === "posts") {
-          updated.posts = images;
-        } else if (path === "profile") {
-          updated.profile = images;
-        }
-        return updated;
-      });
     };
 
-    getImageLib();
-  }, [userId, path]);
+    fetchImages();
+  }, [userId]);
 
   return (
     <div className="static-image-container">
@@ -88,8 +68,10 @@ const ImageDisplay = ({ userId }: ImageDisplayProp) => {
           </ul>
         </div>
         <div className="images-list">
-          {path === "posts" ? (
-            !imagesData.posts || imagesData.posts.length === 0 ? (
+          {loading ? (
+            <Spinner />
+          ) : path === "posts" ? (
+            !imagesData || imagesData.posts.length === 0 ? (
               <span>User doesn't have post photos</span>
             ) : (
               imagesData.posts.map((img, index) => (
@@ -102,7 +84,7 @@ const ImageDisplay = ({ userId }: ImageDisplayProp) => {
                 </div>
               ))
             )
-          ) : !imagesData.profile || imagesData.profile.length === 0 ? (
+          ) : !imagesData || imagesData.profile.length === 0 ? (
             <span>User doesn't have profile photos</span>
           ) : (
             imagesData.profile.map((img, index) => (

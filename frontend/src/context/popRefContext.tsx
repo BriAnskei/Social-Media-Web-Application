@@ -8,8 +8,15 @@ interface PopoverProp {
   popOverClose: () => void;
 }
 
+interface ChatProp {
+  show: boolean;
+  ref: React.MutableRefObject<null>;
+  toogleChat: (ref: React.MutableRefObject<null>) => void;
+}
+
 interface GlobalContextValue {
   popover: PopoverProp;
+  chatProp: ChatProp;
 }
 
 interface ModalProviderProps {
@@ -29,6 +36,14 @@ export const GlobalProvider: React.FC<ModalProviderProps> = ({ children }) => {
     show: false,
     postId: "",
     target: null,
+  });
+
+  const [chatPopover, setChatPopover] = useState<{
+    show: boolean;
+    ref: React.MutableRefObject<null> | any;
+  }>({
+    show: false,
+    ref: null,
   });
 
   // Popover events
@@ -56,6 +71,19 @@ export const GlobalProvider: React.FC<ModalProviderProps> = ({ children }) => {
     setPopoverData((prev) => ({ ...prev, show: false }));
   };
 
+  // chats
+  const toogleChat = (ref: React.MutableRefObject<null>) => {
+    if (!ref || !ref.current) {
+      throw new Error("no reference to open chat list");
+    }
+
+    if (chatPopover.ref && chatPopover.ref.current) {
+      setChatPopover((prev) => ({ ...prev, ref: null, show: false }));
+    } else {
+      setChatPopover((prev) => ({ ...prev, ref: ref, show: true }));
+    }
+  };
+
   const globalContextValue: GlobalContextValue = {
     popover: {
       show: popoverData.show,
@@ -63,6 +91,11 @@ export const GlobalProvider: React.FC<ModalProviderProps> = ({ children }) => {
       postId: popoverData.postId,
       popOverToggle,
       popOverClose,
+    },
+    chatProp: {
+      show: chatPopover.show,
+      ref: chatPopover.ref,
+      toogleChat,
     },
   };
 

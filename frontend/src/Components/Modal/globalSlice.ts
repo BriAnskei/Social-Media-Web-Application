@@ -36,12 +36,18 @@ export interface ViewImageState {
   src: string;
 }
 
+export interface ViewUserFollow {
+  follower: string[];
+  following: string[];
+  show: boolean;
+}
+
 export interface GlobalState {
   postModal: PostModalState;
   postData: PostDataState;
   editPostModal: EditPostModalState;
   deletePostModal: DeletePostModalState;
-
+  viewFollow: ViewUserFollow;
   editProfileModal: EditProfileModalState;
   viewProfile: ViewProfileState;
 
@@ -61,6 +67,11 @@ const initialState: GlobalState = {
 
   editPostModal: {
     postId: "",
+    show: false,
+  },
+  viewFollow: {
+    follower: [],
+    following: [],
     show: false,
   },
   deletePostModal: {
@@ -83,8 +94,6 @@ const initialState: GlobalState = {
   },
 };
 
-// Define payload types for actions that need complex data
-
 // Create the slice
 const globalSlice = createSlice({
   name: "global",
@@ -104,7 +113,6 @@ const globalSlice = createSlice({
     },
 
     toggleEditModal: (state, action: PayloadAction<string | null>) => {
-      console.log("toggle edit: ", action.payload);
       state.editPostModal.show = !state.editPostModal.show;
       state.editPostModal.postId = action.payload || "";
     },
@@ -134,6 +142,12 @@ const globalSlice = createSlice({
       state.viewImageModal.show = false;
       state.viewImageModal.src = "";
     },
+    viewFollowers: (state, action) => {
+      const { follower, following } = action.payload;
+      state.viewFollow.show = !state.viewFollow.show;
+      state.viewFollow.follower = follower;
+      state.viewFollow.following = following;
+    },
   },
 });
 
@@ -148,6 +162,7 @@ export const {
 
   openEditProfileModal,
   viewProfile,
+  viewFollowers,
 
   viewImage,
   viewImageClose,

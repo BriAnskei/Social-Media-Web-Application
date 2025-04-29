@@ -88,15 +88,14 @@ export const followToggled = createAsyncThunk(
 
 export const getImages = createAsyncThunk(
   "user/images",
-  async (data: { userId: string; path: string }, { rejectWithValue }) => {
+  async (userId: string, { rejectWithValue, getState }) => {
     try {
-      console.log("dala", data);
+      const { auth } = getState() as RootState;
+      const { accessToken } = auth;
+      if (!userId || !accessToken)
+        return rejectWithValue("No userId or token to dispatch this request");
 
-      const { userId, path } = data;
-      if (!userId || !path)
-        return rejectWithValue("No userId or path to dispatch this request");
-
-      const res = await userApi.getUserImages(userId, path);
+      const res = await userApi.getUserImages(userId, accessToken);
 
       if (!res.success) {
         return rejectWithValue(res.message || "Failed to fecth images");

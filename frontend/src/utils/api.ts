@@ -269,17 +269,20 @@ export const userApi = {
   },
   getUserImages: async (
     userId: string,
-    path: string
-  ): Promise<ApiResponse & { images?: string[]; userId: string }> => {
+    token: string
+  ): Promise<
+    ApiResponse & { images?: { posts: string[]; profile: string[] } }
+  > => {
     //&  -> intersection.
     try {
       const response = await api.post(
         "/api/users/images",
 
-        { userId, path },
+        { userId },
 
         {
           headers: {
+            token,
             "Content-Type": "application/json",
           },
         }

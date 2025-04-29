@@ -146,34 +146,33 @@ export default upload;
 //  utility function
 export async function getImages(
   userId: string,
-  filePath: string,
   baseUrl: string
-): Promise<String[]> {
+): Promise<{ posts: string[]; profile: string[] }> {
   try {
     // Security check
     if (userId.includes("..")) {
       throw new Error("Invalid user ID format");
     }
 
-    const uploadPath = path.join("uploads", filePath, userId);
+    const postPath = path.join("uploads/posts", userId);
 
-    console.log("File path", uploadPath);
+    const profilePath = path.join("uploads/profile", userId);
 
-    // Check if directory exists
-    if (!fs.existsSync(uploadPath)) {
-      return [];
-    }
+    const postFiles = !fs.existsSync(postPath)
+      ? []
+      : await fs.promises.readdir(postPath);
+    const profileFiles = !fs.existsSync(profilePath)
+      ? []
+      : await fs.promises.readdir(profilePath);
 
-    // Read files
-    const files = await fs.promises.readdir(uploadPath);
-
-    // Generate URLs
-    return files.map(
-      (file) =>
-        `${baseUrl}/${
-          filePath === "posts" ? "images" : "uploads"
-        }/${filePath}/${userId}/${file}`
+    const postImageUrls = postFiles.map(
+      (file) => `${baseUrl}/images/posts/${userId}/${file}`
     );
+    const profileUrls = profileFiles.map(
+      (file) => `${baseUrl}/uploads/profile/${userId}/${file}`
+    );
+
+    return { posts: postImageUrls, profile: profileUrls };
   } catch (error) {
     console.error("Error getting images: ", error);
     throw error;

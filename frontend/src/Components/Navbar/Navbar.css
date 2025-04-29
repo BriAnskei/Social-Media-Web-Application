@@ -97,8 +97,8 @@ Link {
 }
 
 .navbar-menu .chat .count {
-  top: 12px;
-  right: 10.4rem;
+  top: -3px;
+  left: 0.7rem;
   margin: 0;
   padding: 0;
   box-sizing: border-box;

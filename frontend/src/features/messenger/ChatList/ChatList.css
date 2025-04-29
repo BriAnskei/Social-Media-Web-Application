@@ -1,45 +1,108 @@
-
-.chat-container {
-    padding: 0.3rem;
-    margin: 3px 2px 4px 2px;
-    cursor: pointer;
+.chatlist-cont {
+  margin: 2px;
+  width: 27rem;
+  height: 34rem;
 }
 
+.chats-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  margin: 2px 8px 10px 15px;
+  height: 44px;
+}
+
+.chats-header .search-chat {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.search-chat input {
+  height: 2rem;
+  border-radius: 9px;
+  border: 1px solid gray;
+
+  padding: 10px;
+}
+
+.search-chat button {
+  background-color: inherit;
+  border: 1px solid gray;
+  padding: 3px;
+  border-radius: 5px;
+}
+
+.chat-list {
+  height: 90%;
+
+  overflow-y: scroll; /* Enable vertical scrolling */
+  scrollbar-width: none;
+  padding-right: 5px; /* Add some padding to prevent content from touching the scrollbar */
+}
+
+.chat-list::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+.chat-list::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 10px;
+}
+
+.chat-list::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+.chat-container {
+  height: 3.8rem;
+  font-size: 0.9rem;
+  margin-bottom: 8px;
+  padding: 7px;
+}
+
+.unread-chat {
+  font-weight: bold;
+  background-color: #eae9e9;
+}
+
+.unread-chat .sender {
+  font-size: 100px;
+}
 
 .chat-info {
-    display: flex;
-    justify-content: space-between;
-    padding: 5px;
+  display: flex;
+  justify-content: space-between;
 }
 
 .info-picc {
-    display: flex;
-    gap: 5px;
+  display: flex;
+  gap: 5px;
+  margin-bottom: -1.3rem;
 }
 
 .info-picc img {
-    width: 1.9rem;
-    border-radius: 100%;
-    display: block;
-    margin: 0;
-    padding: 0;
-    object-fit: cover;
-    box-sizing: border-box;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 100%;
+  display: block;
+  margin: 0;
+  padding: 0;
+  object-fit: cover;
+  box-sizing: border-box;
 }
 
 .chat-info .info-picc h4 {
-    font-size: 1rem;
-    font-weight: normal;
+  font-size: 1rem;
+  font-weight: normal;
 }
-
-
 
 .chat-info span {
-    font-size: 0.8rem;
+  font-size: 0.8rem;
 }
 
-
-
 .chat-container .chat-content {
-    margin-left: 1.6vw;
+  margin-left: 3.7rem;
+  align-self: start;
 }
