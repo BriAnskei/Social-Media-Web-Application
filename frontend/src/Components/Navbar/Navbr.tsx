@@ -1,10 +1,10 @@
 import { Link, useNavigate } from "react-router-dom";
 import "./Navbar.css";
-import { useEffect, useRef, useState } from "react";
-import ChatModal from "../../features/messenger/Chat/Chat";
+import { useState } from "react";
+
 import NotifModal from "../Modal/NotificationModal/NotifModal";
-import { useDispatch, useSelector } from "react-redux";
-import { AppDispatch, RootState } from "../../store/store";
+import { useDispatch } from "react-redux";
+import { AppDispatch } from "../../store/store";
 import LogoutModal from "../Modal/LogoutModal/LogoutModal";
 import { useUnreadNotif } from "../../hooks/useUnreadNotif";
 import { markAllRead } from "../../features/notifications/notificationsSlice";
@@ -14,27 +14,22 @@ import { viewProfile } from "../Modal/globalSlice";
 import { useCurrentUser } from "../../hooks/useUsers";
 import { useLocation } from "react-router";
 import { fetchAllPost } from "../../features/posts/postSlice";
-import { useGlobal } from "../../hooks/useModal";
-import ChatList from "../../features/messenger/ChatList/ChatList";
+
+import ConversationList from "../../features/messenger/Conversation/ConversationList/ConversationList";
+import { useUnreadCount } from "../../features/messenger/Conversation/useConvo";
 
 const Navbr = () => {
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
   const { currentUser } = useCurrentUser();
 
-  const { chatProp } = useGlobal();
-  const chatRef = useRef(null);
-
   const location = useLocation(); // validating for homepage refresh
+  const { nummberOfUnread, allIds } = useUnreadNotif(); // unread notification
+  const unreadCount = useUnreadCount("5f8d0d55b54764421b7156d1"); // unread messages
 
   const [showNotifModal, setShowNotifModal] = useState(false);
   const [showLogout, setShowLogout] = useState(false);
 
-  const { nummberOfUnread, allIds } = useUnreadNotif(); // unread notification
-
-  const numberOfChants = useSelector(
-    (state: RootState) => state.chats.chats.length
-  );
   const toggleNotif = () => {
     if (showNotifModal) {
       // trigger dispatch only if the model is being closed
@@ -113,11 +108,11 @@ const Navbr = () => {
                   data-bs-auto-close="outside"
                   aria-expanded="false"
                 >
-                  {numberOfChants}
+                  {unreadCount}
                 </span>
-                <ul className="dropdown-menu dropdown-menu-end">
-                  <ChatList />
-                </ul>
+                <div className="dropdown-menu dropdown-menu-end">
+                  <ConversationList />
+                </div>
               </div>
             </li>
             <li className="notifs" onClick={toggleNotif}>

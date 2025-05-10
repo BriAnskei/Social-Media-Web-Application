@@ -294,6 +294,8 @@ export const followUser = async (req: Request, res: Response): Promise<any> => {
 
     if (isFollowing) {
       // If already following, remove (unfollow)
+      console.log("Unfollowing user");
+
       tobeFollowedData = await UserModel.findByIdAndUpdate(
         userId,
         {

@@ -1,38 +1,85 @@
-import mongoose, { Schema, Document, Model, Types, model } from "mongoose";
+import mongoose, { Document, Schema } from "mongoose";
 
-export interface IMessage {
-  sender: Types.ObjectId;
+// Define interfaces for type safety
+export interface IAttachment {
+  type: "image" | "video" | "document" | "audio";
+  url: string;
+  fileName?: string;
+  fileSize?: number;
+}
+
+export interface IMessage extends Document {
+  sender: mongoose.Types.ObjectId;
+  recipient: mongoose.Types.ObjectId;
   content: string;
-  readBy: Types.ObjectId[];
-  attachments: string[];
+  attachments: IAttachment[];
+  read: boolean;
+  readAt: Date | null;
+  conversationId: mongoose.Types.ObjectId;
   createdAt: Date;
 }
 
-const MessageSchema = new Schema<IMessage>({
-  sender: {
-    type: Schema.Types.ObjectId,
-    ref: "User",
-    required: true,
+// Sub schema
+const AttachmentSchema = new Schema<IAttachment>(
+  {
+    type: {
+      type: String,
+      enum: ["image"], // valid file to attach
+      required: function (this: IAttachment) {
+        return !!this; // Required if attachment exists
+      },
+    },
+    url: {
+      type: String,
+      required: function (this: IAttachment) {
+        return !!this; // Required if attachment exists
+      },
+    },
+    fileName: String,
+    fileSize: Number,
   },
-  content: {
-    type: String,
-    required: true,
-  },
-  readBy: [
-    {
+  { _id: false }
+);
+
+const MessageSchema = new Schema<IMessage>(
+  {
+    sender: {
       type: Schema.Types.ObjectId,
       ref: "User",
+      required: true,
     },
-  ],
-  attachments: [
-    {
-      type: String, // URLs to media files
+    recipient: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
     },
-  ],
-  createdAt: {
-    type: Date,
-    default: Date.now,
+    content: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    attachments: [AttachmentSchema],
+    read: {
+      type: Boolean,
+      default: false,
+    },
+    readAt: {
+      type: Date,
+      default: null,
+    },
+    conversationId: {
+      type: Schema.Types.ObjectId,
+      ref: "Conversation",
+      required: true,
+    },
   },
-});
+  { timestamps: true }
+);
 
-export default MessageSchema;
+// Index for quick lookup of messages in a conversation
+MessageSchema.index({ conversationId: 1, createdAt: -1 });
+
+// Index for finding unread messages for a user
+MessageSchema.index({ recipient: 1, read: 1 });
+
+export const MessageModel = mongoose.model<IMessage>("Message", MessageSchema);

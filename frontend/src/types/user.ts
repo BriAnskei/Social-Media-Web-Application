@@ -26,6 +26,6 @@ export interface UserState {
 
 // follow-toggle type
 export interface FollowPayload {
-  userId: string;
-  followerId: string;
+  userId: string; // to be followerd
+  followerId: string; // who followed
 }

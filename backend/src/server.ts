@@ -34,6 +34,7 @@ app.use(
   "/uploads/profile",
   express.static(`${process.env.UPLOAD_PATH}/profile`)
 );
+app.use("/no-profile", express.static(`${process.env.UPLOAD_PATH}/profile`));
 
 // api endpoint(Routes)
 app.use("/api/notify", notifRouter);

@@ -1,5 +1,6 @@
-import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { createSlice, current, PayloadAction } from "@reduxjs/toolkit";
 import { FetchedUserType } from "../../types/user";
+import { ChatWindowType, Conversation } from "../../types/MessengerTypes";
 
 // post states
 export interface PostModalState {
@@ -37,9 +38,11 @@ export interface ViewImageState {
 }
 
 export interface ViewUserFollow {
-  follower: string[];
-  following: string[];
   show: boolean;
+}
+
+export interface ChatWindow {
+  chatWWindows: ChatWindowType[];
 }
 
 export interface GlobalState {
@@ -53,6 +56,9 @@ export interface GlobalState {
 
   // image(profile photos) display modal
   viewImageModal: ViewImageState;
+
+  // chat window
+  chatWindow: ChatWindow;
 }
 
 // Initialize state
@@ -70,8 +76,6 @@ const initialState: GlobalState = {
     show: false,
   },
   viewFollow: {
-    follower: [],
-    following: [],
     show: false,
   },
   deletePostModal: {
@@ -91,6 +95,10 @@ const initialState: GlobalState = {
   viewImageModal: {
     show: false,
     src: "",
+  },
+
+  chatWindow: {
+    chatWWindows: [],
   },
 };
 
@@ -142,11 +150,53 @@ const globalSlice = createSlice({
       state.viewImageModal.show = false;
       state.viewImageModal.src = "";
     },
-    viewFollowers: (state, action) => {
-      const { follower, following } = action.payload;
+    toggleViewFollow: (state, action) => {
       state.viewFollow.show = !state.viewFollow.show;
-      state.viewFollow.follower = follower;
-      state.viewFollow.following = following;
+    },
+    openChatWindow: (
+      state,
+      action: PayloadAction<Conversation & { currUserId: string }>
+    ) => {
+      const { _id, participants, createdAt, updatedAt, currUserId } =
+        action.payload;
+
+      const userId = participants.find((id) => id !== currUserId);
+
+      if (!userId) throw new Error("No valid participant to open this window");
+
+      const isWindowExisting = state.chatWindow.chatWWindows.findIndex(
+        (chtWindow) => chtWindow.convoId === _id
+      );
+
+      if (isWindowExisting !== -1) {
+      } else {
+        const data: ChatWindowType = {
+          convoId: _id,
+          userId,
+          minimized: false,
+          createdAt,
+          updatedAt,
+        };
+
+        state.chatWindow.chatWWindows.push(data);
+      }
+    },
+    closeWindow: (state, action) => {
+      const { convoId } = action.payload;
+
+      state.chatWindow.chatWWindows = state.chatWindow.chatWWindows.filter(
+        (chat) => chat.convoId !== convoId
+      );
+    },
+    minimizeChat: (state, action) => {
+      const { convoId } = action.payload;
+      console.log("convo id: ", convoId);
+
+      state.chatWindow.chatWWindows.map((cht) => {
+        if (cht.convoId === convoId) {
+          cht.minimized = !cht.minimized;
+        }
+      });
     },
   },
 });
@@ -162,9 +212,13 @@ export const {
 
   openEditProfileModal,
   viewProfile,
-  viewFollowers,
+  toggleViewFollow,
 
   viewImage,
   viewImageClose,
+
+  openChatWindow,
+  closeWindow,
+  minimizeChat,
 } = globalSlice.actions;
 export default globalSlice.reducer;

@@ -4,15 +4,16 @@ import { useEffect, useRef, useState } from "react";
 import { useCurrentUser } from "../../../hooks/useUsers";
 import { useDispatch } from "react-redux";
 import { AppDispatch } from "../../../store/store";
-import { openEditProfileModal } from "../../../Components/Modal/globalSlice";
+import {
+  openEditProfileModal,
+  toggleViewFollow,
+} from "../../../Components/Modal/globalSlice";
 import { followToggled, updateFollow } from "../userSlice";
 import { useSocket } from "../../../hooks/socket/useSocket";
 
 interface ProfileProp {
   data: FetchedUserType;
 }
-
-//https://claude.ai/chat/72f48cbd-3dcf-43f7-abb2-14691442d42c
 
 const Profile: React.FC<ProfileProp> = ({ data }) => {
   const dispatch = useDispatch<AppDispatch>();
@@ -48,7 +49,6 @@ const Profile: React.FC<ProfileProp> = ({ data }) => {
         userId: data._id,
         followerId: currentUser._id,
       };
-      dispatch(updateFollow(dataPayload));
 
       const res = await dispatch(followToggled(dataPayload)).unwrap();
 
@@ -71,17 +71,31 @@ const Profile: React.FC<ProfileProp> = ({ data }) => {
     }
   };
 
+  const viewFollowers = () => {
+    dispatch(
+      toggleViewFollow({ followers: data.followers, following: data.following })
+    );
+  };
+
+  const imgUrl =
+    data.profilePicture !== ""
+      ? `http://localhost:4000/uploads/profile/${data._id}/${data.profilePicture}`
+      : "http://localhost:4000/no-profile/no-profile.jpg";
+
   return (
     <>
       <div className="profile-main">
-        <img
-          src={`http://localhost:4000/uploads/profile/${data._id}/${data.profilePicture}`}
-          alt=""
-        />
+        <img src={imgUrl} alt="" />
         <div className="profile-info">
           <h1>{data.fullName}</h1>
-          <span>{data.followers?.length} Followers</span>
-          <span>{data.following?.length} Following</span>
+          <div
+            className="followers"
+            style={{ cursor: "pointer" }}
+            onClick={viewFollowers}
+          >
+            <span>{data.followers?.length} Followers</span>
+            <span>{data.following?.length} Following</span>
+          </div>
           <div className="bio">
             <span>{data.bio}</span>
           </div>

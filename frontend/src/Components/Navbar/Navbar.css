@@ -116,6 +116,10 @@ Link {
   justify-content: center;
 }
 
+.chat .dropdown-menu {
+  padding: 0;
+}
+
 .logout {
   height: 30px;
 }

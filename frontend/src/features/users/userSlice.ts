@@ -71,11 +71,13 @@ export const updateCurrentUser = createAsyncThunk<
 
 export const followToggled = createAsyncThunk(
   "user/follow",
-  async (data: FollowPayload, { rejectWithValue }) => {
+  async (data: FollowPayload, { rejectWithValue, dispatch }) => {
     try {
       if (!data) {
         return rejectWithValue("No data recieved");
       }
+
+      dispatch(updateFollow(data));
 
       const res = await userApi.followToggle(data);
 
@@ -130,15 +132,13 @@ const userSlice = createSlice({
       state.currentUserId = null;
     },
     updateFollow: (state, action) => {
-      console.log("Follow payload");
       const { userId, followerId } = action.payload;
       const userToBeFollowed = state.byId[userId];
       const userWhoFollowed = state.byId[followerId];
-      console.log("data: ", userId, followerId);
+      console.log("FOLLOW FUNCTION TRIIGERED");
 
       if (!userToBeFollowed || !userWhoFollowed) {
-        console.log("user doesnt exist");
-        return;
+        throw new Error("Failed, user might not exist");
       } // Ensure users exist
 
       // Use Set to avoid duplicates efficiently
@@ -212,23 +212,32 @@ const userSlice = createSlice({
         state.error = action.payload as string;
       })
 
-      .addCase(followToggled.fulfilled, (state, action) => {
-        if (!action.payload.success) {
-          // Handle API failure - roll back the state
-          const { userId, followerId } = action.meta.arg; // accessing the payload in the follow toggle
-          const userToBeFollowed = state.byId[userId];
-          const userWhoFollowed = state.byId[followerId];
+      .addCase(followToggled.rejected, (state, action) => {
+        // Handle API failure - roll back the state
+        const { userId, followerId } = action.meta.arg; // accessing the payload in the follow toggle
+        const userToBeFollowed = state.byId[userId];
+        const userWhoFollowed = state.byId[followerId];
 
-          if (userToBeFollowed && userWhoFollowed) {
-            const updatedFollowers = new Set(userToBeFollowed.followers);
-            const updatedFollowing = new Set(userWhoFollowed.following);
+        if (userToBeFollowed && userWhoFollowed) {
+          const updatedFollowers = new Set(userToBeFollowed.followers);
+          const updatedFollowing = new Set(userWhoFollowed.following);
 
+          updatedFollowers.delete(followerId);
+          updatedFollowing.delete(userId);
+
+          if (
+            updatedFollowers.has(followerId) &&
+            updatedFollowing.has(userId)
+          ) {
             updatedFollowers.delete(followerId);
             updatedFollowing.delete(userId);
-
-            userToBeFollowed.followers = Array.from(updatedFollowers);
-            userWhoFollowed.following = Array.from(updatedFollowing);
+          } else {
+            updatedFollowers.add(followerId);
+            updatedFollowing.add(userId);
           }
+
+          userToBeFollowed.followers = Array.from(updatedFollowers);
+          userWhoFollowed.following = Array.from(updatedFollowing);
         }
       });
   },

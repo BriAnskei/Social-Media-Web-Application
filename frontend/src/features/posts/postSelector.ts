@@ -11,8 +11,6 @@ const userLoading = (state: RootState) => state.user.loading;
 export const selectCurrentUserPost = createSelector(
   [byId, allIds, currentUserId, postLoading, userLoading],
   (postById, allIds, currentUserId, postLoading, userLoading) => {
-    console.log("selector runninh", currentUserId, postById);
-
     const currentUsersPost = allIds
       .filter((id) => postById[id].user === currentUserId)
       .map((id) => postById[id]);

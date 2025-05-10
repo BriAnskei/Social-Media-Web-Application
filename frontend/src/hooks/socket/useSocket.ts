@@ -20,7 +20,6 @@ import {
 } from "../../features/notifications/notificationsSlice";
 import { NotificationType } from "../../types/NotificationTypes";
 import { updateFollow } from "../../features/users/userSlice";
-import { viewPost } from "../../Components/Modal/globalSlice";
 
 export interface DataOutput {
   // for post-like notification
@@ -126,6 +125,7 @@ export const useSocket = () => {
         followerId: data.data.sender,
         userId: data.data.receiver,
       };
+      console.log("emiting data: ", followPayload);
 
       dispatch(updateFollow(followPayload));
       dispatch(addNotification(data));
@@ -238,11 +238,13 @@ export const useSocket = () => {
   const emitFollow = useCallback(
     (data: any) => {
       if (socket && isConnected) {
-        console.log("sending emit");
-
         socket.emit("user-follow", data);
       } else {
-        console.log("faild to send, socket not connected", socket, isConnected);
+        console.log(
+          "failed to send, socket not connected",
+          socket,
+          isConnected
+        );
       }
     },
     [socket, isConnected]

@@ -1,7 +1,8 @@
-.chatlist-cont {
+.conversationList-cont {
   margin: 2px;
-  width: 27rem;
+  width: 30rem;
   height: 34rem;
+  cursor: default;
 }
 
 .chats-header {
@@ -36,10 +37,8 @@
 
 .chat-list {
   height: 90%;
-
   overflow-y: scroll; /* Enable vertical scrolling */
   scrollbar-width: none;
-  padding-right: 5px; /* Add some padding to prevent content from touching the scrollbar */
 }
 
 .chat-list::-webkit-scrollbar-track {
@@ -58,7 +57,9 @@
 .chat-container {
   height: 3.8rem;
   font-size: 0.9rem;
-  margin-bottom: 8px;
+  margin-bottom: 0.2rem;
+  cursor: pointer;
+  border-radius: 3px;
   padding: 7px;
 }
 
@@ -67,8 +68,8 @@
   background-color: #eae9e9;
 }
 
-.unread-chat .sender {
-  font-size: 100px;
+.bold-header {
+  font-weight: bold;
 }
 
 .chat-info {
@@ -95,14 +96,34 @@
 
 .chat-info .info-picc h4 {
   font-size: 1rem;
-  font-weight: normal;
 }
 
 .chat-info span {
   font-size: 0.8rem;
 }
 
-.chat-container .chat-content {
+.chat-content-count {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.chat-content {
   margin-left: 3.7rem;
-  align-self: start;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
+  width: 80%;
+}
+
+.unread-count {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 13px;
+  background-color: #bababa;
+  padding: 3px;
+  border-radius: 100%;
+  height: 20px;
+  width: 20px;
 }

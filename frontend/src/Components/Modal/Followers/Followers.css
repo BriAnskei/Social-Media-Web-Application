@@ -1,0 +1,81 @@
+.follower-content {
+  padding: 4px 7px;
+}
+.follower-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.follower-header span {
+  cursor: pointer;
+}
+
+.follower-nav {
+  display: flex;
+  gap: 5px;
+}
+
+.follower-nav span {
+  margin: 5px 8px 0 8px;
+  padding: 5px;
+  cursor: pointer;
+}
+
+.active-follow {
+  background-color: #f5f5f5;
+  font-weight: 500;
+  border-radius: 4px 4px 0 0;
+}
+
+.followers-container {
+  margin: 0 7px 8px 7px;
+  overflow: auto;
+  background-color: #f5f5f5;
+  height: 400px;
+  padding: 5px;
+}
+
+.center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.user-follow-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid gray;
+  height: 70px;
+  width: 100%;
+  padding: 6px;
+}
+
+.user-follow-container img {
+  border-radius: 6px;
+  width: 50px;
+  height: 50px;
+  box-sizing: border-box;
+  object-fit: cover;
+}
+
+.user-follow-data {
+  display: flex;
+  justify-content: center;
+  align-content: center;
+  gap: 13px;
+}
+
+.user-follow-data span {
+  height: 20px;
+}
+
+.toggle-button {
+  background-color: inherit;
+  border: 1px solid gray;
+  height: 40px;
+  width: 80px;
+  border-radius: 8px;
+  color: red;
+}

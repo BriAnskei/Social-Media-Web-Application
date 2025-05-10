@@ -105,11 +105,10 @@ const Post = ({ post, ownerId }: Post) => {
         userId: post.user,
         followerId: currentUser._id,
       };
-      dispatch(updateFollow(data));
+
       const res = await dispatch(followToggled(data)).unwrap();
 
       if (!res.success) {
-        dispatch(updateFollow(data)); // This will toggle back since it's the same function
         setFollowToggleClass("");
         setToggleFollow(false);
         console.error(res.message || "Error handling follow");

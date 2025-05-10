@@ -1,7 +1,8 @@
 import { combineReducers } from "@reduxjs/toolkit";
 import userReducer from "../features/users/userSlice";
 import authReducer from "../features/auth/authSlice";
-import messageReducer from "../features/messenger/messengerSlice";
+import messageReducer from "../features/messenger/Message/messengerSlice";
+import conversationReducer from "../features/messenger/Conversation/conversationSlice";
 import notificationReducer from "../features/notifications/notificationsSlice";
 import postReducer from "../features/posts/postSlice";
 import globalReducer from "../Components/Modal/globalSlice";
@@ -10,7 +11,8 @@ const rootReducer = combineReducers({
   user: userReducer,
   auth: authReducer,
   posts: postReducer,
-  chats: messageReducer,
+  message: messageReducer,
+  conversation: conversationReducer,
   notification: notificationReducer,
   global: globalReducer,
 });

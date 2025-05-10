@@ -19,6 +19,7 @@ import { FetchedUserType, FollowPayload } from "../../../types/user";
 import Spinner from "../../Spinner/Spinner";
 import { viewProfile } from "../globalSlice";
 import { useNavigate } from "react-router";
+import CommentList from "./CommentList";
 
 interface PostModal extends Omit<ModalTypes, "onClose"> {
   onClose: () => void;
@@ -37,26 +38,8 @@ const ViewPostModal: React.FC<PostModal> = ({ showModal, onClose, postId }) => {
   const [isOwnerFollowed, setIsOwnerFollowed] = useState(false);
   const [followToggleClass, setFollowToggleClass] = useState("follow-button");
 
-  // get all user id's in the post comment, after that get the users data per comment
-  const commentUserIds: string[] = useMemo(
-    () =>
-      postData.comments ? postData.comments.map((comment) => comment.user) : [],
-    [postData.comments]
-  );
-  const commentUsersData = useUsersById(commentUserIds);
-
   const [isLiked, setIsLiked] = useState<boolean>(false);
   const [commentInput, setCommentInput] = useState("");
-
-  const commentContRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    // ScrollHeight: The total height of the scrollable content inside the container, including any overflow that is not visible in the viewport.
-    // ScrollTop: The current vertical scroll position of the container (how far it is scrolled down from the top).
-    if (commentContRef.current) {
-      commentContRef.current!.scrollTop = commentContRef.current!.scrollHeight;
-    }
-  }, [postData, postData.comments, commentContRef]);
 
   useEffect(() => {
     if (!postData.likes || !currentUser._id || !postOwnerData) return;
@@ -65,7 +48,7 @@ const ViewPostModal: React.FC<PostModal> = ({ showModal, onClose, postId }) => {
       const isPostLiked = postData.likes.includes(currentUser._id);
       setIsLiked(isPostLiked);
     }
-  }, [postId, currentUser, currentUser.followers]);
+  }, [postId, currentUser]);
 
   useEffect(() => {
     if (!postOwnerData.followers || !currentUser) return;
@@ -103,10 +86,10 @@ const ViewPostModal: React.FC<PostModal> = ({ showModal, onClose, postId }) => {
       const res = await dispatch(followToggled(data)).unwrap();
 
       if (!res.success) {
-        console.error(res.message);
+        console.error(res.message || "failed to follow user");
         return;
       }
-      dispatch(updateFollow(data));
+
       emitFollow(data);
     } catch (error) {
       console.error(error);
@@ -213,7 +196,6 @@ const ViewPostModal: React.FC<PostModal> = ({ showModal, onClose, postId }) => {
                 <Spinner />
               ) : (
                 <>
-                  {" "}
                   <div className="view-post-modal-data">
                     <div className="post-modal-content-data">
                       <div className="post-modal-profile-data">
@@ -303,41 +285,13 @@ const ViewPostModal: React.FC<PostModal> = ({ showModal, onClose, postId }) => {
                         <span>Comment</span>
                       </div>
                     </div>
-                    <div
-                      className="comment-list-container"
-                      ref={commentContRef}
-                    >
-                      {postData.comments && postData.comments.length > 0 ? (
-                        postData.comments.map((comment, index) => {
-                          const commentUserData =
-                            commentUsersData[comment.user];
-
-                          return (
-                            <div
-                              className="comment-cont"
-                              key={index}
-                              onClick={() => viewUserProfile(commentUserData)}
-                            >
-                              <img
-                                src={`http://localhost:4000/uploads/profile/${commentUserData._id}/${commentUserData.profilePicture}`}
-                                alt=""
-                              />
-                              <div className="comment-content">
-                                <div className="info-content">
-                                  <h5>{commentUserData.fullName}</h5>
-                                  <span>{comment.content}</span>
-                                </div>
-                                <span id="comment-date">
-                                  {new Date(comment.createdAt).toLocaleString()}
-                                </span>
-                              </div>
-                            </div>
-                          );
-                        })
-                      ) : (
-                        <>Write a comment</>
-                      )}
-                    </div>
+                    <>
+                      {/* comment list */}
+                      <CommentList
+                        postId={postId}
+                        viewUserProfile={viewUserProfile}
+                      />
+                    </>
                     <div className="comment-con-inputs">
                       <div className="post-modal-profile">
                         <img

@@ -307,13 +307,10 @@ const postsSlice = createSlice({
         state.loading = false;
         const { byId, allIds } = normalizeResponse(action.payload.posts);
 
-        console.log(byId, allIds);
-
         if (!state.allIds.includes(allIds[0])) {
           state.allIds = [allIds[0], ...state.allIds]; // Put the latest post in the first index, to sort it
         }
         state.byId = { ...state.byId, ...byId };
-        console.log(state.allIds, state.byId);
       })
       .addCase(createPost.rejected, (state, action) => {
         state.loading = false;

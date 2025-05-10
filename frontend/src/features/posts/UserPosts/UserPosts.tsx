@@ -10,10 +10,6 @@ interface PostProp {
 }
 
 const UserPosts = ({ posts, loading }: PostProp) => {
-  useEffect(() => {
-    console.log("COMPONENT RENDERED: ", posts);
-  }, [loading, posts]);
-
   return (
     <>
       <div className="postlist-container">

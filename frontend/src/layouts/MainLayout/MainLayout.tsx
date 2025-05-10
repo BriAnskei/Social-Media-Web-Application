@@ -26,7 +26,9 @@ import {
 } from "../../Components/Modal/globalSlice";
 import EditProfileModal from "../../Components/Modal/EditProfileModal/EditProfileModal";
 import ViewImage from "../../Components/Modal/ViewImage/ViewImage";
-import ChatModal from "../../features/messenger/Chat/Chat";
+
+import MessageBox from "../../features/messenger/Message/MessageBox";
+import Followers from "../../Components/Modal/Followers/Followers";
 
 const MainLayout = () => {
   const dispatch = useDispatch<AppDispatch>();
@@ -52,7 +54,8 @@ const MainLayout = () => {
     (state: RootState) => state.global.viewImageModal
   );
 
-  const { popover, chatProp } = useGlobal();
+  const { chatWindow } = useSelector((state: RootState) => state.global);
+  const { popover } = useGlobal();
 
   const closeEditProfModal = () => {
     dispatch(closeEditProfileModal());
@@ -76,9 +79,10 @@ const MainLayout = () => {
     }
   }, []);
 
-  useEffect(() => {
-    console.log("Chat prop update: ", chatProp.ref);
-  }, [chatProp]);
+  // chat funtion
+  const onClose = (id: string) => {};
+  const toggleMinimized = (id: string) => {};
+  const onSendMessage = (id: string, content: string) => {};
 
   return (
     <>
@@ -146,7 +150,20 @@ const MainLayout = () => {
 
       <ViewImage show={viewImageShow} src={src} />
 
-      <ChatModal show={chatProp.show} target={chatProp.ref} />
+      <Followers />
+
+      {/* chat window */}
+      <div className="chat-windows-container">
+        {chatWindow.chatWWindows.map((chat, index) => (
+          <MessageBox
+            key={index}
+            chat={chat}
+            onClose={onClose}
+            toggleMin={toggleMinimized}
+            onSendMessage={onSendMessage}
+          />
+        ))}
+      </div>
     </>
   );
 };

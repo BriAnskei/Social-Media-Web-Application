@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import notificationModel, { INotification } from "../models/notificationModel";
 import mongoose from "mongoose";
+import { log } from "console";
 
 interface initialReq extends Request {
   userId?: string;
@@ -81,6 +82,8 @@ export const saveFollowNotif = async (data: NotifData): Promise<any> => {
     });
 
     if (isNotifExist) {
+      console.log("Notif exist deleting doc");
+
       await notificationModel.deleteOne({
         $and: [
           { _id: isNotifExist._id },
