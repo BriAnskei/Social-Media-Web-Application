@@ -13,6 +13,7 @@ export interface IMessage extends Document {
   recipient: mongoose.Types.ObjectId;
   content: string;
   attachments: IAttachment[];
+  deletedFor: mongoose.Types.ObjectId[];
   read: boolean;
   readAt: Date | null;
   conversationId: mongoose.Types.ObjectId;
@@ -73,7 +74,7 @@ const MessageSchema = new Schema<IMessage>(
       required: true,
     },
   },
-  { timestamps: true }
+  { timestamps: true } // automaticaly adds the date fields
 );
 
 // Index for quick lookup of messages in a conversation

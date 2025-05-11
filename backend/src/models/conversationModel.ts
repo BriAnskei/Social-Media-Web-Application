@@ -11,6 +11,7 @@ export interface IConversation extends Document {
   lastMessage?: mongoose.Types.ObjectId; // user who message
   lastMessageAt: Date;
   unreadCounts: IUnreadCount[];
+  deletedFor: mongoose.Types.ObjectId[];
   createdAt: Date;
   updatedAt: Date;
 }

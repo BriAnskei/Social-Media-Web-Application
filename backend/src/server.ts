@@ -8,6 +8,7 @@ import authRoutes from "./routes/authRoutes";
 import notifRouter from "./routes/notifRoutes";
 import { createServer } from "http";
 import { SocketServer } from "./socket/socketServer";
+import messageRouter from "./routes/messageRoutes";
 
 // app config
 const app = express();
@@ -41,6 +42,7 @@ app.use("/api/notify", notifRouter);
 app.use("/api/users", userRouter);
 app.use("/api/posts", postRouter);
 app.use("/api/token", authRoutes);
+app.use("/api/messages", messageRouter);
 
 app.get("/", (req: Request, res: Response) => {
   res.send("API Working");
