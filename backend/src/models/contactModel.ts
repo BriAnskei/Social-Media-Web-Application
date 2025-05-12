@@ -1,28 +1,31 @@
 import mongoose, { Document, Schema } from "mongoose";
 
 interface IContact extends Document {
-  owner: mongoose.Types.ObjectId;
-  user: mongoose.Types.ObjectId;
+  user: mongoose.Types.ObjectId[];
+  validFor: mongoose.Types.ObjectId[];
   createdAt: Date;
 }
 
-const ContactSchema = new Schema<IContact>(
-  {
-    owner: {
+const ContactSchema = new Schema<IContact>({
+  user: [
+    {
       type: Schema.Types.ObjectId,
       ref: "User",
       required: true,
     },
-    user: {
+  ],
+  validFor: [
+    {
       type: Schema.Types.ObjectId,
       ref: "User",
       required: true,
     },
+  ],
+  createdAt: {
+    type: Date,
+    default: Date.now(),
   },
-  {
-    timestamps: true,
-  }
-);
+});
 
 ContactSchema.index({ user: 1 }); // index by decnding
 

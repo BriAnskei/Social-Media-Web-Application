@@ -41,12 +41,11 @@ export const findOrCreateConvo = async (
       );
 
       if (isDeleted) {
-        const convoId = conversation._id;
-        await Conversation.updateOne(
-          { _id: convoId },
-          { $pull: { deletedFor: { $sin: [userId] } } }
+        conversation.deletedFor = conversation.deletedFor.filter(
+          (user) => user.toString() !== userId?.toString()
         );
       }
+      await conversation.save();
     }
 
     // format data for frontend
@@ -94,7 +93,7 @@ export const getConversations = async (
     // Find all conversation where user is a participant
     const conversations = await Conversation.find({
       participants: userId,
-      deletedFor: { $en: userId },
+      deletedFor: { $ne: userId }, // filder out convo where the user is in the deletedFor field
     })
       .sort({ lastMessaageAt: -1 }) // sort from the latest(decending)
       .skip(skip)
@@ -160,23 +159,12 @@ export const deleteConversation = async (
     conversation.deletedFor.push(new mongoose.Types.ObjectId(userId));
 
     // check if both particapants is in deletedFor.
-    let user1Deleted = false;
-    let user2Deleted = false;
-    const participants = conversation.participants;
-    conversation.deletedFor.forEach((user) => {
-      if (participants.includes(user)) {
-        if (!user1Deleted) {
-          user1Deleted = true;
-        } else {
-          user2Deleted = true;
-        }
-      }
-    });
-
-    const isDeletedByBoth = user1Deleted && user2Deleted;
+    const isDeletedByBoth = conversation.deletedFor.length === 2;
     // here we deleted the conversation and messages permanently
     if (isDeletedByBoth) {
       await Conversation.deleteOne({ _id: convoId });
+    } else {
+      await conversation.save();
     }
 
     res.json({

@@ -8,10 +8,11 @@ export interface IUnreadCount {
 export interface IConversation extends Document {
   contactId: mongoose.Types.ObjectId;
   participants: mongoose.Types.ObjectId[];
-  lastMessage?: mongoose.Types.ObjectId; // user who message
-  lastMessageAt: Date;
-  unreadCounts: IUnreadCount[];
   deletedFor: mongoose.Types.ObjectId[];
+  validFor: mongoose.Types.ObjectId[]; // user who can rply
+  lastMessage?: mongoose.Types.ObjectId; // user who message
+  unreadCounts: IUnreadCount[];
+  lastMessageAt: Date;
   createdAt: Date;
   updatedAt: Date;
 }
