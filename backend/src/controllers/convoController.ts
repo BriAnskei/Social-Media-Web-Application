@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { Conversation } from "../models/conversationModel";
 import mongoose from "mongoose";
+import { validUsers } from "./contactController";
 
 interface ReqAuth extends Request {
   userId?: string;
@@ -12,14 +13,24 @@ export const findOrCreateConvo = async (
 ): Promise<any> => {
   try {
     const userId = req.userId;
-    const otherUser = req.body;
-    const contactId = req.params;
+    const otherUser = req.body.otherUserId;
+    const { contactId } = req.params;
 
-    let conversation = await Conversation.findOne({ contactId })
+    let conversation = await Conversation.findOne({
+      contactId,
+    })
       .populate("participants")
       .populate("lastMessage");
+    const validUser = await validUsers(contactId);
+
+    if (!validUser) {
+      throw new Error("this conversation have no tacts for both user");
+    }
+
     if (!conversation) {
       conversation = await Conversation.create({
+        contactId,
+        validFor: validUser,
         participants: [userId, otherUser],
         unreadCounts: [
           {
@@ -36,7 +47,7 @@ export const findOrCreateConvo = async (
     } else {
       // here if the conversation exist, but user existed in deletedFor(prevously deleted this convo)
       // we might want to pull it in the deletedFor array. Lets say the user want to start a convo agin
-      const isDeleted = conversation.deletedFor.includes(
+      const isDeleted = conversation.deletedFor?.includes(
         new mongoose.Types.ObjectId(userId)
       );
 
@@ -45,6 +56,9 @@ export const findOrCreateConvo = async (
           (user) => user.toString() !== userId?.toString()
         );
       }
+
+      conversation.validFor = validUser; // initilize directly to  update for new valid users
+
       await conversation.save();
     }
 
@@ -58,8 +72,13 @@ export const findOrCreateConvo = async (
       (unrd) => unrd.user.toString() === userId!.toString()
     );
 
+    const isReplyable = conversation?.validFor.includes(
+      new mongoose.Types.ObjectId(userId)
+    );
+
     const foramtedData = {
       _id: conversation!._id,
+      isReplyable,
       otherUser: otherParticipant,
       lastMessage: conversation?.lastMessage,
       unreadCount: unreadData ? unreadData.count : 0,
@@ -71,7 +90,7 @@ export const findOrCreateConvo = async (
       conversations: foramtedData,
     });
   } catch (error) {
-    console.log(error);
+    console.log("Failed to find conversation, " + error);
     res.json({ success: false, message: "Error" });
   }
 };
@@ -112,8 +131,15 @@ export const getConversations = async (
         (unread) => unread.user._id.toString() === userId!.toString()
       );
 
+      console.log(convo.validFor, new mongoose.Types.ObjectId(userId));
+
+      const isReplyable = convo.validFor
+        .toString()
+        .includes(userId!.toString());
+
       return {
         _id: convo._id,
+        isReplyable,
         otherUser: otherParticipants,
         lastMessage: convo.lastMessage,
         lastMessageAt: convo.lastMessageAt,
@@ -150,6 +176,8 @@ export const deleteConversation = async (
     const { convoId } = req.body;
 
     const conversation = await Conversation.findById(convoId);
+
+    console.log(convoId, conversation);
 
     if (!conversation) {
       return res.json({ success: false, message: "conversation not exist" });

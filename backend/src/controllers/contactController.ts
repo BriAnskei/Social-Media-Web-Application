@@ -2,12 +2,6 @@ import { Request, Response } from "express";
 import { Contact } from "../models/contactModel";
 import mongoose from "mongoose";
 
-// | Where        | Used For                        | Example                   | Data Type        |
-// | ------------ | ------------------------------- | ------------------------- | ---------------- |
-// | `req.body`   | Creating/updating data          | `{ "name": "Brian" }`     | JSON or form     |
-// | `req.params` | Identifying a specific resource | `/users/123` → `id = 123` | String           |
-// | `req.query`  | Filtering/sorting/pagination    | `/products?sort=price`    | String key-value |
-
 interface AuthReq extends Request {
   userId?: string;
 }
@@ -49,6 +43,22 @@ export const findOrCreate = async (
   } catch (error) {
     console.log(error);
     res.json({ success: false, message: "Error" });
+  }
+};
+
+export const validUsers = async (contactId: string) => {
+  try {
+    const contact = await Contact.findById(contactId);
+    const validUser = contact?.validFor;
+    if (!contact || validUser?.length === 0) {
+      throw new Error(
+        "Contact migth not exit or there is no valid users for this contact"
+      );
+    }
+
+    return contact.validFor;
+  } catch (error) {
+    console.log("Faild to get vaolid users, " + error);
   }
 };
 

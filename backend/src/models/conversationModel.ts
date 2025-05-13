@@ -46,6 +46,19 @@ const ConversationSchema = new Schema<IConversation>(
         required: true,
       },
     ],
+    deletedFor: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "User",
+      },
+    ],
+    validFor: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "User",
+        required: true,
+      },
+    ],
     lastMessage: {
       type: Schema.Types.ObjectId,
       ref: "Message",
