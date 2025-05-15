@@ -2,7 +2,7 @@ import mongoose, { Document, Schema } from "mongoose";
 
 interface IContact extends Document {
   user: mongoose.Types.ObjectId[];
-  validFor: mongoose.Types.ObjectId[];
+  validFor: mongoose.Types.ObjectId[]; // who can see this contact from the participant
   createdAt: Date;
 }
 

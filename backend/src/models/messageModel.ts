@@ -9,14 +9,14 @@ export interface IAttachment {
 }
 
 export interface IMessage extends Document {
+  conversationId: mongoose.Types.ObjectId;
   sender: mongoose.Types.ObjectId;
   recipient: mongoose.Types.ObjectId;
   content: string;
   attachments: IAttachment[];
-  deletedFor: mongoose.Types.ObjectId[];
+  hideFrom: mongoose.Types.ObjectId;
   read: boolean;
   readAt: Date | null;
-  conversationId: mongoose.Types.ObjectId;
   createdAt: Date;
 }
 
@@ -60,6 +60,10 @@ const MessageSchema = new Schema<IMessage>(
       trim: true,
     },
     attachments: [AttachmentSchema],
+    hideFrom: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+    },
     read: {
       type: Boolean,
       default: false,

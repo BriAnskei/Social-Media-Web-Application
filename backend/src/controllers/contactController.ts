@@ -30,9 +30,11 @@ export const findOrCreate = async (
       );
       // if user not exist, push to validFor
       if (!isValid) {
-        contact.validFor.push(new mongoose.Types.ObjectId(userId));
+        await Contact.updateOne(
+          { _id: contact._id },
+          { $push: { validFor: userId } }
+        );
       }
-      await contact.save();
     }
 
     res.json({
@@ -43,22 +45,6 @@ export const findOrCreate = async (
   } catch (error) {
     console.log(error);
     res.json({ success: false, message: "Error" });
-  }
-};
-
-export const validUsers = async (contactId: string) => {
-  try {
-    const contact = await Contact.findById(contactId);
-    const validUser = contact?.validFor;
-    if (!contact || validUser?.length === 0) {
-      throw new Error(
-        "Contact migth not exit or there is no valid users for this contact"
-      );
-    }
-
-    return contact.validFor;
-  } catch (error) {
-    console.log("Faild to get vaolid users, " + error);
   }
 };
 
@@ -123,5 +109,3 @@ export const updateOrRemove = async (
     res.json({ success: false, message: "Error" });
   }
 };
-
-// export const validForUserContact = (userIds: string[], )

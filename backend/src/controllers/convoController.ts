@@ -1,7 +1,8 @@
 import { Request, Response } from "express";
 import { Conversation } from "../models/conversationModel";
-import mongoose from "mongoose";
-import { validUsers } from "./contactController";
+import mongoose, { ObjectId } from "mongoose";
+import { deleteMessages } from "../services/message.service";
+import { validUsers } from "../services/contact.service";
 
 interface ReqAuth extends Request {
   userId?: string;
@@ -23,8 +24,10 @@ export const findOrCreateConvo = async (
       .populate("lastMessage");
     const validUser = await validUsers(contactId);
 
-    if (!validUser) {
-      throw new Error("this conversation have no tacts for both user");
+    if (!validUser || !userId) {
+      throw new Error(
+        "user is undifine or this conversation have no tacts for both user"
+      );
     }
 
     if (!conversation) {
@@ -45,22 +48,23 @@ export const findOrCreateConvo = async (
         "participants"
       );
     } else {
-      // here if the conversation exist, but user existed in deletedFor(prevously deleted this convo)
-      // we might want to pull it in the deletedFor array. Lets say the user want to start a convo agin
       const isDeleted = conversation.deletedFor?.includes(
         new mongoose.Types.ObjectId(userId)
       );
 
       if (isDeleted) {
-        conversation.deletedFor = conversation.deletedFor.filter(
-          (user) => user.toString() !== userId?.toString()
+        await Conversation.updateOne(
+          { contactId },
+          { $pull: { deletedFor: userId } }
         );
       }
 
-      conversation.validFor = validUser; // initilize directly to  update for new valid users
+      conversation.validFor = validUser;
 
       await conversation.save();
     }
+
+    const isReplyable = validUser.toString().includes(userId.toString());
 
     // format data for frontend
     const otherParticipant = conversation!.participants.find(
@@ -70,10 +74,6 @@ export const findOrCreateConvo = async (
     // for unreadt counts
     const unreadData = conversation!.unreadCounts.find(
       (unrd) => unrd.user.toString() === userId!.toString()
-    );
-
-    const isReplyable = conversation?.validFor.includes(
-      new mongoose.Types.ObjectId(userId)
     );
 
     const foramtedData = {
@@ -131,8 +131,6 @@ export const getConversations = async (
         (unread) => unread.user._id.toString() === userId!.toString()
       );
 
-      console.log(convo.validFor, new mongoose.Types.ObjectId(userId));
-
       const isReplyable = convo.validFor
         .toString()
         .includes(userId!.toString());
@@ -149,7 +147,10 @@ export const getConversations = async (
     });
 
     // Total documents for pagimation
-    const total = await Conversation.countDocuments({ participants: userId });
+    const total = await Conversation.countDocuments({
+      participants: userId,
+      deletedFor: { $ne: userId },
+    });
     res.json({
       success: true,
       message: "conversations find",
@@ -175,9 +176,10 @@ export const deleteConversation = async (
     const userId = req.userId;
     const { convoId } = req.body;
 
-    const conversation = await Conversation.findById(convoId);
+    if (!userId || !convoId)
+      throw new Error("no user id or conversation id recieved");
 
-    console.log(convoId, conversation);
+    const conversation = await Conversation.findById(convoId);
 
     if (!conversation) {
       return res.json({ success: false, message: "conversation not exist" });
@@ -187,9 +189,11 @@ export const deleteConversation = async (
     conversation.deletedFor.push(new mongoose.Types.ObjectId(userId));
 
     // check if both particapants is in deletedFor.
-    const isDeletedByBoth = conversation.deletedFor.length === 2;
-    // here we deleted the conversation and messages permanently
-    if (isDeletedByBoth) {
+    const isPermanent = conversation.deletedFor.length === 2;
+    await deleteMessages(isPermanent, convoId, userId);
+
+    // permanent delete if deletedBoth, soft delete otherwise(save the update)
+    if (isPermanent) {
       await Conversation.deleteOne({ _id: convoId });
     } else {
       await conversation.save();

@@ -10,6 +10,8 @@ import {
   findOrCreateConvo,
   getConversations,
 } from "../controllers/convoController";
+import upload from "../middleware/upload";
+import { addMessage, getMessages } from "../controllers/messageController";
 
 const messageRouter: Router = express.Router();
 
@@ -28,5 +30,12 @@ messageRouter.post("/conversation/get", authMiddleware, getConversations);
 messageRouter.post("/conversation/drop", authMiddleware, deleteConversation);
 
 // message
+messageRouter.post(
+  "/message/sent",
+  authMiddleware,
+  upload.post.save.single("image"),
+  addMessage
+);
+messageRouter.post("/message/get/:conversationId", authMiddleware, getMessages);
 
 export default messageRouter;
