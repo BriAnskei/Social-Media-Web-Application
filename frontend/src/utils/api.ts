@@ -1,22 +1,13 @@
 import axios from "axios";
 import { LoginTypes, RegisterTypes } from "../types/AuthTypes";
-import { FetchedUserType, FollowPayload } from "../types/user";
-import { CommentEventPayload, FetchPostType } from "../types/PostType";
-import { NotificationType } from "../types/NotificationTypes";
+import { FollowPayload } from "../types/user";
+import { CommentApiResponse, CommentEventPayload } from "../types/PostType";
+import { ApiResponse, MessageApiResponse } from "../types/ApiResponseType";
 
 // Axion instance
 export const api = axios.create({
   baseURL: "http://localhost:4000",
 });
-
-export interface ApiResponse {
-  success: boolean;
-  token?: { refreshToken: string; accessToken: string };
-  message?: string;
-  user?: FetchedUserType[] | FetchedUserType;
-  posts?: FetchPostType[] | FetchPostType;
-  notifications?: NotificationType[] | NotificationType;
-}
 
 export const postApi = {
   update: async (
@@ -92,7 +83,9 @@ export const postApi = {
     }
   },
 
-  uploadComment: async (data: CommentEventPayload): Promise<ApiResponse> => {
+  uploadComment: async (
+    data: CommentEventPayload
+  ): Promise<ApiResponse & CommentApiResponse> => {
     try {
       const res = await api.post(
         "/api/posts/add-comment",
@@ -447,6 +440,30 @@ export const notificationApi = {
       return {
         success: false,
         message: "Network Error Occured",
+      };
+    }
+  },
+};
+
+export const MessageApi = {
+  getAllContact: async (token: string): Promise<MessageApiResponse> => {
+    try {
+      const res = await api.post(
+        "api/messages/contact/get",
+        {},
+        {
+          headers: {
+            token,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      return res.data;
+    } catch (error) {
+      return {
+        success: false,
+        message: error as string,
       };
     }
   },

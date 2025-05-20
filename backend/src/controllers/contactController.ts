@@ -1,12 +1,13 @@
 import { Request, Response } from "express";
 import { Contact } from "../models/contactModel";
 import mongoose from "mongoose";
+import { contactFormatHelper } from "../services/contact.service";
 
 interface AuthReq extends Request {
   userId?: string;
 }
 
-export const findOrCreate = async (
+export const createOrUpdate = async (
   req: AuthReq,
   res: Response
 ): Promise<any> => {
@@ -30,10 +31,9 @@ export const findOrCreate = async (
       );
       // if user not exist, push to validFor
       if (!isValid) {
-        await Contact.updateOne(
-          { _id: contact._id },
-          { $push: { validFor: userId } }
-        );
+        contact.validFor.push(new mongoose.Types.ObjectId(userId));
+
+        await contact.save();
       }
     }
 
@@ -55,12 +55,26 @@ export const getAllContacts = async (
   try {
     const userId = req.userId;
 
+    if (!userId) {
+      throw new Error(
+        "Failed to fetch Contacts: No User Id to process this request"
+      );
+    }
+
     const contactData = await Contact.find({
       $and: [{ user: userId }, { validFor: userId }],
     }).populate("user");
+
+    const formatContacts = contactFormatHelper.formatContacts(
+      userId,
+      contactData
+    );
+
+    console.log("contacts:", contactData, userId);
+
     res.json({
       success: true,
-      contacts: contactData,
+      contacts: formatContacts,
       message: "contact succesfully fetched",
     });
   } catch (error) {

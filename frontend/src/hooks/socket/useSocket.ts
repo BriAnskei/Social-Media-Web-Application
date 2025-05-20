@@ -15,11 +15,15 @@ import {
   update,
 } from "../../features/posts/postSlice";
 import {
-  addNotification,
+  addOrDropNotification,
   deleteList,
 } from "../../features/notifications/notificationsSlice";
 import { NotificationType } from "../../types/NotificationTypes";
 import { updateFollow } from "../../features/users/userSlice";
+import {
+  createOrUpdateContact,
+  updateOrDeleteContact,
+} from "../../features/messenger/Contact/ContactSlice";
 
 export interface DataOutput {
   // for post-like notification
@@ -57,6 +61,11 @@ export const SOCKET_EVENTS = {
     // Delete Event
     POST_DELETED: "post-deleted",
     POST_DELETE: "post-delete",
+  },
+
+  coversation: {
+    CREATE_OR_UPDATE_CONTACT: "createdOrUpdated-contact",
+    UPDATE_OR_DROP_CONTACT: "updatedOrDroped-contact",
   },
 };
 
@@ -101,19 +110,19 @@ export const useSocket = () => {
 
   // postOwner, and notification
   const likeNotifEvents = useCallback((data: DataOutput) => {
-    dispatch(addNotification(data));
+    dispatch(addOrDropNotification(data));
   }, []);
 
   const commentNotifEvent = useCallback(
     (data: DataOutput) => {
-      dispatch(addNotification(data));
+      dispatch(addOrDropNotification(data));
     },
     [dispatch]
   );
 
   const uploadNotifEvent = useCallback(
     (data: any) => {
-      dispatch(addNotification(data));
+      dispatch(addOrDropNotification(data));
     },
     [dispatch]
   );
@@ -128,7 +137,24 @@ export const useSocket = () => {
       console.log("emiting data: ", followPayload);
 
       dispatch(updateFollow(followPayload));
-      dispatch(addNotification(data));
+      dispatch(addOrDropNotification(data));
+    },
+    [dispatch]
+  );
+
+  // Contact, conversation events
+  const handleCreateOrUpdateContact = useCallback(
+    (data: any) => {
+      console.log("handleCreateOrUpdateContact".toLocaleUpperCase(), data);
+
+      dispatch(createOrUpdateContact(data));
+    },
+    [dispatch]
+  );
+
+  const handleUpdateOrDropContact = useCallback(
+    (data: any) => {
+      dispatch(updateOrDeleteContact(data));
     },
     [dispatch]
   );
@@ -165,6 +191,10 @@ export const useSocket = () => {
       // uploading event
       socket.off(SOCKET_EVENTS.posts.UPLOAD_POST);
 
+      // contact, conversation events
+      socket.off(SOCKET_EVENTS.coversation.CREATE_OR_UPDATE_CONTACT);
+      socket.off(SOCKET_EVENTS.coversation.UPDATE_OR_DROP_CONTACT);
+
       // global event
       socket.on("postLiked", handleLikeEvent);
       socket.on("postCommented", handleCommentEvent);
@@ -179,8 +209,19 @@ export const useSocket = () => {
 
       socket.on(SOCKET_EVENTS.posts.UPLOAD_POST, uploadNotifEvent);
 
-      //delete event
+      //delete post  event
       socket.on(SOCKET_EVENTS.posts.POST_DELETE, handlePostDelete);
+
+      // contact, conversation events
+      socket.on(
+        SOCKET_EVENTS.coversation.CREATE_OR_UPDATE_CONTACT,
+        handleCreateOrUpdateContact
+      );
+
+      socket.on(
+        SOCKET_EVENTS.coversation.UPDATE_OR_DROP_CONTACT,
+        handleUpdateOrDropContact
+      );
 
       socket.on("error", (error: Error) => {
         console.error("Socket error:", error);
@@ -208,6 +249,16 @@ export const useSocket = () => {
 
         socket.off("followed-user", handleFollowEvent);
         socket.off(SOCKET_EVENTS.posts.UPLOAD_POST, uploadNotifEvent);
+
+        socket.off(
+          SOCKET_EVENTS.coversation.CREATE_OR_UPDATE_CONTACT,
+          handleCreateOrUpdateContact
+        );
+
+        socket.off(
+          SOCKET_EVENTS.coversation.UPDATE_OR_DROP_CONTACT,
+          handleUpdateOrDropContact
+        );
 
         isInitialized.current = false;
       }

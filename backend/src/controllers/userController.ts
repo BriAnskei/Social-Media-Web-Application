@@ -7,6 +7,7 @@ import path from "path";
 import fs from "fs";
 
 import { generateNameSuffix, getImages } from "../middleware/upload";
+import { contactService } from "../services/contact.service";
 
 const createToken = (userId: string) => {
   if (!process.env.ACCESS_SECRET || !process.env.REFRESH_SECRET) {
@@ -293,9 +294,7 @@ export const followUser = async (req: Request, res: Response): Promise<any> => {
     const returnUpdate = { new: true }; // nothing special, just return the updated data
 
     if (isFollowing) {
-      // If already following, remove (unfollow)
-      console.log("Unfollowing user");
-
+      await contactService.updateOrDropContact(followerId, userId);
       tobeFollowedData = await UserModel.findByIdAndUpdate(
         userId,
         {
@@ -314,7 +313,7 @@ export const followUser = async (req: Request, res: Response): Promise<any> => {
 
       message = "User successfully unfollowed";
     } else {
-      // If not following, add (follow)
+      await contactService.createOrUpdateContact(followerId, userId);
       tobeFollowedData = await UserModel.findByIdAndUpdate(
         userId,
         {
@@ -330,7 +329,6 @@ export const followUser = async (req: Request, res: Response): Promise<any> => {
         },
         returnUpdate
       );
-
       message = "User successfully followed";
     }
 

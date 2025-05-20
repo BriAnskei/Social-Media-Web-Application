@@ -9,9 +9,13 @@ import { fetchAllMesseges } from "../../Message/messengerSlice";
 import { Conversation } from "../../../../types/MessengerTypes";
 import { openChatWindow } from "../../../../Components/Modal/globalSlice";
 import ContactList from "../../Contact/ContactList";
+import { fetchAllContact } from "../../Contact/ContactSlice";
+import { useCurrentUser } from "../../../../hooks/useUsers";
 
 const ConversationList = () => {
   const dispatch: AppDispatch = useDispatch();
+  const { currentUser } = useCurrentUser();
+
   const currUser = "5f8d0d55b54764421b7156d1";
   const {
     allIds,
@@ -38,12 +42,13 @@ const ConversationList = () => {
   };
 
   useEffect(() => {
-    const fetchList = async () => {
+    const fetchMessages = async () => {
+      await dispatch(fetchAllContact());
       await dispatch(fetchAllConvoList(currUser)); // assuming this is the user id(currentuser)
-      await dispatch(fetchAllMesseges());
+      await dispatch(fetchAllMesseges()); // might call this when openning the conversation window
     };
 
-    fetchList();
+    fetchMessages();
   }, []);
 
   const handleChatClick = (chat: Conversation) => {

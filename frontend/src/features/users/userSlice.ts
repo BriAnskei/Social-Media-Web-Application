@@ -1,9 +1,10 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import { FetchedUserType, FollowPayload } from "../../types/user";
-import { ApiResponse, userApi } from "../../utils/api";
+import { userApi } from "../../utils/api";
 import { RootState } from "../../store/store";
 import { NormalizeState } from "../../types/NormalizeType";
 import normalizeResponse from "../../utils/normalizeResponse";
+import { ApiResponse } from "../../types/ApiResponseType";
 
 export const getUsersData = createAsyncThunk(
   "user/getUsersData",

@@ -1,3 +1,5 @@
+import { ApiResponse } from "./ApiResponseType";
+
 export interface FetchPostType {
   _id: string;
   user: string;
@@ -10,6 +12,14 @@ export interface FetchPostType {
     createdAt: string;
   }[];
   createdAt: string;
+}
+
+export interface CommentApiResponse extends ApiResponse {
+  commentData?: {
+    user: string;
+    content: string;
+    createdAt: string;
+  };
 }
 
 // Uploading posts

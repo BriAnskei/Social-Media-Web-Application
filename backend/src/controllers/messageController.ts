@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { MessageModel } from "../models/messageModel";
-import { updateConversationOnMessage } from "../services/conversation.service";
+import { ConvoService } from "../services/conversation.service";
 
 interface ReqAuth extends Request {
   userId?: string;
@@ -19,7 +19,8 @@ export const addMessage = async (req: ReqAuth, res: Response): Promise<any> => {
       content,
       attachments: req.file?.filename,
     });
-    await updateConversationOnMessage(
+
+    await ConvoService.increamentUnread(
       conversationId,
       recipient,
       message._id as string

@@ -1,14 +1,19 @@
 import { Request, Response } from "express";
 import { Conversation } from "../models/conversationModel";
 import mongoose, { ObjectId } from "mongoose";
-import { deleteMessages } from "../services/message.service";
-import { validUsers } from "../services/contact.service";
+import { messageService } from "../services/message.service";
+
+import {
+  conversationFormatHelper,
+  ConvoService,
+} from "../services/conversation.service";
+import { contactService } from "../services/contact.service";
 
 interface ReqAuth extends Request {
   userId?: string;
 }
 
-export const findOrCreateConvo = async (
+export const openOrUpdateConvo = async (
   req: ReqAuth,
   res: Response
 ): Promise<any> => {
@@ -22,7 +27,7 @@ export const findOrCreateConvo = async (
     })
       .populate("participants")
       .populate("lastMessage");
-    const validUser = await validUsers(contactId);
+    const validUser = await contactService.validUsers(contactId);
 
     if (!validUser || !userId) {
       throw new Error(
@@ -53,41 +58,42 @@ export const findOrCreateConvo = async (
       );
 
       if (isDeleted) {
-        await Conversation.updateOne(
-          { contactId },
-          { $pull: { deletedFor: userId } }
+        conversation.deletedFor = await ConvoService.undeleteConversation(
+          contactId,
+          userId
         );
       }
 
-      conversation.validFor = validUser;
+      const isUserValid = conversation.validFor.includes(
+        new mongoose.Types.ObjectId(userId)
+      );
 
-      await conversation.save();
+      if (!isUserValid) {
+        conversation.validFor = await ConvoService.updateForValidUser(
+          contactId,
+          validUser
+        );
+      }
+
+      // set all messages to read
+      await Conversation.updateOne(
+        { _id: conversation._id, "unreadCounts.user": userId },
+        { "unreadCounts.$.count": 0 }
+      );
+
+      await messageService.markReadMessages(conversation._id as string, userId);
     }
 
-    const isReplyable = validUser.toString().includes(userId.toString());
-
-    // format data for frontend
-    const otherParticipant = conversation!.participants.find(
-      (user) => user._id.toString() !== userId!.toString()
+    const formatedData = conversationFormatHelper.formatConversationData(
+      conversation!,
+      userId,
+      validUser
     );
-
-    // for unreadt counts
-    const unreadData = conversation!.unreadCounts.find(
-      (unrd) => unrd.user.toString() === userId!.toString()
-    );
-
-    const foramtedData = {
-      _id: conversation!._id,
-      isReplyable,
-      otherUser: otherParticipant,
-      lastMessage: conversation?.lastMessage,
-      unreadCount: unreadData ? unreadData.count : 0,
-    };
 
     res.json({
       success: true,
       message: "conversation find",
-      conversations: foramtedData,
+      conversations: formatedData,
     });
   } catch (error) {
     console.log("Failed to find conversation, " + error);
@@ -101,8 +107,10 @@ export const getConversations = async (
 ): Promise<any> => {
   try {
     const { userId } = req;
-    // default values
+
     const { page = 1, limit = 20 } = req.query;
+
+    if (!userId) throw new Error("Id is required to fetch conversation");
 
     const pageNum = parseInt(page as string);
     const limitNum = parseInt(limit as string);
@@ -122,29 +130,10 @@ export const getConversations = async (
       .lean();
 
     // Format data
-    const formatedData = conversations.map((convo) => {
-      const otherParticipants = convo.participants.find(
-        (user) => user._id.toString() !== userId!.toString()
-      );
-
-      const unreadData = convo.unreadCounts.find(
-        (unread) => unread.user._id.toString() === userId!.toString()
-      );
-
-      const isReplyable = convo.validFor
-        .toString()
-        .includes(userId!.toString());
-
-      return {
-        _id: convo._id,
-        isReplyable,
-        otherUser: otherParticipants,
-        lastMessage: convo.lastMessage,
-        lastMessageAt: convo.lastMessageAt,
-        unreadCount: unreadData ? unreadData.count : 0,
-        updatedAt: convo.updatedAt,
-      };
-    });
+    const formatedData = conversationFormatHelper.formatConversationArray(
+      conversations,
+      userId
+    );
 
     // Total documents for pagimation
     const total = await Conversation.countDocuments({
@@ -190,7 +179,11 @@ export const deleteConversation = async (
 
     // check if both particapants is in deletedFor.
     const isPermanent = conversation.deletedFor.length === 2;
-    await deleteMessages(isPermanent, convoId, userId);
+    const { success } = await messageService.deleteMessages(
+      isPermanent,
+      convoId,
+      userId
+    );
 
     // permanent delete if deletedBoth, soft delete otherwise(save the update)
     if (isPermanent) {
@@ -201,7 +194,7 @@ export const deleteConversation = async (
 
     res.json({
       success: true,
-      message: "deleted for this user",
+      message: `deleted for this user, delete for messages is  ${success}`,
       conversations: conversation,
     });
   } catch (error) {

@@ -13,34 +13,12 @@ export interface IMessage extends Document {
   sender: mongoose.Types.ObjectId;
   recipient: mongoose.Types.ObjectId;
   content: string;
-  attachments: IAttachment[];
+  attachments: string;
   hideFrom: mongoose.Types.ObjectId;
   read: boolean;
   readAt: Date | null;
   createdAt: Date;
 }
-
-// Sub schema
-const AttachmentSchema = new Schema<IAttachment>(
-  {
-    type: {
-      type: String,
-      enum: ["image"], // valid file to attach
-      required: function (this: IAttachment) {
-        return !!this; // Required if attachment exists
-      },
-    },
-    url: {
-      type: String,
-      required: function (this: IAttachment) {
-        return !!this; // Required if attachment exists
-      },
-    },
-    fileName: String,
-    fileSize: Number,
-  },
-  { _id: false }
-);
 
 const MessageSchema = new Schema<IMessage>(
   {
@@ -59,7 +37,12 @@ const MessageSchema = new Schema<IMessage>(
       required: true,
       trim: true,
     },
-    attachments: [AttachmentSchema],
+    attachments: {
+      type: String,
+      required: function () {
+        return !!this.attachments;
+      },
+    },
     hideFrom: {
       type: Schema.Types.ObjectId,
       ref: "User",

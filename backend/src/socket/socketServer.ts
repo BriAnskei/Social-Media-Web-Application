@@ -2,18 +2,12 @@ import { Server } from "socket.io"; // Socket.io server class, which manages Web
 import { Server as HttpServer } from "http"; // http server module from node.js
 import { verifyToken } from "../middleware/auth";
 
-import {
-  bulkSave,
-  NotifData,
-  saveCommentNotif,
-  saveFollowNotif,
-  saveLikeNotification,
-} from "../controllers/notifController";
+import { NotifData, saveCommentNotif } from "../controllers/notifController";
 import { getUserById, getUsersFolowers } from "../controllers/userController";
 import mongoose from "mongoose";
 import notificationModel from "../models/notificationModel";
 import { getAllCommenter } from "../controllers/postController";
-import { IPost } from "../models/postModel";
+
 import {
   CommentEventPayload,
   LikeEventPayload,
@@ -21,6 +15,8 @@ import {
   PostUploadNotifEvent,
 } from "./EventsTypes/PostEvents";
 import { FollowEvent } from "./EventsTypes/UserEvents";
+import { notifService } from "../services/notification.service";
+import { appEvents } from "./events";
 
 interface ConnectedUser {
   userId: string;
@@ -169,6 +165,17 @@ export class SocketServer {
         this.handlePostDeleteEvent(socket, data);
       });
 
+      // conversation, contact evens
+      appEvents.on("createOrUpdate-contact", (data: any) => {
+        console.log("createOrUpdateContact", data);
+
+        this.handleCreateOrUpdateContact(socket, data);
+      });
+
+      appEvents.on('updateOrDrop-contact"', (data: any) => {
+        this.handleUpdateOrDropContact(socket, data);
+      });
+
       // Handle Error
       socket.on("error", (error) => {
         console.error("Socket Server Error", error);
@@ -236,7 +243,7 @@ export class SocketServer {
           type: "like",
         };
 
-        const notifdata = await saveLikeNotification(data); // persist notification of the owner
+        const notifdata = await notifService.AddOrDropLikeNotif(data); // persist notification of the owner
 
         // Notify owner if online
         const ownerSocket = this.connectedUSers.get(postOwnerId);
@@ -327,7 +334,7 @@ export class SocketServer {
         createdAt: data.data.createdAt,
       }));
 
-      const response = await bulkSave(bulkedData);
+      const response = await notifService.batchSaveComments(bulkedData);
       const { success, bulkResData } = response;
 
       if (!success) {
@@ -400,17 +407,6 @@ export class SocketServer {
       const batchSize = 1000;
       const totalFollowers = usersFollowers.length;
 
-      // const postNotificationRoom = `post-notification:${postId}`;
-      // This creates a room for all users interested in this post notification. The benefits are:
-      // 1. Efficient Broadcasts
-      // Instead of sending notifications individually to each follower:
-
-      // this.io.to(followerSocket.socketId).emit(...)
-      // We can broadcast to all followers at once using:
-
-      // this.io.to(postNotificationRoom).emit("post-notification", { ... });
-      // WILL EMPLEMENT THIS IN THE FUTURE HEHEHE
-
       for (let i = 0; i < totalFollowers; i += batchSize) {
         const followersBatch = usersFollowers.slice(i, i + batchSize);
 
@@ -438,22 +434,6 @@ export class SocketServer {
               .emit(SOCKET_EVENTS.notification.UPLOAD_POST, notifData);
           }
         }
-
-        // Check which followers are online and notify them
-        // for (const followerId of followersBatch) {
-        //   const followerSocket = this.connectedUSers.get(followerId.toString());
-        //   if (followerSocket) {
-        //     // Send notification to the online follower
-        //     this.io
-        //       .to(followerSocket.socketId)
-        //       .emit(SOCKET_EVENTS.notification.UPLOAD_POST, {
-        //         postId,
-        //         userId,
-        //         type: "upload",
-        //         message: `uploaded a new post`,
-        //       });
-        //   }
-        // }
       }
     } catch (error) {
       console.error("Error handling post upload event: ", error);
@@ -487,7 +467,9 @@ export class SocketServer {
         type: "follow",
       };
 
-      const notifData = await saveFollowNotif(followEventPayload);
+      const notifData = await notifService.AddOrDropFollowNotif(
+        followEventPayload
+      );
 
       const ownerSocket = this.connectedUSers.get(userId);
       if (ownerSocket) {
@@ -507,9 +489,33 @@ export class SocketServer {
   ): Promise<void> {
     try {
       console.log("Emiting post delete: ", postId);
+      // Delete like, comment notification for this
       socket.broadcast.emit(SOCKET_EVENTS.posts.POST_DELETE, postId);
     } catch (error) {
       console.error("Failed to broadcast delete post: ", error);
+    }
+  }
+
+  // conversation, contact events
+  private async handleCreateOrUpdateContact(
+    socket: any,
+    data: any
+  ): Promise<void> {
+    try {
+      socket.emit("createdOrUpdated-contact", data);
+    } catch (error) {
+      console.log("Failed to emit contact(create or update), ", error);
+    }
+  }
+
+  private async handleUpdateOrDropContact(
+    socket: any,
+    data: any
+  ): Promise<void> {
+    try {
+      socket.emit("updatedOrDroped-contact", data);
+    } catch (error) {
+      console.log("Failed to emit contact(update or create), ", error);
     }
   }
 

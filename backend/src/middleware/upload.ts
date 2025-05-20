@@ -15,7 +15,7 @@ export const generateNameSuffix = () =>
   `${Date.now()}-${Math.round(Math.random() * 1e5)}`;
 
 const storage = {
-  save: multer.diskStorage({
+  postPathSave: multer.diskStorage({
     destination(req: MulterRequest, file, callback) {
       const userId = req.userId;
       const uploadPath = `uploads/posts/${userId}`;
@@ -28,7 +28,21 @@ const storage = {
       return callback(null, `${nameSuffix}-${file.originalname}`);
     },
   }),
+  messagePathSave: multer.diskStorage({
+    destination(req: MulterRequest, file, callback) {
+      const userId = req.userId;
+      const { conversationId } = req.params;
 
+      const uploadPath = `uploads/messages/${conversationId}/${userId}`;
+      fs.mkdirSync(uploadPath, { recursive: true });
+      callback(null, uploadPath);
+    },
+
+    filename(req, file, callback) {
+      const nameSuffix = generateNameSuffix();
+      return callback(null, `${nameSuffix}-${file.originalname}`);
+    },
+  }),
   temporary: multer.memoryStorage(), // Temporary memory for registration
 };
 
@@ -125,10 +139,9 @@ function deleteImageMiddleWare() {
   };
 }
 
-// Regular upload middleware
 const upload = {
   post: {
-    save: multer({ storage: storage.save }), // used for updating
+    save: multer({ storage: storage.postPathSave }),
     updateImage: {
       single: (field: string) => updateImageMiddleware(field),
     },
@@ -139,6 +152,7 @@ const upload = {
   profile: multer({
     storage: storage.temporary,
   }),
+  message: multer({ storage: storage.messagePathSave }),
 };
 
 export default upload;
@@ -161,6 +175,7 @@ export async function getImages(
     const postFiles = !fs.existsSync(postPath)
       ? []
       : await fs.promises.readdir(postPath);
+
     const profileFiles = !fs.existsSync(profilePath)
       ? []
       : await fs.promises.readdir(profilePath);

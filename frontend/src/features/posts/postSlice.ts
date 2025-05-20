@@ -1,6 +1,6 @@
 import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
 
-import { ApiResponse, postApi } from "../../utils/api";
+import { postApi } from "../../utils/api";
 import {
   CommentEventPayload,
   FetchPostType,
@@ -86,24 +86,14 @@ export const toggleLike = createAsyncThunk(
   }
 );
 
-// extend the comment object for returned comment data.
-// the reason we get this payload is to have accurate date for the comment
-interface CommentRes extends ApiResponse {
-  commentData?: {
-    user: string;
-    content: string;
-    createdAt: string;
-  };
-}
 export const addComment = createAsyncThunk(
   "posts/add-comment",
   async (data: CommentEventPayload, { rejectWithValue, dispatch }) => {
     try {
-      const res: CommentRes = await postApi.uploadComment(data);
+      const res = await postApi.uploadComment(data);
 
       if (res.success) {
-        // if response is successfull, it will sure to have a payload of 'CommentRes' type
-        // if not return the errror message payload
+        // the reason we get this payload is to have accurate date for the comment
         const resData: CommentEventPayload = {
           postId: data.postId,
           data: res.commentData!,

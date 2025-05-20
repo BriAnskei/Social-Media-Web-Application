@@ -1,13 +1,13 @@
 import express, { Router } from "express";
 import {
-  findOrCreate,
+  createOrUpdate,
   getAllContacts,
   updateOrRemove,
 } from "../controllers/contactController";
 import authMiddleware from "../middleware/auth";
 import {
   deleteConversation,
-  findOrCreateConvo,
+  openOrUpdateConvo,
   getConversations,
 } from "../controllers/convoController";
 import upload from "../middleware/upload";
@@ -16,7 +16,7 @@ import { addMessage, getMessages } from "../controllers/messageController";
 const messageRouter: Router = express.Router();
 
 // contacts
-messageRouter.post("/contact/add", authMiddleware, findOrCreate);
+messageRouter.post("/contact/add", authMiddleware, createOrUpdate);
 messageRouter.post("/contact/get", authMiddleware, getAllContacts);
 messageRouter.post("/contact/drop/:userId/:contactId", updateOrRemove);
 
@@ -24,16 +24,16 @@ messageRouter.post("/contact/drop/:userId/:contactId", updateOrRemove);
 messageRouter.post(
   "/conversation/find/:contactId",
   authMiddleware,
-  findOrCreateConvo
+  openOrUpdateConvo
 );
 messageRouter.post("/conversation/get", authMiddleware, getConversations);
 messageRouter.post("/conversation/drop", authMiddleware, deleteConversation);
 
 // message
 messageRouter.post(
-  "/message/sent",
+  "/message/sent/:conversationId",
   authMiddleware,
-  upload.post.save.single("image"),
+  upload.message.single("image"),
   addMessage
 );
 messageRouter.post("/message/get/:conversationId", authMiddleware, getMessages);

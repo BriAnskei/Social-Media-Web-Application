@@ -30,8 +30,6 @@ export const fetchAllNotifs = createAsyncThunk(
     const { auth } = getState() as RootState;
     const accessToken = auth.accessToken;
 
-    console.log("Ftehcing notif triggered", accessToken);
-
     if (!accessToken) throw new Error("Access token is required");
 
     try {
@@ -100,7 +98,7 @@ const notificationSlice = createSlice({
   name: "notification",
   initialState,
   reducers: {
-    addNotification: (state, action: PayloadAction<NotifData>): void => {
+    addOrDropNotification: (state, action: PayloadAction<NotifData>): void => {
       // used in socket
       const { isExist, data } = action.payload;
       const { byId, allIds } = normalizeResponse(data);
@@ -187,5 +185,5 @@ const notificationSlice = createSlice({
   },
 });
 
-export const { addNotification, deleteList } = notificationSlice.actions;
+export const { addOrDropNotification, deleteList } = notificationSlice.actions;
 export default notificationSlice.reducer;
