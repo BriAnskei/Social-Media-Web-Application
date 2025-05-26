@@ -19,8 +19,9 @@ export const openOrUpdateConvo = async (
 ): Promise<any> => {
   try {
     const userId = req.userId;
-    const otherUser = req.body.otherUserId;
+    const otherUser = req.body.otherUser;
     const { contactId } = req.params;
+    console.log(userId, otherUser, contactId);
 
     let conversation = await Conversation.findOne({
       contactId,
@@ -52,6 +53,7 @@ export const openOrUpdateConvo = async (
       conversation = await Conversation.findById(conversation._id).populate(
         "participants"
       );
+      console.log("Creating conversairton: ", conversation);
     } else {
       const isDeleted = conversation.deletedFor?.includes(
         new mongoose.Types.ObjectId(userId)
@@ -75,13 +77,14 @@ export const openOrUpdateConvo = async (
         );
       }
 
-      // set all messages to read
+      // set unread to read
       await Conversation.updateOne(
         { _id: conversation._id, "unreadCounts.user": userId },
         { "unreadCounts.$.count": 0 }
       );
 
       await messageService.markReadMessages(conversation._id as string, userId);
+      console.log("updating conversation: ", conversation);
     }
 
     const formatedData = conversationFormatHelper.formatConversationData(

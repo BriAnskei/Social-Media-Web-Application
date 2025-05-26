@@ -7,7 +7,7 @@ import { toggleViewFollow } from "../globalSlice";
 import { useEffect, useState } from "react";
 import { FetchedUserType, FollowPayload } from "../../../types/user";
 import { userProfile } from "../../../utils/ImageUrlHelper";
-import { followToggled, updateFollow } from "../../../features/users/userSlice";
+import { followToggled } from "../../../features/users/userSlice";
 import { useSocket } from "../../../hooks/socket/useSocket";
 import { followEvent } from "../../../types/SocketTypes";
 
@@ -39,7 +39,7 @@ const Followers = () => {
 
   const onClose = () => {
     setDisplay("follower");
-    dispatch(toggleViewFollow({}));
+    dispatch(toggleViewFollow());
   };
 
   const onFollow = async (

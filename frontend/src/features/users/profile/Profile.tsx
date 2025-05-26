@@ -1,6 +1,6 @@
 import "./Profile.css";
 import { FetchedUserType, FollowPayload } from "../../../types/user";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useCurrentUser } from "../../../hooks/useUsers";
 import { useDispatch } from "react-redux";
 import { AppDispatch } from "../../../store/store";

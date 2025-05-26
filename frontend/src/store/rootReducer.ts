@@ -2,7 +2,7 @@ import { combineReducers } from "@reduxjs/toolkit";
 import userReducer from "../features/users/userSlice";
 import authReducer from "../features/auth/authSlice";
 import contactReducer from "../features/messenger/Contact/ContactSlice";
-import messageReducer from "../features/messenger/Message/messengerSlice";
+import messageReducer from "../features/messenger/Message/messengeSlice";
 import conversationReducer from "../features/messenger/Conversation/conversationSlice";
 import notificationReducer from "../features/notifications/notificationsSlice";
 import postReducer from "../features/posts/postSlice";

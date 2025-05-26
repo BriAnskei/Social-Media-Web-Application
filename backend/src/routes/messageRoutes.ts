@@ -1,9 +1,5 @@
 import express, { Router } from "express";
-import {
-  createOrUpdate,
-  getAllContacts,
-  updateOrRemove,
-} from "../controllers/contactController";
+import { getAllContacts } from "../controllers/contactController";
 import authMiddleware from "../middleware/auth";
 import {
   deleteConversation,
@@ -16,9 +12,7 @@ import { addMessage, getMessages } from "../controllers/messageController";
 const messageRouter: Router = express.Router();
 
 // contacts
-messageRouter.post("/contact/add", authMiddleware, createOrUpdate);
 messageRouter.post("/contact/get", authMiddleware, getAllContacts);
-messageRouter.post("/contact/drop/:userId/:contactId", updateOrRemove);
 
 // conversation
 messageRouter.post(

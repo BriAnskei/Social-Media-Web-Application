@@ -9,7 +9,7 @@ import { useSocket } from "../../../hooks/socket/useSocket";
 import { useGlobal } from "../../../hooks/useModal";
 
 import { useCurrentUser, useUserById } from "../../../hooks/useUsers";
-import { followToggled, updateFollow } from "../../users/userSlice";
+import { followToggled } from "../../users/userSlice";
 import {
   openPostModal,
   viewProfile,

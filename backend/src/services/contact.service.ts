@@ -9,15 +9,12 @@ export const contactService = {
         $and: [{ user: userId }, { user: otherUserId }],
       });
 
-      let isContactExist = false;
-
       if (!contact) {
         contact = await Contact.create({
           user: [userId, otherUserId],
           validFor: [userId],
         });
       } else {
-        isContactExist = true;
         // check if this contact is valid for userId
         const isValid = contact.validFor.includes(
           new mongoose.Types.ObjectId(userId)
@@ -28,10 +25,15 @@ export const contactService = {
           await contact.save();
         }
       }
+      contact = await contact.populate("user");
+      const formatedContact = contactFormatHelper.formatContactSigleData(
+        userId,
+        contact
+      );
 
       const emitPayload = {
-        isContactExist,
-        contact,
+        contact: formatedContact,
+        userId,
       };
 
       appEvents.emit("createOrUpdate-contact", emitPayload);
@@ -46,7 +48,9 @@ export const contactService = {
       });
 
       if (!contact) {
-        throw new Error("Failed to Drop contact, contact does not exist");
+        throw new Error(
+          "Failed to Drop/update contact, contact does not exist"
+        );
       }
 
       // remove user in the validFor filter
@@ -64,8 +68,8 @@ export const contactService = {
       }
 
       const emitPayload = {
-        contactStillValid,
-        contact,
+        contactId: contact._id,
+        userId,
       };
 
       appEvents.emit("updateOrDrop-contact", emitPayload);
@@ -106,5 +110,16 @@ export const contactFormatHelper = {
     });
 
     return formatedContacts;
+  },
+  formatContactSigleData: (userId: string, contact: IContact) => {
+    const userData = contact.user.find(
+      (user) => user._id.toString() !== userId
+    );
+    return {
+      _id: contact._id,
+      user: userData,
+      validFor: contact.validFor,
+      createdAt: contact.createdAt,
+    };
   },
 };

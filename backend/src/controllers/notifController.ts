@@ -116,29 +116,3 @@ export const deleteNotifs = async (
     return res.json({ success: false, message: "Error" });
   }
 };
-
-// for bacth notif in socket server
-export const bulkSave = async (
-  data: {
-    receiver: string;
-    sender: string;
-    post: string;
-    message: string;
-    type: string;
-    createdAt: Date;
-  }[]
-) => {
-  try {
-    const res = await notificationModel.insertMany(data);
-    return {
-      success: true,
-      bulkResData: res,
-    };
-  } catch (error) {
-    console.log("Error savinf bulk notif: ", error);
-    return {
-      success: false,
-      bulkResData: [],
-    };
-  }
-};

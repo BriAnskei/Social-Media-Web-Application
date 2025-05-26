@@ -117,6 +117,7 @@ export const ConvoService = {
 export const conversationFormatHelper = {
   formatConversationData: (
     conversation: IConversation,
+
     userId: string,
     validUser: mongoose.Types.ObjectId[]
   ) => {
@@ -138,10 +139,14 @@ export const conversationFormatHelper = {
 
     const formatedData = {
       _id: conversation._id,
+      contactId: conversation.contactId,
+      participant: otherParticipant,
       isUserValidToRply,
-      otherUser: otherParticipant,
       lastMessage: conversation?.lastMessage,
+      lastMessageAt: conversation.lastMessageAt,
       unreadCount: unreadData ? unreadData.count : 0,
+      createdAt: conversation.createdAt,
+      updatedAt: conversation.updatedAt,
     };
 
     return formatedData;
@@ -159,15 +164,17 @@ export const conversationFormatHelper = {
 
       const isUserValidToRply = convo.validFor
         .toString()
-        .includes(userId!.toString());
+        .includes(userId.toString());
 
       return {
         _id: convo._id,
+        contactId: convo.contactId,
+        participant: otherParticipants,
         isUserValidToRply,
-        otherUser: otherParticipants,
         lastMessage: convo.lastMessage,
         lastMessageAt: convo.lastMessageAt,
         unreadCount: unreadData ? unreadData.count : 0,
+        createdAt: convo.createdAt,
         updatedAt: convo.updatedAt,
       };
     });

@@ -1,14 +1,4 @@
-interface UnreadType {
-  user: string;
-  count: number;
-}
-
-interface Attachment {
-  type: string;
-  url: string;
-  fileName?: string;
-  fileSize?: number;
-}
+import { FetchedUserType } from "./user";
 
 export interface Message {
   _id: string;
@@ -23,20 +13,21 @@ export interface Message {
   updatedAt: string;
 }
 
-export interface Conversation {
+export interface ConversationType {
   _id: string;
-  participants: string[];
-  lastMessage: string;
-  lastMessageAt: string;
-  unreadCounts: UnreadType[];
+  contactId: string;
+  participant: FetchedUserType; // we only show the other participant in here
+  isUserValidToRply: boolean;
+  lastMessage: Message;
+  lastMessageAt: Date;
+  unreadCounts: number;
   createdAt: string;
   updatedAt: string;
 }
 
-export interface ChatWindowType {
-  convoId: string;
-  userId: string;
-  minimized: boolean;
-  createdAt: string;
-  updatedAt: string;
+// api payload types
+export interface SentMessagePayload {
+  token: string;
+  conversationId: string;
+  recipent: string;
 }

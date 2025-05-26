@@ -3,6 +3,8 @@ import { LoginTypes, RegisterTypes } from "../types/AuthTypes";
 import { FollowPayload } from "../types/user";
 import { CommentApiResponse, CommentEventPayload } from "../types/PostType";
 import { ApiResponse, MessageApiResponse } from "../types/ApiResponseType";
+import { openConversationPayload } from "../features/messenger/Conversation/conversationSlice";
+import { SentMessagePayload } from "../types/MessengerTypes";
 
 // Axion instance
 export const api = axios.create({
@@ -446,25 +448,150 @@ export const notificationApi = {
 };
 
 export const MessageApi = {
-  getAllContact: async (token: string): Promise<MessageApiResponse> => {
-    try {
-      const res = await api.post(
-        "api/messages/contact/get",
-        {},
-        {
-          headers: {
-            token,
-            "Content-Type": "application/json",
-          },
-        }
-      );
+  contacts: {
+    getAllContact: async (token: string): Promise<MessageApiResponse> => {
+      try {
+        const res = await api.post(
+          "api/messages/contact/get",
+          {},
+          {
+            headers: {
+              token,
+              "Content-Type": "application/json",
+            },
+          }
+        );
 
-      return res.data;
-    } catch (error) {
-      return {
-        success: false,
-        message: error as string,
-      };
-    }
+        return res.data;
+      } catch (error) {
+        return {
+          success: false,
+          message: error as string,
+        };
+      }
+    },
+  },
+  conversation: {
+    drop: async (
+      token: string,
+      conversationId: string
+    ): Promise<MessageApiResponse> => {
+      try {
+        const res = await api.post(
+          "api/messages/conversation/drop",
+          { conversationId },
+          {
+            headers: {
+              token,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+        return res.data;
+      } catch (error) {
+        return {
+          success: false,
+          message: error as string,
+        };
+      }
+    },
+    findOrUpdate: async (
+      data: openConversationPayload & { token: string }
+    ): Promise<MessageApiResponse> => {
+      try {
+        const { otherUser, contactId, token } = data;
+        const res = await api.post(
+          `api/messages/conversation/find/${contactId}`,
+          { otherUser },
+          {
+            headers: {
+              token,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        return res.data;
+      } catch (error) {
+        return {
+          success: false,
+          message: error as string,
+        };
+      }
+    },
+    getAll: async (token: string): Promise<MessageApiResponse> => {
+      try {
+        const res = await api.post(
+          "api/messages/conversation/get",
+          {},
+          {
+            headers: {
+              token,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        return res.data;
+      } catch (error) {
+        return {
+          success: false,
+          message: error as string,
+        };
+      }
+    },
+  },
+  message: {
+    getMessagesByConvorsationId: async (
+      conversationId: string,
+      token: string
+    ): Promise<MessageApiResponse> => {
+      try {
+        const res = await api.post(
+          `api/messages/message/get/${conversationId}`,
+          {},
+          {
+            headers: {
+              token,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        return res.data;
+      } catch (error) {
+        return {
+          success: false,
+          message: error as string,
+        };
+      }
+    },
+    sentMessage: async (
+      messageContent: FormData,
+      payload: SentMessagePayload
+    ): Promise<MessageApiResponse> => {
+      try {
+        const { token, conversationId, recipent } = payload;
+
+        const apiPayload = { ...messageContent, recipent };
+
+        const res = await api.post(
+          `api/messages/message/get/${conversationId}`,
+          apiPayload,
+          {
+            headers: {
+              token,
+              "Content-Type": "multipart/form-data",
+            },
+          }
+        );
+        return res.data;
+      } catch (error) {
+        return {
+          success: false,
+          message: error as string,
+        };
+      }
+    },
   },
 };

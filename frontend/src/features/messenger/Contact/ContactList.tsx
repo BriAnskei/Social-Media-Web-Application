@@ -1,41 +1,47 @@
 import { useSelector } from "react-redux";
 import "./ContactList.css";
 import { RootState } from "../../../store/store";
-import { useEffect } from "react";
 import { userProfile } from "../../../utils/ImageUrlHelper";
 import Spinner from "../../../Components/Spinner/Spinner";
 
-const ContactList = () => {
+interface ContactListProp {
+  openConversation: (contactId: string, participantId: string) => void;
+}
+
+const ContactList = ({ openConversation }: ContactListProp) => {
   const { allIds, byId, loading } = useSelector(
     (state: RootState) => state.contact
   );
 
-  useEffect(() => {
-    console.log("All contacts", byId, allIds);
-  }, [byId, allIds]);
+  const isContactEmpty = allIds.length === 0;
 
   return (
     <>
-      <div className={`contact-list ${false ? "no-contact" : ""}`}>
+      <div className={`contact-list ${isContactEmpty ? "no-contact" : ""}`}>
         {loading ? (
           <Spinner />
-        ) : allIds.length === 0 ? (
+        ) : isContactEmpty ? (
           <>No Contacts</>
         ) : (
           allIds.map((id, index) => {
             const contactData = byId[id];
+            const userName = contactData.user.fullName.replace(/ .*/, "");
+
             return (
-              <div key={index} className="contact-container">
+              <div
+                key={index}
+                className="contact-container"
+                onClick={() =>
+                  openConversation(contactData._id, contactData.user._id)
+                }
+              >
                 <img
                   src={userProfile(
-                    contactData.user.profilePicture || "",
+                    contactData.user.profilePicture!,
                     contactData.user._id
                   )}
-                  alt=""
                 />
-                <div className="contact-name">
-                  {contactData.user.fullName.replace(/ .*/, "")}
-                </div>
+                <div className="contact-name">{userName}</div>
               </div>
             );
           })

@@ -29,9 +29,11 @@ import ViewImage from "../../Components/Modal/ViewImage/ViewImage";
 
 import MessageBox from "../../features/messenger/Message/MessageBox";
 import Followers from "../../Components/Modal/Followers/Followers";
+import { useCurrentUser } from "../../hooks/useUsers";
 
 const MainLayout = () => {
   const dispatch = useDispatch<AppDispatch>();
+  const { currentUser } = useCurrentUser();
   const { isAuthenticated } = useSelector((state: RootState) => state.auth);
 
   const { show: showEditProfileModal, data } = useSelector(
@@ -54,7 +56,7 @@ const MainLayout = () => {
     (state: RootState) => state.global.viewImageModal
   );
 
-  const { chatWindow } = useSelector((state: RootState) => state.global);
+  const { chatWindows } = useSelector((state: RootState) => state.global);
   const { popover } = useGlobal();
 
   const closeEditProfModal = () => {
@@ -78,11 +80,6 @@ const MainLayout = () => {
       dispatch(fetchAllNotifs());
     }
   }, []);
-
-  // chat funtion
-  const onClose = (id: string) => {};
-  const toggleMinimized = (id: string) => {};
-  const onSendMessage = (id: string, content: string) => {};
 
   return (
     <>
@@ -152,15 +149,13 @@ const MainLayout = () => {
 
       <Followers />
 
-      {/* chat window */}
+      {/* chat window list */}
       <div className="chat-windows-container">
-        {chatWindow.chatWWindows.map((chat, index) => (
+        {chatWindows.map((chatWindow, index) => (
           <MessageBox
             key={index}
-            chat={chat}
-            onClose={onClose}
-            toggleMin={toggleMinimized}
-            onSendMessage={onSendMessage}
+            ChatWindowData={chatWindow}
+            currentUserData={currentUser}
           />
         ))}
       </div>

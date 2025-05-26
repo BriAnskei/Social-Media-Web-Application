@@ -25,9 +25,7 @@ export const fetchAllContact = createAsyncThunk(
         return rejectWithValue("no accessToken to validate this request");
       }
 
-      const res = await MessageApi.getAllContact(token);
-
-      console.log("contact response: ", res);
+      const res = await MessageApi.contacts.getAllContact(token);
 
       return res;
     } catch (error) {
@@ -44,13 +42,13 @@ const contactSlice = createSlice({
       state,
       action: PayloadAction<{ contact: ContactType; isContactExist: boolean }>
     ) => {
-      const { contact, isContactExist } = action.payload;
+      const { contact } = action.payload;
+      const { allIds, byId } = normalizeResponse(contact);
+      const isContactExist = state.allIds.includes(allIds[0]);
 
       if (isContactExist) {
         state.byId[contact._id].validFor = contact.validFor;
       } else {
-        const { allIds, byId } = normalizeResponse(contact);
-
         state.allIds.push(allIds[0]);
         state.byId = { ...state.byId, ...byId };
       }
@@ -64,21 +62,11 @@ const contactSlice = createSlice({
       // // Always merge in the fresh data
       // Object.assign(state.byId, byId);
     },
-    updateOrDeleteContact: (
-      state,
-      action: PayloadAction<{
-        contact: ContactType;
-        contactStillValid: boolean;
-      }>
-    ) => {
-      const { contact, contactStillValid } = action.payload;
+    updateOrDeleteContact: (state, action) => {
+      const { contactId } = action.payload;
 
-      if (contactStillValid) {
-        state.byId[contact._id].validFor = contact.validFor;
-      } else {
-        state.allIds.filter((id) => id !== contact._id);
-        delete state.byId[contact._id];
-      }
+      state.allIds = state.allIds.filter((id) => id !== contactId);
+      delete state.byId[contactId];
     },
   },
   extraReducers: (builder) => {
@@ -88,11 +76,14 @@ const contactSlice = createSlice({
       })
       .addCase(fetchAllContact.fulfilled, (state, action) => {
         const { allIds, byId } = normalizeResponse(action.payload?.contacts);
-        console.log("action", action.payload?.contacts, allIds, byId);
-        state.loading = false;
 
         state.allIds = allIds;
         state.byId = { ...byId };
+        state.loading = false;
+      })
+      .addCase(fetchAllContact.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
       });
   },
 });

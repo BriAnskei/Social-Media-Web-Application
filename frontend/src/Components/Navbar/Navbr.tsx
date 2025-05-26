@@ -16,7 +16,6 @@ import { useLocation } from "react-router";
 import { fetchAllPost } from "../../features/posts/postSlice";
 
 import ConversationList from "../../features/messenger/Conversation/ConversationList/ConversationList";
-import { useUnreadCount } from "../../features/messenger/Conversation/useConvo";
 
 const Navbr = () => {
   const dispatch = useDispatch<AppDispatch>();
@@ -25,7 +24,7 @@ const Navbr = () => {
 
   const location = useLocation(); // validating for homepage refresh
   const { nummberOfUnread, allIds } = useUnreadNotif(); // unread notification
-  const unreadCount = useUnreadCount("5f8d0d55b54764421b7156d1"); // unread messages
+  const unreadCount = 0;
 
   const [showNotifModal, setShowNotifModal] = useState(false);
   const [showLogout, setShowLogout] = useState(false);
@@ -111,7 +110,7 @@ const Navbr = () => {
                   {unreadCount}
                 </span>
                 <div className="dropdown-menu dropdown-menu-end">
-                  <ConversationList />
+                  <ConversationList currentUser={currentUser} />
                 </div>
               </div>
             </li>

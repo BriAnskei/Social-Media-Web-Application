@@ -68,6 +68,7 @@ const SOCKET_EVENTS = {
 export class SocketServer {
   private io: Server;
   private connectedUSers: Map<string, ConnectedUser> = new Map();
+  private serverEventListeberInitialized = false;
 
   // https://chatgpt.com/c/67cd8457-6eb0-8012-a2a5-c81d87368d1f
   // .on(event, callback)	Listens for a specific event from the client.
@@ -91,6 +92,7 @@ export class SocketServer {
   private async initializeServer(): Promise<void> {
     try {
       await this.setUpMiddleware();
+      this.serverEventHandlers();
       this.setupEventHandlers();
     } catch (error) {
       console.log("Failed to initialize socket server: ", error);
@@ -118,6 +120,20 @@ export class SocketServer {
         next(new Error("Authentication Error"));
       }
     });
+  }
+
+  private serverEventHandlers(): void {
+    if (this.serverEventListeberInitialized) return;
+    // Set up app-wide event listeners that aren't tied to individual sockets
+    appEvents.on("createOrUpdate-contact", (data: any) => {
+      this.handleCreateOrUpdateContact(data);
+    });
+
+    appEvents.on("updateOrDrop-contact", (data: any) => {
+      this.handleUpdateOrDropContact(data);
+    });
+
+    this.serverEventListeberInitialized = true;
   }
 
   private setupEventHandlers() {
@@ -163,17 +179,6 @@ export class SocketServer {
       // on post delete
       socket.on(SOCKET_EVENTS.posts.POST_DELETED, (data: string) => {
         this.handlePostDeleteEvent(socket, data);
-      });
-
-      // conversation, contact evens
-      appEvents.on("createOrUpdate-contact", (data: any) => {
-        console.log("createOrUpdateContact", data);
-
-        this.handleCreateOrUpdateContact(socket, data);
-      });
-
-      appEvents.on('updateOrDrop-contact"', (data: any) => {
-        this.handleUpdateOrDropContact(socket, data);
       });
 
       // Handle Error
@@ -497,23 +502,33 @@ export class SocketServer {
   }
 
   // conversation, contact events
-  private async handleCreateOrUpdateContact(
-    socket: any,
-    data: any
-  ): Promise<void> {
+  private async handleCreateOrUpdateContact(data: any): Promise<void> {
     try {
-      socket.emit("createdOrUpdated-contact", data);
+      const { userId } = data;
+      const socketOwner = this.connectedUSers.get(userId);
+      if (!socketOwner) {
+        throw new Error(
+          "Failed to emit Contact Data: user is not register as online"
+        );
+      }
+
+      this.io.to(socketOwner.socketId).emit("createdOrUpdated-contact", data);
     } catch (error) {
       console.log("Failed to emit contact(create or update), ", error);
     }
   }
 
-  private async handleUpdateOrDropContact(
-    socket: any,
-    data: any
-  ): Promise<void> {
+  private async handleUpdateOrDropContact(data: any): Promise<void> {
     try {
-      socket.emit("updatedOrDroped-contact", data);
+      const { userId } = data;
+      const socketOwner = this.connectedUSers.get(userId);
+      if (!socketOwner) {
+        throw new Error(
+          "Failed to emit Contact Data: user is not register as online"
+        );
+      }
+
+      this.io.to(socketOwner.socketId).emit("updatedOrDroped-contact", data);
     } catch (error) {
       console.log("Failed to emit contact(update or create), ", error);
     }

@@ -74,11 +74,12 @@ export const useSocket = () => {
   const { socket, isConnected } = useContext(SocketContext);
   const { accessToken } = useSelector((state: RootState) => state.auth);
   const isInitialized = useRef(false); //  ensure that the socket event listeners (like postLiked, likeNotify) are only set up once, even if the useEffect runs multiple times.
-  // flag for the logic, use useRef to not cause a render every update
 
   // like events function
   const handleLikeEvent = useCallback(
     (data: LikeHandlerTypes) => {
+      console.log("Like event triggered", data);
+
       dispatch(postLiked(data));
     },
     [dispatch]
@@ -134,8 +135,6 @@ export const useSocket = () => {
         followerId: data.data.sender,
         userId: data.data.receiver,
       };
-      console.log("emiting data: ", followPayload);
-
       dispatch(updateFollow(followPayload));
       dispatch(addOrDropNotification(data));
     },
@@ -145,8 +144,6 @@ export const useSocket = () => {
   // Contact, conversation events
   const handleCreateOrUpdateContact = useCallback(
     (data: any) => {
-      console.log("handleCreateOrUpdateContact".toLocaleUpperCase(), data);
-
       dispatch(createOrUpdateContact(data));
     },
     [dispatch]
@@ -173,28 +170,28 @@ export const useSocket = () => {
         socket.connect();
       }
 
-      //  Ensures only one event listener exists per socket event.
+      const removeAllListener = () => {
+        socket.off(SOCKET_EVENTS.posts.POST_UPDATE);
 
-      // update event
-      socket.off(SOCKET_EVENTS.posts.POST_UPDATE);
+        //delete event
+        socket.off(SOCKET_EVENTS.posts.POST_DELETE);
 
-      //delete event
-      socket.off(SOCKET_EVENTS.posts.POST_DELETE);
+        socket.off("postLiked");
+        socket.off("likeNotify");
 
-      socket.off("postLiked");
-      socket.off("likeNotify");
+        socket.off("postCommented");
+        socket.off(SOCKET_EVENTS.posts.COMMENT_NOTIF);
 
-      socket.off("postCommented");
-      socket.off(SOCKET_EVENTS.posts.COMMENT_NOTIF);
+        socket.off("followed-user");
+        // uploading event
+        socket.off(SOCKET_EVENTS.posts.UPLOAD_POST);
 
-      socket.off("followed-user");
-      // uploading event
-      socket.off(SOCKET_EVENTS.posts.UPLOAD_POST);
+        // contact, conversation events
+        socket.off(SOCKET_EVENTS.coversation.CREATE_OR_UPDATE_CONTACT);
+        socket.off(SOCKET_EVENTS.coversation.UPDATE_OR_DROP_CONTACT);
+      };
 
-      // contact, conversation events
-      socket.off(SOCKET_EVENTS.coversation.CREATE_OR_UPDATE_CONTACT);
-      socket.off(SOCKET_EVENTS.coversation.UPDATE_OR_DROP_CONTACT);
-
+      removeAllListener();
       // global event
       socket.on("postLiked", handleLikeEvent);
       socket.on("postCommented", handleCommentEvent);

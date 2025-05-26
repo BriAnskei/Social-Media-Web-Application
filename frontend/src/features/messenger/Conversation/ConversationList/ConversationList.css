@@ -1,6 +1,6 @@
 .conversationList-cont {
   margin: 2px;
-  width: 30rem;
+  width: 27rem;
   height: 34rem;
   cursor: default;
 }
@@ -61,6 +61,11 @@
   cursor: pointer;
   border-radius: 3px;
   padding: 7px;
+}
+
+.chat-container:hover {
+  background-color: #f1f1f1;
+  transition: background-color 0.3s ease;
 }
 
 .unread-chat {

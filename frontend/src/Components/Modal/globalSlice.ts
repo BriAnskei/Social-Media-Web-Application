@@ -1,6 +1,6 @@
-import { createSlice, current, PayloadAction } from "@reduxjs/toolkit";
+import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { FetchedUserType } from "../../types/user";
-import { ChatWindowType, Conversation } from "../../types/MessengerTypes";
+import { Conversation } from "../../types/MessengerTypes";
 
 // post states
 export interface PostModalState {
@@ -41,8 +41,10 @@ export interface ViewUserFollow {
   show: boolean;
 }
 
-export interface ChatWindow {
-  chatWWindows: ChatWindowType[];
+export interface ChatWindowType {
+  contactId: string;
+  participantId: string;
+  minimized: boolean;
 }
 
 export interface GlobalState {
@@ -58,7 +60,7 @@ export interface GlobalState {
   viewImageModal: ViewImageState;
 
   // chat window
-  chatWindow: ChatWindow;
+  chatWindows: ChatWindowType[];
 }
 
 // Initialize state
@@ -97,9 +99,7 @@ const initialState: GlobalState = {
     src: "",
   },
 
-  chatWindow: {
-    chatWWindows: [],
-  },
+  chatWindows: [],
 };
 
 // Create the slice
@@ -150,51 +150,39 @@ const globalSlice = createSlice({
       state.viewImageModal.show = false;
       state.viewImageModal.src = "";
     },
-    toggleViewFollow: (state, action) => {
+    toggleViewFollow: (state) => {
       state.viewFollow.show = !state.viewFollow.show;
     },
-    openChatWindow: (
-      state,
-      action: PayloadAction<Conversation & { currUserId: string }>
-    ) => {
-      const { _id, participants, createdAt, updatedAt, currUserId } =
-        action.payload;
+    openChatWindow: (state, action) => {
+      const { contactId, participantId } = action.payload;
 
-      const userId = participants.find((id) => id !== currUserId);
-
-      if (!userId) throw new Error("No valid participant to open this window");
-
-      const isWindowExisting = state.chatWindow.chatWWindows.findIndex(
-        (chtWindow) => chtWindow.convoId === _id
+      const isWindowExist = state.chatWindows.findIndex(
+        (chatWindow) => chatWindow.contactId === contactId
       );
-
-      if (isWindowExisting !== -1) {
+      if (isWindowExist !== -1) {
       } else {
-        const data: ChatWindowType = {
-          convoId: _id,
-          userId,
+        const chatWindowPayload: ChatWindowType = {
+          contactId,
+          participantId,
           minimized: false,
-          createdAt,
-          updatedAt,
         };
 
-        state.chatWindow.chatWWindows.push(data);
+        state.chatWindows.push(chatWindowPayload);
       }
     },
     closeWindow: (state, action) => {
-      const { convoId } = action.payload;
+      const { contactId } = action.payload;
 
-      state.chatWindow.chatWWindows = state.chatWindow.chatWWindows.filter(
-        (chat) => chat.convoId !== convoId
+      state.chatWindows = state.chatWindows.filter(
+        (chatWindow) => chatWindow.contactId !== contactId
       );
     },
-    minimizeChat: (state, action) => {
-      const { convoId } = action.payload;
-      console.log("convo id: ", convoId);
+    toggleMinimize: (state, action) => {
+      const { contactId } = action.payload;
 
-      state.chatWindow.chatWWindows.map((cht) => {
-        if (cht.convoId === convoId) {
-          cht.minimized = !cht.minimized;
+      state.chatWindows.map((chatWindow) => {
+        if (chatWindow.contactId === contactId) {
+          chatWindow.minimized = !chatWindow.minimized;
         }
       });
     },
@@ -219,6 +207,6 @@ export const {
 
   openChatWindow,
   closeWindow,
-  minimizeChat,
+  toggleMinimize,
 } = globalSlice.actions;
 export default globalSlice.reducer;
