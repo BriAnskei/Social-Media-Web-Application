@@ -23,7 +23,7 @@
 }
 
 .chatwindow-header {
-  background-color: #bbbbbb;
+  background-color: #c5ba9a;
   color: white;
   padding: 12px;
   display: flex;
@@ -34,16 +34,14 @@
 }
 
 .chatwindow-profile {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background-color: #ccc;
-  margin-right: 12px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  font-weight: bold;
-  color: #fff;
+  width: 34px;
+  height: 34px;
+  border-radius: 100%;
+  margin-right: 10px;
+  display: block;
+  padding: 0;
+  object-fit: cover;
+  box-sizing: border-box;
 }
 
 .chatwindow-nm {

@@ -4,11 +4,12 @@ import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "../../../../store/store";
 import Spinner from "../../../../Components/Spinner/Spinner";
 import { fetchAllConvoList } from "../conversationSlice";
-import { ConversationType } from "../../../../types/MessengerTypes";
+
 import { openChatWindow } from "../../../../Components/Modal/globalSlice";
 import ContactList from "../../Contact/ContactList";
 import { fetchAllContact } from "../../Contact/ContactSlice";
 import { FetchedUserType } from "../../../../types/user";
+import { userProfile } from "../../../../utils/ImageUrlHelper";
 
 interface ConversationListPorp {
   currentUser: FetchedUserType;
@@ -22,7 +23,7 @@ const ConversationList = ({ currentUser }: ConversationListPorp) => {
   );
 
   useEffect(() => {
-    console.log("update: ", byId);
+    console.log("CONVERSATIONLIST UPDATED: ", byId);
   }, [byId]);
 
   const closeDropDown = () => {
@@ -45,7 +46,10 @@ const ConversationList = ({ currentUser }: ConversationListPorp) => {
         await dispatch(fetchAllContact());
         await dispatch(fetchAllConvoList());
       } catch (error) {
-        console.error("Failed to fetch data for conversation list, ", error);
+        console.error(
+          "Failed to fetch data for conversation and contact list, ",
+          error
+        );
       }
     };
 
@@ -78,33 +82,32 @@ const ConversationList = ({ currentUser }: ConversationListPorp) => {
         <div className="chat-list">
           {loading ? (
             <Spinner />
+          ) : allIds.length === 0 ? (
+            <>No Conversation</>
           ) : (
             allIds.map((id, index) => {
               const conversation = byId[id];
 
-              if (!conversation) {
-                return (
-                  <div key={index}>
-                    <Spinner />
-                  </div>
-                );
+              if (!conversation || !conversation.lastMessage) {
+                return null;
               }
+              const { participant, lastMessage } = conversation;
 
-              const isLastMessageCurrUser =
-                conversation.lastMessage.sender === currentUser._id;
+              let isLastMessageCurrUser =
+                lastMessage.sender === currentUser._id;
 
-              const isLastMessageRead = conversation.lastMessage.read;
+              const isLastMessageRead = lastMessage.read;
+
+              const addBold = isLastMessageRead
+                ? ""
+                : isLastMessageCurrUser
+                ? ""
+                : "unread-chat";
 
               return (
                 <>
                   <div
-                    className={`chat-container ${
-                      isLastMessageRead
-                        ? ""
-                        : isLastMessageCurrUser
-                        ? ""
-                        : "unread-chat"
-                    }`}
+                    className={`chat-container ${addBold}`}
                     key={index}
                     onClick={() =>
                       openConversation(
@@ -116,17 +119,14 @@ const ConversationList = ({ currentUser }: ConversationListPorp) => {
                     <div className="chat-info">
                       <div className="info-picc">
                         <img
-                          src="https://images.ctfassets.net/h6goo9gw1hh6/2sNZtFAWOdP1lmQ33VwRN3/24e953b920a9cd0ff2e1d587742a2472/1-intro-photo-final.jpg?w=1200&h=992&fl=progressive&q=70&fm=jpg"
+                          src={userProfile(
+                            participant.profilePicture!,
+                            participant._id
+                          )}
                           alt=""
                         />
-                        <h4
-                          className={`${
-                            isLastMessageRead && isLastMessageCurrUser
-                              ? ""
-                              : "bold-header"
-                          }`}
-                        >
-                          {}
+                        <h4 className={`${addBold}`}>
+                          {`${participant.fullName}(${participant.username})`}
                         </h4>
                       </div>
                       <span>
@@ -135,10 +135,9 @@ const ConversationList = ({ currentUser }: ConversationListPorp) => {
                     </div>
                     <div className="chat-content-count">
                       <div className="chat-content">
-                        {conversation.lastMessage.content ||
-                        conversation.lastMessage.attachments
+                        {!lastMessage.content && lastMessage.attachments
                           ? "send a picc"
-                          : ""}
+                          : lastMessage.content}
                       </div>
                       {conversation.unreadCounts > 0 && (
                         <div className="unread-count">

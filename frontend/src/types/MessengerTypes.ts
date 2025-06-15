@@ -1,25 +1,24 @@
 import { FetchedUserType } from "./user";
 
 export interface Message {
-  _id: string;
+  _id?: string;
   sender: string;
   recipient: string;
   content: string;
   attachments?: string; // for images(for now)
-  read: boolean;
-  readAt: string | null;
+  read?: boolean;
+  readAt?: string | null;
   conversationId: string;
   createdAt: string;
-  updatedAt: string;
 }
 
 export interface ConversationType {
   _id: string;
   contactId: string;
-  participant: FetchedUserType; // we only show the other participant in here
+  participant: FetchedUserType;
   isUserValidToRply: boolean;
   lastMessage: Message;
-  lastMessageAt: Date;
+  lastMessageAt: string;
   unreadCounts: number;
   createdAt: string;
   updatedAt: string;
@@ -27,7 +26,6 @@ export interface ConversationType {
 
 // api payload types
 export interface SentMessagePayload {
-  token: string;
   conversationId: string;
   recipent: string;
 }

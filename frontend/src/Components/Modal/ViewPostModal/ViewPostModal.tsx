@@ -1,12 +1,8 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import "./ViewPostModal.css";
 import { ModalTypes } from "../../../types/modalTypes";
 import { CommentEventPayload } from "../../../types/PostType";
-import {
-  useCurrentUser,
-  useUserById,
-  useUsersById,
-} from "../../../hooks/useUsers";
+import { useCurrentUser, useUserById } from "../../../hooks/useUsers";
 import { useDispatch } from "react-redux";
 import { AppDispatch } from "../../../store/store";
 import { addComment, toggleLike } from "../../../features/posts/postSlice";
@@ -14,7 +10,7 @@ import { addComment, toggleLike } from "../../../features/posts/postSlice";
 import AutoResizeTextarea from "../../../utils/AutoResizeTextaria";
 import { usePostById } from "../../../hooks/usePost";
 import { useSocket } from "../../../hooks/socket/useSocket";
-import { followToggled, updateFollow } from "../../../features/users/userSlice";
+import { followToggled } from "../../../features/users/userSlice";
 import { FetchedUserType, FollowPayload } from "../../../types/user";
 import Spinner from "../../Spinner/Spinner";
 import { viewProfile } from "../globalSlice";

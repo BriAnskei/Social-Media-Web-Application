@@ -1,10 +1,10 @@
-type NormalizeResponse<T> = {
+export type NormalizeResponse<T> = {
   byId: { [key: string]: T };
   allIds: string[];
 };
 
 // Helper function that will returns an array or an object depinding on the api response
-const normalizeResponse = <T extends { _id: string }>(
+export const normalizeResponse = <T extends { _id: string }>(
   data: T[] | T | undefined
 ): NormalizeResponse<T> => {
   if (!data) return { byId: {}, allIds: [] };
@@ -24,5 +24,3 @@ const normalizeResponse = <T extends { _id: string }>(
     };
   }
 };
-
-export default normalizeResponse;

@@ -29,6 +29,7 @@ import ViewImage from "../../Components/Modal/ViewImage/ViewImage";
 
 import MessageBox from "../../features/messenger/Message/MessageBox";
 import Followers from "../../Components/Modal/Followers/Followers";
+import ViewMessageImage from "../../features/messenger/Message/ViewMessageImage";
 import { useCurrentUser } from "../../hooks/useUsers";
 
 const MainLayout = () => {
@@ -159,6 +160,8 @@ const MainLayout = () => {
           />
         ))}
       </div>
+
+      <ViewMessageImage />
     </>
   );
 };

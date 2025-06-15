@@ -3,7 +3,7 @@ import { ContactType } from "../../../types/contactType";
 import { NormalizeState } from "../../../types/NormalizeType";
 import { RootState } from "../../../store/store";
 import { MessageApi } from "../../../utils/api";
-import normalizeResponse from "../../../utils/normalizeResponse";
+import { normalizeResponse } from "../../../utils/normalizeResponse";
 
 interface Contactstate extends NormalizeState<ContactType> {}
 

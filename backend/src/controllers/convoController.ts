@@ -8,7 +8,7 @@ import {
   ConvoService,
 } from "../services/conversation.service";
 import { contactService } from "../services/contact.service";
-
+1;
 interface ReqAuth extends Request {
   userId?: string;
 }
@@ -21,7 +21,6 @@ export const openOrUpdateConvo = async (
     const userId = req.userId;
     const otherUser = req.body.otherUser;
     const { contactId } = req.params;
-    console.log(userId, otherUser, contactId);
 
     let conversation = await Conversation.findOne({
       contactId,
@@ -32,7 +31,7 @@ export const openOrUpdateConvo = async (
 
     if (!validUser || !userId) {
       throw new Error(
-        "user is undifine or this conversation have no tacts for both user"
+        "Failed  on 'openOrUpdateConvo'. UserId is undifined or there is no valid user for this conversation"
       );
     }
 
@@ -53,7 +52,6 @@ export const openOrUpdateConvo = async (
       conversation = await Conversation.findById(conversation._id).populate(
         "participants"
       );
-      console.log("Creating conversairton: ", conversation);
     } else {
       const isDeleted = conversation.deletedFor?.includes(
         new mongoose.Types.ObjectId(userId)
@@ -84,7 +82,6 @@ export const openOrUpdateConvo = async (
       );
 
       await messageService.markReadMessages(conversation._id as string, userId);
-      console.log("updating conversation: ", conversation);
     }
 
     const formatedData = conversationFormatHelper.formatConversationData(
@@ -124,6 +121,7 @@ export const getConversations = async (
     const conversations = await Conversation.find({
       participants: userId,
       deletedFor: { $ne: userId }, // filder out convo where the user is in the deletedFor field
+      lastMessage: { $ne: null },
     })
       .sort({ lastMessaageAt: -1 }) // sort from the latest(decending)
       .skip(skip)

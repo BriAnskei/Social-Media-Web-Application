@@ -5,7 +5,7 @@ import {
   PayloadAction,
 } from "@reduxjs/toolkit";
 import { NormalizeState } from "../../types/NormalizeType";
-import normalizeResponse from "../../utils/normalizeResponse";
+import { normalizeResponse } from "../../utils/normalizeResponse";
 import { NotificationType } from "../../types/NotificationTypes";
 import { RootState } from "../../store/store";
 import { notificationApi } from "../../utils/api";

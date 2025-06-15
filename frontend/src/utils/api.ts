@@ -4,7 +4,7 @@ import { FollowPayload } from "../types/user";
 import { CommentApiResponse, CommentEventPayload } from "../types/PostType";
 import { ApiResponse, MessageApiResponse } from "../types/ApiResponseType";
 import { openConversationPayload } from "../features/messenger/Conversation/conversationSlice";
-import { SentMessagePayload } from "../types/MessengerTypes";
+import { Message, SentMessagePayload } from "../types/MessengerTypes";
 
 // Axion instance
 export const api = axios.create({
@@ -544,12 +544,13 @@ export const MessageApi = {
   message: {
     getMessagesByConvorsationId: async (
       conversationId: string,
+      cursor: string | null,
       token: string
-    ): Promise<MessageApiResponse> => {
+    ): Promise<MessageApiResponse & { hasMore?: boolean }> => {
       try {
         const res = await api.post(
           `api/messages/message/get/${conversationId}`,
-          {},
+          { cursor },
           {
             headers: {
               token,
@@ -567,17 +568,21 @@ export const MessageApi = {
       }
     },
     sentMessage: async (
-      messageContent: FormData,
-      payload: SentMessagePayload
+      token: string,
+      data: Message
     ): Promise<MessageApiResponse> => {
       try {
-        const { token, conversationId, recipent } = payload;
+        const formData = new FormData();
+        const { sender, recipient, content, conversationId, createdAt } = data;
 
-        const apiPayload = { ...messageContent, recipent };
+        formData.append("sender", sender);
+        formData.append("recipient", recipient);
+        formData.append("content", content);
+        formData.append("createdAt", createdAt.toString());
 
         const res = await api.post(
-          `api/messages/message/get/${conversationId}`,
-          apiPayload,
+          `api/messages/message/sent/${conversationId}`,
+          formData,
           {
             headers: {
               token,

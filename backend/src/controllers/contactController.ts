@@ -1,6 +1,5 @@
 import { Request, Response } from "express";
 import { Contact } from "../models/contactModel";
-import mongoose from "mongoose";
 import { contactFormatHelper } from "../services/contact.service";
 
 interface AuthReq extends Request {
@@ -28,8 +27,6 @@ export const getAllContacts = async (
       userId,
       contactData
     );
-
-    console.log("contacts:", contactData, userId);
 
     res.json({
       success: true,

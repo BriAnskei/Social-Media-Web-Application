@@ -1,9 +1,10 @@
 import { NormalizeState } from "../../../types/NormalizeType";
 import { ConversationType } from "../../../types/MessengerTypes";
-import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import normalizeResponse from "../../../utils/normalizeResponse";
+import { createAsyncThunk, createSlice, current } from "@reduxjs/toolkit";
+
 import { MessageApi } from "../../../utils/api";
 import { RootState } from "../../../store/store";
+import { normalizeResponse } from "../../../utils/normalizeResponse";
 
 interface ConversationState extends NormalizeState<ConversationType> {
   openingConvoLoading: Boolean;
@@ -49,6 +50,7 @@ export const fetchAllConvoList = createAsyncThunk(
       }
 
       const res = await MessageApi.conversation.getAll(accessToken);
+
       return res.conversations;
     } catch (error) {
       rejectWithValue("Failed to fetch convo list: " + error || "Error");
@@ -77,7 +79,7 @@ export const openConversation = createAsyncThunk(
       const payload = { ...data, token };
       const res = await MessageApi.conversation.findOrUpdate(payload);
 
-      return res.conversations;
+      return res;
     } catch (error) {
       rejectWithValue("Failed to open conversation: " + error);
     }
@@ -87,7 +89,15 @@ export const openConversation = createAsyncThunk(
 const conversationSlice = createSlice({
   name: "conversation",
   initialState,
-  reducers: {},
+  reducers: {
+    setLatestMessage: (state, action) => {
+      const { conversationId, messageData, updatedAt } = action.payload;
+
+      state.byId[conversationId].lastMessage = messageData;
+      state.byId[conversationId].lastMessageAt = updatedAt;
+      state.byId[conversationId].updatedAt = updatedAt;
+    },
+  },
   extraReducers: (builder) => {
     builder
       .addCase(fetchAllConvoList.pending, (state) => {
@@ -110,7 +120,9 @@ const conversationSlice = createSlice({
         state.error = null;
       })
       .addCase(openConversation.fulfilled, (state, action) => {
-        const { byId, allIds } = normalizeResponse(action.payload);
+        const { byId, allIds } = normalizeResponse(
+          action.payload?.conversations
+        );
 
         const isConvoExist = state.allIds.includes(allIds[0]);
 
@@ -127,7 +139,5 @@ const conversationSlice = createSlice({
   },
 });
 
-export const {
-  // reducer function
-} = conversationSlice.actions;
+export const { setLatestMessage } = conversationSlice.actions;
 export default conversationSlice.reducer;

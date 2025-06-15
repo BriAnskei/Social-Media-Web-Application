@@ -8,7 +8,7 @@ import {
 } from "../../types/PostType";
 import { NormalizeState } from "../../types/NormalizeType";
 import { RootState } from "../../store/store";
-import normalizeResponse from "../../utils/normalizeResponse";
+import { normalizeResponse } from "../../utils/normalizeResponse";
 
 interface Poststate extends NormalizeState<FetchPostType> {}
 

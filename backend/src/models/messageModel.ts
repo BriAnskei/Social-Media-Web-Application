@@ -20,49 +20,50 @@ export interface IMessage extends Document {
   createdAt: Date;
 }
 
-const MessageSchema = new Schema<IMessage>(
-  {
-    sender: {
-      type: Schema.Types.ObjectId,
-      ref: "User",
-      required: true,
-    },
-    recipient: {
-      type: Schema.Types.ObjectId,
-      ref: "User",
-      required: true,
-    },
-    content: {
-      type: String,
-      required: true,
-      trim: true,
-    },
-    attachments: {
-      type: String,
-      required: function () {
-        return !!this.attachments;
-      },
-    },
-    hideFrom: {
-      type: Schema.Types.ObjectId,
-      ref: "User",
-    },
-    read: {
-      type: Boolean,
-      default: false,
-    },
-    readAt: {
-      type: Date,
-      default: null,
-    },
-    conversationId: {
-      type: Schema.Types.ObjectId,
-      ref: "Conversation",
-      required: true,
+const MessageSchema = new Schema<IMessage>({
+  sender: {
+    type: Schema.Types.ObjectId,
+    ref: "User",
+    required: true,
+  },
+  recipient: {
+    type: Schema.Types.ObjectId,
+    ref: "User",
+    required: true,
+  },
+  content: {
+    type: String,
+    required: true,
+    trim: true,
+  },
+  createdAt: {
+    type: Date,
+    required: true,
+  },
+  attachments: {
+    type: String,
+    required: function () {
+      return !!this.attachments;
     },
   },
-  { timestamps: true } // automaticaly adds the date fields
-);
+  hideFrom: {
+    type: Schema.Types.ObjectId,
+    ref: "User",
+  },
+  read: {
+    type: Boolean,
+    default: false,
+  },
+  readAt: {
+    type: Date,
+    default: null,
+  },
+  conversationId: {
+    type: Schema.Types.ObjectId,
+    ref: "Conversation",
+    required: true,
+  },
+});
 
 // Index for quick lookup of messages in a conversation
 MessageSchema.index({ conversationId: 1, createdAt: -1 });

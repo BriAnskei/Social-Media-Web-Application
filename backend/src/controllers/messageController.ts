@@ -10,13 +10,14 @@ export const addMessage = async (req: ReqAuth, res: Response): Promise<any> => {
   try {
     const userId = req.userId;
     const { conversationId } = req.params;
-    const { recipient, content } = req.body;
+    const { recipient, content, createdAt } = req.body;
 
     const message = await MessageModel.create({
       conversationId,
       sender: userId,
       recipient,
       content,
+      createdAt: new Date(createdAt),
       attachments: req.file?.filename,
     });
 
@@ -40,18 +41,38 @@ export const getMessages = async (
   try {
     const userId = req.userId;
     const { conversationId } = req.params;
-    // default values
+    const { cursor, limit = 7 } = req.body;
 
-    const messages = await MessageModel.find({
-      conversationId,
-      hideFrom: { $ne: userId },
-    })
-      .sort({ createdAt: -1 })
-      .limit(30);
+    let messages;
+
+    if (cursor) {
+      messages = await MessageModel.find({
+        conversationId,
+        hideFrom: { $ne: userId },
+        createdAt: { $lt: new Date(cursor) },
+      })
+        .sort({ createdAt: -1 })
+        .limit(limit + 1);
+    } else {
+      messages = await MessageModel.find({
+        conversationId,
+        hideFrom: { $ne: userId },
+      })
+        .sort({ createdAt: -1 })
+        .limit(limit + 1);
+    }
+
+    const hasMore = messages.length > limit;
+
+    console.log("FETCHED: ", hasMore, messages, messages.length, limit);
+
+    if (hasMore) messages.pop();
+
     res.json({
       success: true,
       message: "Messages fetched",
       messages,
+      hasMore,
     });
   } catch (error) {
     console.log("Failed to fetch messages, " + error);

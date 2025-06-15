@@ -3,13 +3,6 @@ import { useEffect, useMemo, useRef } from "react";
 import { useUsersById } from "../../../hooks/useUsers";
 import { FetchedUserType } from "../../../types/user";
 import { usePostById } from "../../../hooks/usePost";
-import Spinner from "../../Spinner/Spinner";
-
-interface comment {
-  user: string;
-  content: string;
-  createdAt: string;
-}
 
 interface CommentListProp {
   postId: string;
@@ -29,7 +22,6 @@ const CommentList = ({ postId, viewUserProfile }: CommentListProp) => {
 
   useEffect(() => {
     buttonRef.current?.scrollIntoView({ behavior: "smooth" });
-    console.log("cooment update");
   }, [comments]);
 
   return (
@@ -66,7 +58,7 @@ const CommentList = ({ postId, viewUserProfile }: CommentListProp) => {
             );
           })
         )}
-        <div ref={buttonRef} className="button"></div>
+        <div ref={buttonRef}></div>
       </div>
     </>
   );

@@ -5,3 +5,14 @@ export interface NormalizeState<T> {
   loading: Boolean;
   error: string | null;
 }
+
+interface MessageState {
+  loading: boolean;
+}
+
+export interface MessageNormalizeSate {
+  // convoId: MessageSate
+  byId: { [key: string]: MessageState };
+  allIds: string[]; // contactId
+  error: string;
+}

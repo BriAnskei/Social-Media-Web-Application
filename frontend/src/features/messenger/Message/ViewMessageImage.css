@@ -1,0 +1,29 @@
+.message-image-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  overflow: hidden;
+  display: flex;
+  background-color: black;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  width: 100%;
+  z-index: 2;
+}
+
+.message-image-container img {
+  width: auto;
+  max-width: 100%;
+  height: auto;
+  max-height: 95%;
+  object-fit: contain;
+}
+
+.message-image-container span {
+  position: absolute;
+  color: gray;
+  top: 20px;
+  right: 50px;
+  cursor: pointer;
+}

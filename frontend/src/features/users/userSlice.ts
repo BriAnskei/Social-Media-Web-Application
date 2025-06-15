@@ -3,7 +3,7 @@ import { FetchedUserType, FollowPayload } from "../../types/user";
 import { userApi } from "../../utils/api";
 import { RootState } from "../../store/store";
 import { NormalizeState } from "../../types/NormalizeType";
-import normalizeResponse from "../../utils/normalizeResponse";
+import { normalizeResponse } from "../../utils/normalizeResponse";
 import { ApiResponse } from "../../types/ApiResponseType";
 
 export const getUsersData = createAsyncThunk(

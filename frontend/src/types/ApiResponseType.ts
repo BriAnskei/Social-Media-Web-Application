@@ -9,7 +9,7 @@ export interface MessageApiResponse {
   message: string;
   contacts?: ContactType | ContactType[];
   conversations?: ConversationType | ConversationType[];
-  messages?: Message | Message[];
+  messages?: Message[];
 }
 
 export interface ApiResponse {

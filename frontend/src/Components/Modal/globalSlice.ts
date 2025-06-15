@@ -1,6 +1,5 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { FetchedUserType } from "../../types/user";
-import { Conversation } from "../../types/MessengerTypes";
 
 // post states
 export interface PostModalState {
@@ -47,6 +46,11 @@ export interface ChatWindowType {
   minimized: boolean;
 }
 
+export interface ViewMessageImage {
+  show: boolean;
+  url: string;
+}
+
 export interface GlobalState {
   postModal: PostModalState;
   postData: PostDataState;
@@ -61,6 +65,7 @@ export interface GlobalState {
 
   // chat window
   chatWindows: ChatWindowType[];
+  viewMessageImage: ViewMessageImage;
 }
 
 // Initialize state
@@ -100,6 +105,10 @@ const initialState: GlobalState = {
   },
 
   chatWindows: [],
+  viewMessageImage: {
+    show: false,
+    url: "",
+  },
 };
 
 // Create the slice
@@ -173,6 +182,8 @@ const globalSlice = createSlice({
     closeWindow: (state, action) => {
       const { contactId } = action.payload;
 
+      console.log("ContacT id: ", contactId);
+
       state.chatWindows = state.chatWindows.filter(
         (chatWindow) => chatWindow.contactId !== contactId
       );
@@ -185,6 +196,21 @@ const globalSlice = createSlice({
           chatWindow.minimized = !chatWindow.minimized;
         }
       });
+    },
+
+    toggleViewMessageImage: (state, action) => {
+      const isImageIsViewed =
+        Boolean(state.viewMessageImage.url) && state.viewMessageImage.show;
+
+      if (isImageIsViewed) {
+        state.viewMessageImage.show = false;
+        state.viewMessageImage.url = "";
+      } else {
+        const url = action.payload;
+
+        state.viewMessageImage.show = true;
+        state.viewMessageImage.url = url;
+      }
     },
   },
 });
@@ -208,5 +234,7 @@ export const {
   openChatWindow,
   closeWindow,
   toggleMinimize,
+
+  toggleViewMessageImage,
 } = globalSlice.actions;
 export default globalSlice.reducer;

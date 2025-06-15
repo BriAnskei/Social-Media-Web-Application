@@ -83,7 +83,7 @@ export const contactService = {
       const validUser = contact?.validFor;
       if (!contact || validUser?.length === 0) {
         throw new Error(
-          "Contact migth not exit or there is no valid users for this contact"
+          "Contact migth not exist or there is no valid users for this contact"
         );
       }
 
