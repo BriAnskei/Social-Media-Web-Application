@@ -9,3 +9,11 @@ const Spinner = () => {
 };
 
 export default Spinner;
+
+export const MessageSpinner = () => {
+  return (
+    <div className="spinner-border text-dark" role="status">
+      <span className="sr-only">Loading...</span>
+    </div>
+  );
+};

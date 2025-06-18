@@ -80,6 +80,25 @@
   display: none; /* Safari and Chrome */
 }
 
+.no-message-left {
+  display: flex;
+  justify-content: center;
+}
+
+.no-message-left span {
+  background-color: #aeb5bb;
+  border-radius: 30px;
+  padding: 0 8px;
+}
+
+.message-loading {
+  display: flex;
+  justify-content: center;
+  gap: 7px;
+  margin: 0;
+  padding: 0;
+}
+
 .message-containter {
   display: flex;
   flex-direction: column;

@@ -1,6 +1,6 @@
 import "./MessageBox.css";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useDispatch } from "react-redux";
 import { AppDispatch } from "../../../store/store";
 import {
@@ -8,8 +8,9 @@ import {
   closeWindow,
   toggleMinimize,
   toggleViewMessageImage,
+  viewProfile,
 } from "../../../Components/Modal/globalSlice";
-import Spinner from "../../../Components/Spinner/Spinner";
+import Spinner, { MessageSpinner } from "../../../Components/Spinner/Spinner";
 import { FetchedUserType } from "../../../types/user";
 import { monthNames } from "./monthNames";
 import {
@@ -19,7 +20,8 @@ import {
 import { fetchMessagesByConvoId, sentMessage } from "./messengeSlice";
 import { ConversationType, Message } from "../../../types/MessengerTypes";
 import { useConversationByContactId } from "../Conversation/useConvo";
-import { userProfile } from "../../../utils/ImageUrlHelper";
+import { getMessageImageUrl, userProfile } from "../../../utils/ImageUrlHelper";
+import { useNavigate } from "react-router";
 
 interface MessageBoxProp {
   ChatWindowData: ChatWindowType;
@@ -27,9 +29,9 @@ interface MessageBoxProp {
 }
 
 const MessageBox = ({ ChatWindowData, currentUserData }: MessageBoxProp) => {
+  const navigate = useNavigate();
   const dispatch = useDispatch<AppDispatch>();
   const { contactId, participantId, minimized } = ChatWindowData;
-  const conversationData = useConversationByContactId(contactId);
 
   const [conversation, setConversation] = useState<ConversationType | null>(
     null
@@ -47,6 +49,7 @@ const MessageBox = ({ ChatWindowData, currentUserData }: MessageBoxProp) => {
   const inputRef = useRef<any>(null);
   const messagesRef = useRef<HTMLDivElement | null>(null);
   const scrollRef = useRef<any>(null);
+  const lastScrollRef = useRef<number>(0);
 
   const closeChat = () => {
     if (ChatWindowData.minimized) return;
@@ -63,11 +66,11 @@ const MessageBox = ({ ChatWindowData, currentUserData }: MessageBoxProp) => {
       };
       const res = await dispatch(openConversation(data)).unwrap();
 
-      setConversation((res?.conversations as ConversationType) || null);
+      const conversationData = res?.conversations as ConversationType;
 
-      const conversation = res?.conversations as ConversationType;
+      setConversation(conversationData || null);
 
-      await fetchMessages(conversation._id, null);
+      await fetchMessages(conversationData._id, null);
     } catch (error) {
       console.error(
         "Failed to fetch 'Conversation' data  for chat window, ",
@@ -80,37 +83,32 @@ const MessageBox = ({ ChatWindowData, currentUserData }: MessageBoxProp) => {
 
   const fetchMessages = async (
     conversationId: string,
-    cursor: string | null,
-    scrollHeightBefore?: number
+    cursor: string | null
   ) => {
     try {
-      if (isFetchingMore) {
-        setIsMessageLoading(true);
-      }
+      const scrollElement = scrollRef.current;
+      lastScrollRef.current = scrollElement?.scrollHeight;
+
       const responseData = await dispatch(
         fetchMessagesByConvoId({ conversationId, cursor })
       ).unwrap();
 
-      const newMessages = responseData?.messages!;
+      const messagesData = responseData?.messages!;
+      const isThereMore = responseData?.hasMore;
 
-      setIsThereMoreMessages(responseData?.hasMore!);
-      setMessages((prev) => [...(newMessages.reverse() || []), ...prev]);
-
-      // After state update, adjust scroll position
-      if (scrollHeightBefore && scrollRef.current) {
-        requestAnimationFrame(() => {
-          if (scrollRef.current) {
-            const scrollHeightAfter = scrollRef.current.scrollHeight;
-            scrollRef.current.scrollTop =
-              scrollHeightAfter - scrollHeightBefore - 1;
-          }
-        });
+      if (!messagesData || isThereMore === undefined) {
+        throw new Error(
+          "Error in storing new messages, one of the prop data response might be undifined"
+        );
       }
+
+      setIsThereMoreMessages(Boolean(isThereMore));
+
+      setMessages((prev) => [...(messagesData.reverse() || []), ...prev]);
     } catch (error) {
       console.error("Failed to fetch 'Message' data for chat window, ", error);
     } finally {
       setIsMessageLoading(false);
-      setIsFetchingMore(false);
     }
   };
 
@@ -123,59 +121,66 @@ const MessageBox = ({ ChatWindowData, currentUserData }: MessageBoxProp) => {
   }, []);
 
   useEffect(() => {
-    if (isFetchingMore) return;
-
-    if (sentMessageLoading) {
-      messagesRef.current?.scrollIntoView({
-        behavior: "smooth",
-        block: "center",
-      });
-    } else {
-      messagesRef.current?.scrollIntoView({
-        behavior: "instant",
-        block: "end",
-      });
-    }
-  }, [messages]);
-
-  useEffect(() => {
-    function setConversationData() {
-      if (!isConversationLoading) {
-        setConversation(conversationData || null);
+    function setViewportToBottom() {
+      if (!isFetchingMore && messages.length === 7) {
+        messagesRef.current?.scrollIntoView({
+          behavior: "instant",
+          block: "end",
+        });
       }
     }
-    setConversationData();
-  }, [isConversationLoading]);
 
-  const getImageUrl = (fileName: string, userId: string): string => {
-    return `http://localhost:4000/message/images/${conversation?._id}/${userId}/${fileName}`;
-  };
+    function smoothScroll() {
+      if (!isFetchingMore && messages.length > 7) {
+        messagesRef.current?.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
+      }
+    }
+    smoothScroll();
+    setViewportToBottom();
+  }, [messages]);
 
-  const handleScroll = async () => {
+  const loadMoreMessages = useCallback(async () => {
+    if (!isThereMoreMessages) return;
+
+    setIsFetchingMore(true);
+
+    const scrollElement = scrollRef.current;
+    lastScrollRef.current = scrollElement.scrollHeight;
+
+    const lastMessageDateAsCursor = messages[0].createdAt;
+
+    await fetchMessages(conversation?._id!, lastMessageDateAsCursor);
+
+    // use setTimeout to ensure scroll adjustment runs after rect has updated the DOM with the new messages
+    setTimeout(() => {
+      const newScrollHeight = scrollElement.scrollHeight;
+      const scrollDiff = newScrollHeight - lastScrollRef.current;
+
+      scrollElement.scrollTop = scrollDiff;
+
+      setIsFetchingMore(false);
+    }, 0);
+  }, [isMessageLoading, isThereMoreMessages, messages]);
+
+  const handleScroll = () => {
     const element = scrollRef.current;
-    if (element && element.scrollTop === 0) {
-      if (!isThereMoreMessages) return;
-
-      // Store current scroll height before fetching
-      const scrollHeightBefore = element.scrollHeight;
-      const conversationId = conversation?._id!;
-      const lastDateAsCursor = messages[0].createdAt;
-      setIsFetchingMore(true);
-
-      await fetchMessages(conversationId, lastDateAsCursor, scrollHeightBefore);
+    // Check if we're near the top (with a small buffer)
+    if (element.scrollTop === 0 && !isFetchingMore && isThereMoreMessages) {
+      loadMoreMessages();
     }
   };
-
-  useEffect(() => {
-    console.log("scrollRef.current.scrollTop", scrollRef.current?.scrollTop);
-  }, [scrollRef.current]);
 
   const handleSubmitMessage = async (e: React.FormEvent<HTMLFormElement>) => {
     try {
       e.preventDefault();
       if (sentMessageLoading) return;
       setSentMessageLoading(true);
+
       const createdAt = new Date();
+
       const messageDataPayload: Message = {
         sender: currentUserData._id,
         recipient: conversation?.participant._id!,
@@ -187,6 +192,7 @@ const MessageBox = ({ ChatWindowData, currentUserData }: MessageBoxProp) => {
       setMessageInput("");
 
       setMessages((prev) => [...prev, messageDataPayload]);
+
       dispatch(
         setLatestMessage({
           conversationId: conversation?._id!,
@@ -199,6 +205,15 @@ const MessageBox = ({ ChatWindowData, currentUserData }: MessageBoxProp) => {
       console.error("Failed to sent message, ", error);
     } finally {
       setSentMessageLoading(false);
+    }
+  };
+
+  const viewUserProfile = (userId: string) => {
+    if (userId === currentUserData._id) {
+      navigate("/profile");
+    } else {
+      dispatch(viewProfile(data));
+      navigate("/view/profile");
     }
   };
 
@@ -243,11 +258,20 @@ const MessageBox = ({ ChatWindowData, currentUserData }: MessageBoxProp) => {
             </div>
           </div>
           <div className="chat-area" ref={scrollRef} onScroll={handleScroll}>
-            {isFetchingMore && (
-              <div className="message-loading">
-                <Spinner />
+            {/* No Conversation to fetch */}
+            {!isThereMoreMessages && (
+              <div className="no-message-left">
+                <span>No older messages</span>
               </div>
             )}
+
+            {/* Fetching loading flag */}
+            {isFetchingMore && isThereMoreMessages && (
+              <div className="message-loading">
+                Loading.... <MessageSpinner />
+              </div>
+            )}
+
             {isMessagesNotReady ? (
               <Spinner />
             ) : (
@@ -278,13 +302,21 @@ const MessageBox = ({ ChatWindowData, currentUserData }: MessageBoxProp) => {
                         onClick={() =>
                           dispatch(
                             toggleViewMessageImage(
-                              getImageUrl(msg.attachments!, msg.sender)
+                              getMessageImageUrl(
+                                msg.attachments!,
+                                msg.sender,
+                                conversation._id
+                              )
                             )
                           )
                         }
                       >
                         <img
-                          src={getImageUrl(msg.attachments, msg.sender)}
+                          src={getMessageImageUrl(
+                            msg.attachments!,
+                            msg.sender,
+                            conversation._id
+                          )}
                           alt=""
                         />
                       </div>
@@ -325,6 +357,7 @@ const MessageBox = ({ ChatWindowData, currentUserData }: MessageBoxProp) => {
               name="content"
               value={messageInput}
               onChange={(e) => setMessageInput(e.target.value)}
+              autoComplete="off"
             />
             <button className="sent-button" type="submit">
               ➤
