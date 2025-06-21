@@ -13,7 +13,7 @@ interface ReqAuth extends Request {
   userId?: string;
 }
 
-export const openOrUpdateConvo = async (
+export const findOrCreateConversation = async (
   req: ReqAuth,
   res: Response
 ): Promise<any> => {
@@ -64,18 +64,7 @@ export const openOrUpdateConvo = async (
         );
       }
 
-      const isUserValid = conversation.validFor.includes(
-        new mongoose.Types.ObjectId(userId)
-      );
-
-      if (!isUserValid) {
-        conversation.validFor = await ConvoService.updateForValidUser(
-          contactId,
-          validUser
-        );
-      }
-
-      // set unread to read
+      // set unread counts to 0 and unread messages to read
       await Conversation.updateOne(
         { _id: conversation._id, "unreadCounts.user": userId },
         { "unreadCounts.$.count": 0 }

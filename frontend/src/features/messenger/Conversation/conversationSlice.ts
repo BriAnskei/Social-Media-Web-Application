@@ -1,6 +1,11 @@
 import { NormalizeState } from "../../../types/NormalizeType";
-import { ConversationType } from "../../../types/MessengerTypes";
-import { createAsyncThunk, createSlice, current } from "@reduxjs/toolkit";
+import { ConversationType, Message } from "../../../types/MessengerTypes";
+import {
+  createAsyncThunk,
+  createSlice,
+  current,
+  PayloadAction,
+} from "@reduxjs/toolkit";
 
 import { MessageApi } from "../../../utils/api";
 import { RootState } from "../../../store/store";
@@ -17,6 +22,12 @@ const initialState: ConversationState = {
   loading: false,
   error: null,
 };
+
+export interface latestMessagePayload {
+  conversationId: string;
+  messageData: Message;
+  updatedAt: string;
+}
 
 export const deleteConversation = createAsyncThunk(
   "conversation/drop",
@@ -79,6 +90,8 @@ export const openConversation = createAsyncThunk(
       const payload = { ...data, token };
       const res = await MessageApi.conversation.findOrUpdate(payload);
 
+      console.log(res.conversations);
+
       return res;
     } catch (error) {
       rejectWithValue("Failed to open conversation: " + error);
@@ -90,7 +103,7 @@ const conversationSlice = createSlice({
   name: "conversation",
   initialState,
   reducers: {
-    setLatestMessage: (state, action) => {
+    setLatestMessage: (state, action: PayloadAction<latestMessagePayload>) => {
       const { conversationId, messageData, updatedAt } = action.payload;
 
       state.byId[conversationId].lastMessage = messageData;

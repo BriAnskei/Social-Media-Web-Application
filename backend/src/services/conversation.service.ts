@@ -1,7 +1,24 @@
 import mongoose from "mongoose";
 import { Conversation, IConversation } from "../models/conversationModel";
+import { messageService } from "./message.service";
 
 export const ConvoService = {
+  deleteConvoByContactId: async (contactId: string, userId: string) => {
+    try {
+      await Conversation.deleteOne({ contactId });
+    } catch (error) {
+      console.log("Failed to deleteConvoByContactId, ", error);
+    }
+  },
+
+  getConvoByContactId: async (contactId: string) => {
+    try {
+      return await Conversation.findOne({ contactId });
+    } catch (error) {
+      console.log("Failed to getConvoByContactId", error);
+    }
+  },
+
   increamentUnread: async (
     conversationId: string,
     recipentId: string,

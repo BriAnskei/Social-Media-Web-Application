@@ -1,22 +1,26 @@
 import { Server } from "socket.io"; // Socket.io server class, which manages WebSocket connections.
 import { Server as HttpServer } from "http"; // http server module from node.js
-import { verifyToken } from "../middleware/auth";
+import { verifyToken } from "../../middleware/auth";
 
-import { NotifData, saveCommentNotif } from "../controllers/notifController";
-import { getUserById, getUsersFolowers } from "../controllers/userController";
+import { NotifData, saveCommentNotif } from "../../controllers/notifController";
+import {
+  getUserById,
+  getUsersFolowers,
+} from "../../controllers/userController";
 import mongoose from "mongoose";
-import notificationModel from "../models/notificationModel";
-import { getAllCommenter } from "../controllers/postController";
+import notificationModel from "../../models/notificationModel";
+import { getAllCommenter } from "../../controllers/postController";
 
 import {
   CommentEventPayload,
   LikeEventPayload,
   PostUpdateEvent,
   PostUploadNotifEvent,
-} from "./EventsTypes/PostEvents";
-import { FollowEvent } from "./EventsTypes/UserEvents";
-import { notifService } from "../services/notification.service";
-import { appEvents } from "./events";
+} from "../EventsTypes/PostEvents";
+import { FollowEvent } from "../EventsTypes/UserEvents";
+import { notifService } from "../../services/notification.service";
+import { appEvents } from "../events";
+import { MessageHanlder } from "./messageHanlder";
 
 interface ConnectedUser {
   userId: string;
@@ -99,6 +103,7 @@ export class SocketServer {
     }
   }
 
+  // this function run independently for each connection attemp in the client
   private async setUpMiddleware() {
     this.io.use(async (socket, next) => {
       try {
@@ -140,6 +145,9 @@ export class SocketServer {
     // emplmenting events of tha users that are in the connection room
     this.io.on("connection", (socket) => {
       this.handleConnection(socket); // register the user as connected(online) first
+
+      const messageEvents = new MessageHanlder(this.io);
+      messageEvents.registerEvents(socket);
 
       socket.on("disconnect", () => this.handleDisconnection(socket));
 

@@ -5,7 +5,7 @@ export interface Message {
   sender: string;
   recipient: string;
   content: string;
-  attachments?: string; // for images(for now)
+  attachments?: string | File | null;
   read?: boolean;
   readAt?: string | null;
   conversationId: string;

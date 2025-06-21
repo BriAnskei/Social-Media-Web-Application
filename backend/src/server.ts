@@ -7,7 +7,7 @@ import postRouter from "./routes/postRoutes";
 import authRoutes from "./routes/authRoutes";
 import notifRouter from "./routes/notifRoutes";
 import { createServer } from "http";
-import { SocketServer } from "./socket/socketServer";
+import { SocketServer } from "./socket/handlers/socketServer";
 import messageRouter from "./routes/messageRoutes";
 
 // app config

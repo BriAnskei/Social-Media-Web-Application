@@ -9,5 +9,5 @@ export const getMessageImageUrl = (
   userId: string,
   conversationId: string
 ): string => {
-  return `http://localhost:4000/message/images/${conversation?._id}/${userId}/${fileName}`;
+  return `http://localhost:4000/message/images/${conversationId}/${userId}/${fileName}`;
 };

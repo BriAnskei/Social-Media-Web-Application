@@ -12,6 +12,16 @@ export const addMessage = async (req: ReqAuth, res: Response): Promise<any> => {
     const { conversationId } = req.params;
     const { recipient, content, createdAt } = req.body;
 
+    console.log(
+      "Recived data: ",
+      req.file?.filename,
+      userId,
+      conversationId,
+      recipient,
+      content,
+      createdAt
+    );
+
     const message = await MessageModel.create({
       conversationId,
       sender: userId,
@@ -20,6 +30,8 @@ export const addMessage = async (req: ReqAuth, res: Response): Promise<any> => {
       createdAt: new Date(createdAt),
       attachments: req.file?.filename,
     });
+
+    console.log("New mesage ", message);
 
     await ConvoService.increamentUnread(
       conversationId,
@@ -63,8 +75,6 @@ export const getMessages = async (
     }
 
     const hasMore = messages.length > limit;
-
-    console.log("FETCHED: ", hasMore, messages, messages.length, limit);
 
     if (hasMore) messages.pop();
 

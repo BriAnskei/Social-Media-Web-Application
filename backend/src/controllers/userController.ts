@@ -8,6 +8,11 @@ import fs from "fs";
 
 import { generateNameSuffix, getImages } from "../middleware/upload";
 import { contactService } from "../services/contact.service";
+import { ConvoService } from "../services/conversation.service";
+import {
+  ChatRelationPayload,
+  UserChatRelationService,
+} from "../services/UserChatRelation.service";
 
 const createToken = (userId: string) => {
   if (!process.env.ACCESS_SECRET || !process.env.REFRESH_SECRET) {
@@ -288,13 +293,22 @@ export const followUser = async (req: Request, res: Response): Promise<any> => {
       userToBeFollowed.followers.includes(followerId) &&
       userWhoFollowed.following.includes(userId);
 
+    const servicePayload: ChatRelationPayload = {
+      payload: {
+        userId: followerId as string,
+        otherUserId: userId as string,
+      },
+      isUnfollowing: isFollowing,
+    };
+
+    await UserChatRelationService.updateChatRelation(servicePayload);
+
     let tobeFollowedData, whoFollowedData;
     let message;
 
     const returnUpdate = { new: true }; // nothing special, just return the updated data
 
     if (isFollowing) {
-      await contactService.updateOrDropContact(followerId, userId);
       tobeFollowedData = await UserModel.findByIdAndUpdate(
         userId,
         {
@@ -313,7 +327,6 @@ export const followUser = async (req: Request, res: Response): Promise<any> => {
 
       message = "User successfully unfollowed";
     } else {
-      await contactService.createOrUpdateContact(followerId, userId);
       tobeFollowedData = await UserModel.findByIdAndUpdate(
         userId,
         {

@@ -22,10 +22,6 @@ const ConversationList = ({ currentUser }: ConversationListPorp) => {
     (state: RootState) => state.conversation
   );
 
-  useEffect(() => {
-    console.log("CONVERSATIONLIST UPDATED: ", byId);
-  }, [byId]);
-
   const closeDropDown = () => {
     // Find all open dropdown menus and remove their 'show' class
     const dropDown = document.querySelector(".dropdown-menu.show");
@@ -135,7 +131,8 @@ const ConversationList = ({ currentUser }: ConversationListPorp) => {
                     </div>
                     <div className="chat-content-count">
                       <div className="chat-content">
-                        {!lastMessage.content && lastMessage.attachments
+                        {!lastMessage.content &&
+                        (lastMessage.attachments as string)
                           ? "send a picc"
                           : lastMessage.content}
                       </div>

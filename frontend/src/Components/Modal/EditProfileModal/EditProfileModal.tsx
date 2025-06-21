@@ -68,6 +68,8 @@ const EditProfileModal: React.FC<EditProp> = ({ showModal, onClose, data }) => {
     }
   };
 
+  let isNewProfileSelected = Boolean(profileUrl);
+
   return (
     <div
       className={`modal fade ${showModal ? "show d-block" : ""} logout-modal`}
@@ -79,7 +81,7 @@ const EditProfileModal: React.FC<EditProp> = ({ showModal, onClose, data }) => {
             <div
               className="upload-profile image-style"
               style={{
-                backgroundImage: profileUrl
+                backgroundImage: isNewProfileSelected
                   ? `url(${profileUrl})`
                   : `url(http://localhost:4000/uploads/profile/${data._id}/${data.profilePicture})`,
               }}

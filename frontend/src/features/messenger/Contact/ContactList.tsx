@@ -3,6 +3,7 @@ import "./ContactList.css";
 import { RootState } from "../../../store/store";
 import { userProfile } from "../../../utils/ImageUrlHelper";
 import Spinner from "../../../Components/Spinner/Spinner";
+import { useEffect } from "react";
 
 interface ContactListProp {
   openConversation: (contactId: string, participantId: string) => void;

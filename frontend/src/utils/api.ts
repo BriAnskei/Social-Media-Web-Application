@@ -575,10 +575,16 @@ export const MessageApi = {
         const formData = new FormData();
         const { sender, recipient, content, conversationId, createdAt } = data;
 
+        console.log("Data to send: ", data);
+
         formData.append("sender", sender);
         formData.append("recipient", recipient);
         formData.append("content", content);
         formData.append("createdAt", createdAt.toString());
+
+        if (data.attachments) {
+          formData.append("image", data.attachments as File);
+        }
 
         const res = await api.post(
           `api/messages/message/sent/${conversationId}`,

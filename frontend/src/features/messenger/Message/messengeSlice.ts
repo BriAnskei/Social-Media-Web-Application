@@ -55,13 +55,15 @@ export const sentMessage = createAsyncThunk(
       const state = getState() as RootState;
       const token = state.auth.accessToken;
 
+      console.log("message data in slice: ", data);
+
       if (!token) {
         return rejectWithValue("Failed to sent message: No token");
       }
 
       const res = await MessageApi.message.sentMessage(token, data);
 
-      return res.messages;
+      return res.messages as Message;
     } catch (error) {
       rejectWithValue("Failed to sent message, " + error);
     }

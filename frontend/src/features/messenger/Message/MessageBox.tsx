@@ -19,9 +19,12 @@ import {
 } from "../Conversation/conversationSlice";
 import { fetchMessagesByConvoId, sentMessage } from "./messengeSlice";
 import { ConversationType, Message } from "../../../types/MessengerTypes";
-import { useConversationByContactId } from "../Conversation/useConvo";
 import { getMessageImageUrl, userProfile } from "../../../utils/ImageUrlHelper";
 import { useNavigate } from "react-router";
+import { useUserById } from "../../../hooks/useUsers";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faImage } from "@fortawesome/free-solid-svg-icons";
+import { useChatSocket } from "../../../hooks/socket/useChatSocket";
 
 interface MessageBoxProp {
   ChatWindowData: ChatWindowType;
@@ -31,6 +34,11 @@ interface MessageBoxProp {
 const MessageBox = ({ ChatWindowData, currentUserData }: MessageBoxProp) => {
   const navigate = useNavigate();
   const dispatch = useDispatch<AppDispatch>();
+
+  const { socket, toggleViewConversation } = useChatSocket();
+
+  const userParticipant = useUserById(ChatWindowData.participantId);
+
   const { contactId, participantId, minimized } = ChatWindowData;
 
   const [conversation, setConversation] = useState<ConversationType | null>(
@@ -42,6 +50,8 @@ const MessageBox = ({ ChatWindowData, currentUserData }: MessageBoxProp) => {
   const [isThereMoreMessages, setIsThereMoreMessages] = useState(true);
 
   const [messageInput, setMessageInput] = useState("");
+  const [imageUrl, setImageUrl] = useState<string>("");
+  const [imageFile, setImageFile] = useState<File | null>(null);
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [sentMessageLoading, setSentMessageLoading] = useState(false);
@@ -50,10 +60,11 @@ const MessageBox = ({ ChatWindowData, currentUserData }: MessageBoxProp) => {
   const messagesRef = useRef<HTMLDivElement | null>(null);
   const scrollRef = useRef<any>(null);
   const lastScrollRef = useRef<number>(0);
+  const lastMessageIndexRef = useRef<number>(0);
 
   const closeChat = () => {
     if (ChatWindowData.minimized) return;
-
+    toggleViewConversation(false, conversation?._id!);
     dispatch(closeWindow({ contactId }));
   };
 
@@ -67,6 +78,7 @@ const MessageBox = ({ ChatWindowData, currentUserData }: MessageBoxProp) => {
       const res = await dispatch(openConversation(data)).unwrap();
 
       const conversationData = res?.conversations as ConversationType;
+      toggleViewConversation(!ChatWindowData.minimized, conversationData._id);
 
       setConversation(conversationData || null);
 
@@ -93,7 +105,7 @@ const MessageBox = ({ ChatWindowData, currentUserData }: MessageBoxProp) => {
         fetchMessagesByConvoId({ conversationId, cursor })
       ).unwrap();
 
-      const messagesData = responseData?.messages!;
+      const messagesData = responseData?.messages! as Message[];
       const isThereMore = responseData?.hasMore;
 
       if (!messagesData || isThereMore === undefined) {
@@ -122,7 +134,7 @@ const MessageBox = ({ ChatWindowData, currentUserData }: MessageBoxProp) => {
 
   useEffect(() => {
     function setViewportToBottom() {
-      if (!isFetchingMore && messages.length === 7) {
+      if (!isFetchingMore && messages.length <= 7) {
         messagesRef.current?.scrollIntoView({
           behavior: "instant",
           block: "end",
@@ -131,7 +143,7 @@ const MessageBox = ({ ChatWindowData, currentUserData }: MessageBoxProp) => {
     }
 
     function smoothScroll() {
-      if (!isFetchingMore && messages.length > 7) {
+      if (sentMessageLoading || messages.length > 7) {
         messagesRef.current?.scrollIntoView({
           behavior: "smooth",
           block: "center",
@@ -140,6 +152,10 @@ const MessageBox = ({ ChatWindowData, currentUserData }: MessageBoxProp) => {
     }
     smoothScroll();
     setViewportToBottom();
+  }, [messages, sentMessageLoading]);
+
+  useEffect(() => {
+    console.log("Messages update", messages);
   }, [messages]);
 
   const loadMoreMessages = useCallback(async () => {
@@ -154,7 +170,7 @@ const MessageBox = ({ ChatWindowData, currentUserData }: MessageBoxProp) => {
 
     await fetchMessages(conversation?._id!, lastMessageDateAsCursor);
 
-    // use setTimeout to ensure scroll adjustment runs after rect has updated the DOM with the new messages
+    // use setTimeout to ensure scroll adjustment runs after component rendered and  has updated the DOM with the new messages
     setTimeout(() => {
       const newScrollHeight = scrollElement.scrollHeight;
       const scrollDiff = newScrollHeight - lastScrollRef.current;
@@ -173,26 +189,40 @@ const MessageBox = ({ ChatWindowData, currentUserData }: MessageBoxProp) => {
     }
   };
 
-  const handleSubmitMessage = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleUpload = (e: any) => {
+    const file = e.target?.files;
+
+    if (file && file.length > 0) {
+      const imageUrl = URL.createObjectURL(file[0]);
+      setImageUrl(imageUrl);
+      setImageFile(file[0]);
+    }
+  };
+
+  const handleSubmitMessage = async (e: React.FormEvent<any>) => {
     try {
       e.preventDefault();
-      if (sentMessageLoading) return;
+      if (sentMessageLoading || (!messageInput && !imageFile)) return;
       setSentMessageLoading(true);
 
-      const createdAt = new Date();
+      const newDate = new Date();
 
       const messageDataPayload: Message = {
         sender: currentUserData._id,
         recipient: conversation?.participant._id!,
         content: messageInput,
+        attachments: imageFile ? "loading" : null,
         conversationId: conversation?._id!,
-        createdAt: createdAt.toISOString(),
+        createdAt: newDate.toISOString(),
       };
 
+      console.log("Message data to send in the slice");
+
       setMessageInput("");
+      setImageUrl("");
 
+      lastMessageIndexRef.current = messages.length - 1;
       setMessages((prev) => [...prev, messageDataPayload]);
-
       dispatch(
         setLatestMessage({
           conversationId: conversation?._id!,
@@ -200,7 +230,10 @@ const MessageBox = ({ ChatWindowData, currentUserData }: MessageBoxProp) => {
           updatedAt: messageDataPayload.createdAt,
         })
       );
-      await dispatch(sentMessage(messageDataPayload));
+
+      const newMessageData = await dispatch(
+        sentMessage({ ...messageDataPayload, attachments: imageFile })
+      ).unwrap();
     } catch (error) {
       console.error("Failed to sent message, ", error);
     } finally {
@@ -208,17 +241,15 @@ const MessageBox = ({ ChatWindowData, currentUserData }: MessageBoxProp) => {
     }
   };
 
-  const viewUserProfile = (userId: string) => {
-    if (userId === currentUserData._id) {
-      navigate("/profile");
-    } else {
-      dispatch(viewProfile(data));
-      navigate("/view/profile");
-    }
+  const viewUserProfile = () => {
+    dispatch(viewProfile(userParticipant));
+    navigate("/view/profile");
   };
 
   const isConversationNotReady = isConversationLoading || !conversation;
   const isMessagesNotReady = isMessageLoading || !messages;
+
+  let isImageAttach = Boolean(imageUrl);
 
   return (
     <div
@@ -242,7 +273,7 @@ const MessageBox = ({ ChatWindowData, currentUserData }: MessageBoxProp) => {
               alt=""
               className="chatwindow-profile"
             />
-            <div className="chatwindow-nm">
+            <div className="chatwindow-nm" onClick={viewUserProfile}>
               {conversation.participant.fullName}
             </div>
             <div className="chatwindow-icons">
@@ -294,6 +325,7 @@ const MessageBox = ({ ChatWindowData, currentUserData }: MessageBoxProp) => {
 
                 return (
                   <div key={index} className="message-containter">
+                    {/* Message image attachment */}
                     {msg.attachments && (
                       <div
                         className={`chat-window-img ${
@@ -303,7 +335,7 @@ const MessageBox = ({ ChatWindowData, currentUserData }: MessageBoxProp) => {
                           dispatch(
                             toggleViewMessageImage(
                               getMessageImageUrl(
-                                msg.attachments!,
+                                msg.attachments! as string,
                                 msg.sender,
                                 conversation._id
                               )
@@ -313,7 +345,7 @@ const MessageBox = ({ ChatWindowData, currentUserData }: MessageBoxProp) => {
                       >
                         <img
                           src={getMessageImageUrl(
-                            msg.attachments!,
+                            msg.attachments! as string,
                             msg.sender,
                             conversation._id
                           )}
@@ -321,21 +353,28 @@ const MessageBox = ({ ChatWindowData, currentUserData }: MessageBoxProp) => {
                         />
                       </div>
                     )}
+                    {/* message content */}
+                    {msg.content && (
+                      <div
+                        key={msg._id}
+                        className={`message ${
+                          isMessageOwner ? "sent" : "recieved"
+                        }`}
+                      >
+                        {msg.content}
+                      </div>
+                    )}
+
                     <div
-                      key={msg._id}
-                      className={`message ${
-                        isMessageOwner ? "sent" : "recieved"
+                      className={`time ${
+                        isMessageOwner ? "img-sent" : "img-recieved"
                       }`}
                     >
-                      {msg.content}
-                      <div className="time">
-                        {date.toLocaleTimeString([], {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
-                      </div>
+                      {date.toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
                     </div>
-
                     {isMessageDiffDate && (
                       <div className="message-date">
                         {monthNames[date.getMonth()]}
@@ -348,7 +387,33 @@ const MessageBox = ({ ChatWindowData, currentUserData }: MessageBoxProp) => {
             )}
             <div ref={messagesRef}></div>
           </div>
+
+          {isImageAttach && (
+            <div className="message-images-container">
+              <div className="message-image">
+                <img src={imageUrl} />
+              </div>
+              <span onClick={() => setImageUrl("")}>x</span>
+            </div>
+          )}
+
           <form className="input-area" onSubmit={(e) => handleSubmitMessage(e)}>
+            <div>
+              <label htmlFor="file-upload">
+                <FontAwesomeIcon
+                  className="message-image-input"
+                  icon={faImage}
+                  type="file"
+                />
+              </label>
+              <input
+                id="file-upload"
+                type="file"
+                onChange={handleUpload}
+                style={{ display: "none" }}
+              />
+            </div>
+
             <input
               ref={inputRef}
               type="text"

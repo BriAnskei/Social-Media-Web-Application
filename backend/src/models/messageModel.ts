@@ -33,8 +33,10 @@ const MessageSchema = new Schema<IMessage>({
   },
   content: {
     type: String,
-    required: true,
     trim: true,
+    required: function () {
+      return !!this.content;
+    },
   },
   createdAt: {
     type: Date,

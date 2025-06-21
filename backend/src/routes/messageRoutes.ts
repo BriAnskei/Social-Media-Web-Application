@@ -3,7 +3,7 @@ import { getAllContacts } from "../controllers/contactController";
 import authMiddleware from "../middleware/auth";
 import {
   deleteConversation,
-  openOrUpdateConvo,
+  findOrCreateConversation,
   getConversations,
 } from "../controllers/convoController";
 import upload from "../middleware/upload";
@@ -18,7 +18,7 @@ messageRouter.post("/contact/get", authMiddleware, getAllContacts);
 messageRouter.post(
   "/conversation/find/:contactId",
   authMiddleware,
-  openOrUpdateConvo
+  findOrCreateConversation
 );
 messageRouter.post("/conversation/get", authMiddleware, getConversations);
 messageRouter.post("/conversation/drop", authMiddleware, deleteConversation);
