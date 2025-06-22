@@ -19,7 +19,7 @@ import {
 } from "../EventsTypes/PostEvents";
 import { FollowEvent } from "../EventsTypes/UserEvents";
 import { notifService } from "../../services/notification.service";
-import { appEvents } from "../events";
+import { appEvents } from "../../events/appEvents";
 import { MessageHanlder } from "./messageHanlder";
 
 interface ConnectedUser {

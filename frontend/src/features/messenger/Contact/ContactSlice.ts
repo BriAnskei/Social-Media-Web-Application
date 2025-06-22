@@ -40,7 +40,7 @@ const contactSlice = createSlice({
   reducers: {
     createOrUpdateContact: (
       state,
-      action: PayloadAction<{ contact: ContactType; isContactExist: boolean }>
+      action: PayloadAction<{ contact: ContactType }>
     ) => {
       const { contact } = action.payload;
       const { allIds, byId } = normalizeResponse(contact);
@@ -62,7 +62,7 @@ const contactSlice = createSlice({
       // // Always merge in the fresh data
       // Object.assign(state.byId, byId);
     },
-    updateOrDeleteContact: (state, action) => {
+    deleteContact: (state, action) => {
       const { contactId } = action.payload;
 
       state.allIds = state.allIds.filter((id) => id !== contactId);
@@ -88,6 +88,5 @@ const contactSlice = createSlice({
   },
 });
 
-export const { createOrUpdateContact, updateOrDeleteContact } =
-  contactSlice.actions;
+export const { createOrUpdateContact, deleteContact } = contactSlice.actions;
 export default contactSlice.reducer;

@@ -1,6 +1,6 @@
 import { Contact, IContact } from "../models/contactModel";
 import mongoose from "mongoose";
-import { appEvents } from "../socket/events";
+import { appEvents } from "../events/appEvents";
 import { ConvoService } from "./conversation.service";
 import { UserChatRelationService } from "./UserChatRelation.service";
 
@@ -28,7 +28,7 @@ export const contactService = {
         }
       }
 
-      await UserChatRelationService.checkConversationForValidUsers(
+      const convoId = await UserChatRelationService.updateValidConvoUsers(
         contact._id as string,
         contact.validFor
       );
@@ -39,14 +39,13 @@ export const contactService = {
         contact
       );
 
-      const emitPayload = {
+      let emitPayload = {
         contact: formatedContact,
         userId,
+        convoId,
       };
 
       appEvents.emit("createOrUpdate-contact", emitPayload);
-
-      return { validUsers: contact.validFor, contactId: contact._id as string };
     } catch (error) {
       console.log("Failed to create/update contact, " + error);
     }
@@ -70,26 +69,16 @@ export const contactService = {
 
       // delete contact if both user does not exist in the validFor
       const contactStillValid = contact.validFor.length >= 1;
+      let convoId: any;
 
       if (contactStillValid) {
         await contact.save();
-
-        await UserChatRelationService.dropMessagesOnValidUsers(
-          userId,
-          contact._id as string,
-          contact.validFor
-        );
       } else {
         await Contact.deleteOne({ _id: contact._id });
-
-        await UserChatRelationService.dropConversation(
-          contact._id as string,
-          userId
-        );
       }
 
-      const emitPayload = {
-        contactId: contact._id,
+      let emitPayload = {
+        contactId: contact._id as string,
         userId,
       };
 

@@ -93,9 +93,13 @@ export const ConvoService = {
       const { deletedFor } = conversation;
       const userObjectId = new mongoose.Types.ObjectId(userId);
 
-      conversation.deletedFor = deletedFor.filter((id) => id !== userObjectId);
+      conversation.deletedFor = deletedFor.filter(
+        (id) => id.toString() !== userObjectId.toString()
+      );
 
       await conversation.save();
+
+      console.log("COnversation update:d", deletedFor);
 
       return conversation.deletedFor;
     } catch (error) {
@@ -119,6 +123,8 @@ export const ConvoService = {
       }
 
       conversation.validFor = validUsers;
+
+      console.log("Upadting valid users for convo", conversation);
 
       await conversation.save();
 

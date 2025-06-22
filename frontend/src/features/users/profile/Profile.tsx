@@ -8,7 +8,7 @@ import {
   openEditProfileModal,
   toggleViewFollow,
 } from "../../../Components/Modal/globalSlice";
-import { followToggled, updateFollow } from "../userSlice";
+import { followToggled } from "../userSlice";
 import { useSocket } from "../../../hooks/socket/useSocket";
 
 interface ProfileProp {
@@ -72,9 +72,7 @@ const Profile: React.FC<ProfileProp> = ({ data }) => {
   };
 
   const viewFollowers = () => {
-    dispatch(
-      toggleViewFollow({ followers: data.followers, following: data.following })
-    );
+    dispatch(toggleViewFollow());
   };
 
   const imgUrl =

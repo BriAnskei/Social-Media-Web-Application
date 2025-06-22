@@ -262,3 +262,30 @@
   color: rgb(255, 255, 255);
   cursor: pointer;
 }
+
+.unreplyable-container {
+  height: 95px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 9px;
+}
+
+.unreplyable-message {
+  text-align: center;
+  font-size: 12px;
+  color: red;
+  width: 80%;
+}
+
+.unreplyable_buttons {
+  display: flex;
+  gap: 80px;
+}
+
+.unreplyable_buttons button {
+  padding: 5px 18px;
+  border-radius: 10%;
+  border: none;
+}

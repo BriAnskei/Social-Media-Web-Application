@@ -12,3 +12,12 @@ export const selectConversationByContactId = createSelector(
     return matchId ? byId[matchId] : undefined;
   }
 );
+
+export const selectConsationsByContactIds = createSelector(
+  [byId, (_: RootState, convoIds: string[]): string[] => convoIds],
+  (byId, convoIds) =>
+    convoIds.reduce((acc, id) => {
+      acc[id] = byId[id];
+      return acc;
+    }, {} as { [key: string]: ConversationType })
+);

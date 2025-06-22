@@ -22,13 +22,27 @@ import { NotificationType } from "../../types/NotificationTypes";
 import { updateFollow } from "../../features/users/userSlice";
 import {
   createOrUpdateContact,
-  updateOrDeleteContact,
+  deleteContact,
 } from "../../features/messenger/Contact/ContactSlice";
+import { setConvoToValid } from "../../features/messenger/Conversation/conversationSlice";
+import { ContactType } from "../../types/contactType";
 
 export interface DataOutput {
   // for post-like notification
   isExist: boolean;
   data: NotificationType;
+}
+
+interface DropChatPayload {
+  contactId: string;
+  userId: string;
+  convoId?: string;
+}
+
+interface RefreshContactPayload {
+  contact: ContactType;
+  userId: string;
+  convoId?: string;
 }
 
 // post update
@@ -143,15 +157,16 @@ export const useSocket = () => {
 
   // Contact, conversation events
   const handleCreateOrUpdateContact = useCallback(
-    (data: any) => {
+    (data: RefreshContactPayload) => {
       dispatch(createOrUpdateContact(data));
+      dispatch(setConvoToValid(data.convoId));
     },
     [dispatch]
   );
 
   const handleUpdateOrDropContact = useCallback(
-    (data: any) => {
-      dispatch(updateOrDeleteContact(data));
+    (data: DropChatPayload) => {
+      dispatch(deleteContact(data));
     },
     [dispatch]
   );

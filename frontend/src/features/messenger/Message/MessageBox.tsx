@@ -231,7 +231,7 @@ const MessageBox = ({ ChatWindowData, currentUserData }: MessageBoxProp) => {
         })
       );
 
-      const newMessageData = await dispatch(
+      await dispatch(
         sentMessage({ ...messageDataPayload, attachments: imageFile })
       ).unwrap();
     } catch (error) {
@@ -397,37 +397,53 @@ const MessageBox = ({ ChatWindowData, currentUserData }: MessageBoxProp) => {
             </div>
           )}
 
-          <form className="input-area" onSubmit={(e) => handleSubmitMessage(e)}>
-            <div>
-              <label htmlFor="file-upload">
-                <FontAwesomeIcon
-                  className="message-image-input"
-                  icon={faImage}
-                  type="file"
-                />
-              </label>
-              <input
-                id="file-upload"
-                type="file"
-                onChange={handleUpload}
-                style={{ display: "none" }}
-              />
+          {!conversation.isUserValidToRply ? (
+            <div className="unreplyable-container">
+              <div className="unreplyable-message">
+                Unable to send message. Please follow this user first or delete
+                the conversation otherwise.
+              </div>
+              <div className="unreplyable_buttons">
+                <button>follow</button>
+                <button>delete</button>
+              </div>
             </div>
+          ) : (
+            <form
+              className="input-area"
+              onSubmit={(e) => handleSubmitMessage(e)}
+            >
+              <div>
+                <label htmlFor="file-upload">
+                  <FontAwesomeIcon
+                    className="message-image-input"
+                    icon={faImage}
+                    type="file"
+                  />
+                </label>
+                <input
+                  id="file-upload"
+                  type="file"
+                  onChange={handleUpload}
+                  style={{ display: "none" }}
+                />
+              </div>
 
-            <input
-              ref={inputRef}
-              type="text"
-              placeholder="Message..."
-              className="message-input"
-              name="content"
-              value={messageInput}
-              onChange={(e) => setMessageInput(e.target.value)}
-              autoComplete="off"
-            />
-            <button className="sent-button" type="submit">
-              ➤
-            </button>
-          </form>
+              <input
+                ref={inputRef}
+                type="text"
+                placeholder="Message..."
+                className="message-input"
+                name="content"
+                value={messageInput}
+                onChange={(e) => setMessageInput(e.target.value)}
+                autoComplete="off"
+              />
+              <button className="sent-button" type="submit">
+                ➤
+              </button>
+            </form>
+          )}
         </>
       )}
     </div>

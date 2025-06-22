@@ -484,3 +484,50 @@ Calling one controller from another creates tight coupling, making it harder to 
 Don't call conversation.controller from message.controller.
 Don't put business logic in controllers.
 Do create a conversation.service file and call that function from both controllers as needed.
+
+# setTimeout(..., 0) for Scroll Adjustment
+
+## Purpose
+
+The `setTimeout(..., 0)` is used to defer execution of scroll adjustment until after the DOM has updated with newly rendered messages.
+
+## Why It's Needed
+
+### The Problem
+
+- React and the browser don't immediately apply DOM changes when you call `setState` or render new components
+- If you try to read or adjust scroll position immediately after rendering logic, the scroll height will still be the old value
+- This doesn't account for new messages just added to the DOM
+
+### The Solution
+
+By wrapping logic in `setTimeout(..., 0)`, you tell the browser:
+
+> "Wait until the current JavaScript call stack is finished and the DOM has painted, then run this."
+
+This gives time for:
+
+- React to complete rendering
+- The updated DOM (including new messages) to reflect an accurate `scrollHeight`
+
+## Implementation Example
+
+```javascript
+setTimeout(() => {
+  const newScrollHeight = scrollElement.scrollHeight;
+  const scrollDiff = newScrollHeight - lastScrollRef.current;
+  scrollElement.scrollTop = scrollDiff;
+  setIsFetchingMore(false);
+}, 0);
+```
+
+## What Happens
+
+1. `newScrollHeight` now includes the newly added messages
+2. Compute how much taller the scroll container got (`scrollDiff`)
+3. Adjust scroll position to preserve user's position (prevents jumping)
+4. Set `setIsFetchingMore(false)` to mark end of loading phase
+
+## Result
+
+This technique ensures a smooth and accurate scroll experience in infinite scroll/message applications.

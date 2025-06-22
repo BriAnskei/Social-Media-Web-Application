@@ -13,16 +13,6 @@ export interface ChatRelationPayload {
 }
 
 export const UserChatRelationService = {
-  checkConversationForValidUsers: async (
-    contactId: string,
-    validUsers: mongoose.Types.ObjectId[]
-  ) => {
-    const conversation = await Conversation.findOne({ contactId });
-
-    if (conversation) {
-      await ConvoService.updateForValidUser(contactId, validUsers);
-    }
-  },
   dropConversation: async (contactId: string, userId: string) => {
     try {
       const conversation = await ConvoService.getConvoByContactId(contactId);
@@ -35,26 +25,30 @@ export const UserChatRelationService = {
         conversation?._id as string,
         userId
       );
+
+      return conversation?._id as string;
     } catch (error) {
       console.log("Failed to dropConversation", error);
     }
   },
-  dropMessagesOnValidUsers: async (
+  dropCovoMessagesOnValidUsers: async (
     userId: string,
     contactId: string,
     validUsers: mongoose.Types.ObjectId[]
   ) => {
     try {
       const conversation = await ConvoService.getConvoByContactId(contactId);
-      const isPermanent = false;
 
       await ConvoService.updateForValidUser(contactId, validUsers);
 
+      const isPermanent = false;
       await messageService.deleteMessages(
         isPermanent,
         conversation?._id as string,
         userId
       );
+
+      return conversation?._id as string;
     } catch (error) {
       console.log("failed to updateChatValidUsers, ", error);
     }
@@ -68,5 +62,17 @@ export const UserChatRelationService = {
     } else {
       await contactService.createOrUpdateContact(userId, otherUserId);
     }
+  },
+  updateValidConvoUsers: async (
+    contactId: string,
+    validUsers: mongoose.Types.ObjectId[]
+  ) => {
+    const conversation = await Conversation.findOne({ contactId });
+
+    if (conversation) {
+      await ConvoService.updateForValidUser(contactId, validUsers);
+    }
+
+    return conversation?.id as string;
   },
 };

@@ -1,11 +1,6 @@
 import { NormalizeState } from "../../../types/NormalizeType";
 import { ConversationType, Message } from "../../../types/MessengerTypes";
-import {
-  createAsyncThunk,
-  createSlice,
-  current,
-  PayloadAction,
-} from "@reduxjs/toolkit";
+import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
 
 import { MessageApi } from "../../../utils/api";
 import { RootState } from "../../../store/store";
@@ -103,12 +98,27 @@ const conversationSlice = createSlice({
   name: "conversation",
   initialState,
   reducers: {
+    dropConversation: (state, action) => {
+      const convoId = action.payload;
+      if (convoId && state.byId[convoId]) {
+        state.allIds = state.allIds.filter((id) => id !== convoId);
+
+        delete state.byId[convoId];
+      }
+    },
     setLatestMessage: (state, action: PayloadAction<latestMessagePayload>) => {
       const { conversationId, messageData, updatedAt } = action.payload;
 
       state.byId[conversationId].lastMessage = messageData;
       state.byId[conversationId].lastMessageAt = updatedAt;
       state.byId[conversationId].updatedAt = updatedAt;
+    },
+    setConvoToValid: (state, action) => {
+      const convoId = action.payload.convoId;
+
+      if (convoId && state.byId[convoId]) {
+        state.byId[convoId].isUserValidToRply = true;
+      }
     },
   },
   extraReducers: (builder) => {
@@ -152,5 +162,6 @@ const conversationSlice = createSlice({
   },
 });
 
-export const { setLatestMessage } = conversationSlice.actions;
+export const { setLatestMessage, dropConversation, setConvoToValid } =
+  conversationSlice.actions;
 export default conversationSlice.reducer;

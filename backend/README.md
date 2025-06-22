@@ -248,3 +248,40 @@ export const setupSocketIO = (httpServer) => {
 3. Use EventEmitter for internal application communication
 4. Use Socket.io for client-server real-time communication
 5. Organize your code by responsibility with clear folder structure
+
+# 📝 Note on Mongoose timestamps Option
+
+In the MessageSchema, the line:
+
+```typescript
+{
+  timestamps: true;
+}
+```
+
+automatically adds the following fields to every document:
+
+- **createdAt**: Timestamp when the document is first created.
+- **updatedAt**: Timestamp when the document is last updated (initially the same as createdAt, but automatically updated by Mongoose on future updates).
+
+These fields are not explicitly defined in the schema, but Mongoose manages them internally when `timestamps: true` is used.
+
+## ✅ Example Output:
+
+```json
+{
+  "createdAt": "2025-06-14T10:48:38.245Z",
+  "updatedAt": "2025-06-14T10:48:38.245Z"
+}
+```
+
+## 🔧 To customize:
+
+**Only include createdAt:**
+
+```typescript
+{ timestamps: { createdAt: true, updatedAt: false } }
+```
+
+**Disable both:**
+Remove or omit the timestamps option.
