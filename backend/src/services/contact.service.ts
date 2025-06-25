@@ -69,13 +69,17 @@ export const contactService = {
 
       // delete contact if both user does not exist in the validFor
       const contactStillValid = contact.validFor.length >= 1;
-      let convoId: any;
 
       if (contactStillValid) {
         await contact.save();
       } else {
         await Contact.deleteOne({ _id: contact._id });
       }
+
+      await UserChatRelationService.updateValidConvoUsers(
+        contact._id as string,
+        contact.validFor
+      );
 
       let emitPayload = {
         contactId: contact._id as string,

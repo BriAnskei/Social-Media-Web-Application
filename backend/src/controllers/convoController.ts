@@ -57,21 +57,12 @@ export const findOrCreateConversation = async (
         new mongoose.Types.ObjectId(userId)
       );
 
-      console.log("Conversation founmd: ", conversation);
-
       if (isDeleted) {
         conversation.deletedFor = await ConvoService.undeleteConversation(
           contactId,
           userId
         );
       }
-
-      console.log(
-        "Convo exist, removing user in delete for",
-        isDeleted,
-        "convo nod: ",
-        conversation
-      );
 
       // set unread counts to 0 and unread messages to read
       await Conversation.updateOne(

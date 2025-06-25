@@ -575,8 +575,6 @@ export const MessageApi = {
         const formData = new FormData();
         const { sender, recipient, content, conversationId, createdAt } = data;
 
-        console.log("Data to send: ", data);
-
         formData.append("sender", sender);
         formData.append("recipient", recipient);
         formData.append("content", content);

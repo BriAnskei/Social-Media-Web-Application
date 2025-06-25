@@ -1,6 +1,11 @@
 import { NormalizeState } from "../../../types/NormalizeType";
 import { ConversationType, Message } from "../../../types/MessengerTypes";
-import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
+import {
+  createAsyncThunk,
+  createSlice,
+  current,
+  PayloadAction,
+} from "@reduxjs/toolkit";
 
 import { MessageApi } from "../../../utils/api";
 import { RootState } from "../../../store/store";
@@ -114,10 +119,12 @@ const conversationSlice = createSlice({
       state.byId[conversationId].updatedAt = updatedAt;
     },
     setConvoToValid: (state, action) => {
-      const convoId = action.payload.convoId;
+      const convoId = action.payload;
 
       if (convoId && state.byId[convoId]) {
         state.byId[convoId].isUserValidToRply = true;
+
+        console.log("COnvo now", current(state.byId[convoId]));
       }
     },
   },

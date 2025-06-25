@@ -1,4 +1,9 @@
-import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
+import {
+  createAsyncThunk,
+  createSlice,
+  current,
+  PayloadAction,
+} from "@reduxjs/toolkit";
 import { Message, SentMessagePayload } from "../../../types/MessengerTypes";
 import { MessageNormalizeSate } from "../../../types/NormalizeType";
 
@@ -7,8 +12,9 @@ import { MessageApi } from "../../../utils/api";
 
 const initialState: MessageNormalizeSate = {
   byId: {},
-  allIds: [],
-  error: null,
+  hasMore: {},
+  loading: {},
+  error: {},
 };
 
 // might also user user Id as a prop to fetch all messages
@@ -55,8 +61,6 @@ export const sentMessage = createAsyncThunk(
       const state = getState() as RootState;
       const token = state.auth.accessToken;
 
-      console.log("message data in slice: ", data);
-
       if (!token) {
         return rejectWithValue("Failed to sent message: No token");
       }
@@ -73,19 +77,58 @@ export const sentMessage = createAsyncThunk(
 const messengerSlice = createSlice({
   name: "message",
   initialState,
-  reducers: {},
+  reducers: {
+    addMessage: (
+      state,
+      action: PayloadAction<{ conversationId: string; messageData: Message }>
+    ) => {
+      const { conversationId, messageData } = action.payload;
+
+      if (!state.byId[conversationId]) {
+        state.byId[conversationId] = [];
+      }
+      state.byId[conversationId] = [...state.byId[conversationId], messageData];
+    },
+  },
   extraReducers: (builder) => {
     builder
+      .addCase(fetchMessagesByConvoId.pending, (state, action) => {
+        const convoId = action.meta.arg.conversationId;
+
+        state.loading[convoId] = true;
+      })
+      .addCase(fetchMessagesByConvoId.fulfilled, (state, action) => {
+        const convoId = action.meta.arg.conversationId;
+
+        const messages = action.payload?.messages as Message[];
+        const hasMore = action.payload?.hasMore;
+
+        if (!state.byId[convoId]) {
+          state.byId[convoId] = [];
+        }
+
+        state.loading[convoId] = false;
+        state.byId[convoId] = [...messages.reverse(), ...state.byId[convoId]];
+        state.hasMore[convoId] = hasMore as boolean;
+
+        console.log(
+          "State not in slice: ",
+          current(state.loading),
+          current(state.byId),
+          current(state.hasMore)
+        );
+      })
       .addCase(fetchMessagesByConvoId.rejected, (state, action) => {
-        state.error = action.payload as string;
+        const convoId = action.meta.arg.conversationId;
+        state.error[convoId] = action.payload as string;
+        state.loading[convoId] = false;
       })
       .addCase(sentMessage.rejected, (state, action) => {
-        state.error = action.payload as string;
+        const convoId = action.meta.arg.conversationId;
+        state.error[convoId] = action.payload as string;
       });
   },
 });
 
-export const {
-  // reducer functions
-} = messengerSlice.actions;
+export const { addMessage } = messengerSlice.actions;
 export default messengerSlice.reducer;

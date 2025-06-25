@@ -2,8 +2,8 @@ import "./Profile.css";
 import { FetchedUserType, FollowPayload } from "../../../types/user";
 import { useEffect, useState } from "react";
 import { useCurrentUser } from "../../../hooks/useUsers";
-import { useDispatch } from "react-redux";
-import { AppDispatch } from "../../../store/store";
+import { useDispatch, useSelector } from "react-redux";
+import { AppDispatch, RootState } from "../../../store/store";
 import {
   openEditProfileModal,
   toggleViewFollow,

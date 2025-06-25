@@ -21,6 +21,7 @@ import { FollowEvent } from "../EventsTypes/UserEvents";
 import { notifService } from "../../services/notification.service";
 import { appEvents } from "../../events/appEvents";
 import { MessageHanlder } from "./messageHanlder";
+import { IMessage } from "../../models/messageModel";
 
 interface ConnectedUser {
   userId: string;
@@ -71,6 +72,7 @@ const SOCKET_EVENTS = {
 
 export class SocketServer {
   private io: Server;
+  private messagetHandler: MessageHanlder;
   private connectedUSers: Map<string, ConnectedUser> = new Map();
   private serverEventListeberInitialized = false;
 
@@ -89,6 +91,7 @@ export class SocketServer {
       pingTimeout: 60000, // Close connection if client doesn't respond to ping within 60s
       pingInterval: 25000, // Send ping every 25s
     });
+    this.messagetHandler = new MessageHanlder(this.io);
 
     this.initializeServer();
   }
@@ -138,6 +141,13 @@ export class SocketServer {
       this.handleUpdateOrDropContact(data);
     });
 
+    appEvents.on(
+      "message_on_sent",
+      (data: { conversationId: string; messageData: IMessage }) => {
+        this.messagetHandler.sentMessageGlobal(data);
+      }
+    );
+
     this.serverEventListeberInitialized = true;
   }
 
@@ -145,9 +155,7 @@ export class SocketServer {
     // emplmenting events of tha users that are in the connection room
     this.io.on("connection", (socket) => {
       this.handleConnection(socket); // register the user as connected(online) first
-
-      const messageEvents = new MessageHanlder(this.io);
-      messageEvents.registerEvents(socket);
+      this.messagetHandler.registerEvents(socket);
 
       socket.on("disconnect", () => this.handleDisconnection(socket));
 

@@ -1,5 +1,12 @@
-import { MessageModel } from "../models/messageModel";
+import { appEvents } from "../events/appEvents";
+import { IMessage, MessageModel } from "../models/messageModel";
 export const messageService = {
+  emitMessageOnSend: (data: {
+    conversationId: string;
+    messageData: IMessage;
+  }) => {
+    appEvents.emit("message_on_sent", data);
+  },
   deleteMessages: async (
     isPermanent: boolean,
     conversationId: string,

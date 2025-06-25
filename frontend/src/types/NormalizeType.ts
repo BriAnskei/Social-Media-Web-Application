@@ -1,3 +1,5 @@
+import { Message } from "./MessengerTypes";
+
 // Use For normalize state slices
 export interface NormalizeState<T> {
   byId: { [key: string]: T };
@@ -6,13 +8,9 @@ export interface NormalizeState<T> {
   error: string | null;
 }
 
-interface MessageState {
-  loading: boolean;
-}
-
 export interface MessageNormalizeSate {
-  // convoId: MessageSate
-  byId: { [key: string]: MessageState };
-  allIds: string[]; // contactId
-  error: string;
+  byId: { [key: string]: Message[] }; // conversationId: Messages[]
+  hasMore: { [key: string]: boolean };
+  loading: { [key: string]: boolean }; //
+  error: { [key: string]: string | null };
 }

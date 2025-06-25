@@ -3,13 +3,18 @@ import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "../../../../store/store";
 import Spinner from "../../../../Components/Spinner/Spinner";
-import { fetchAllConvoList } from "../conversationSlice";
+import {
+  fetchAllConvoList,
+  openConversation,
+  openConversationPayload,
+} from "../conversationSlice";
 
 import { openChatWindow } from "../../../../Components/Modal/globalSlice";
 import ContactList from "../../Contact/ContactList";
 import { fetchAllContact } from "../../Contact/ContactSlice";
 import { FetchedUserType } from "../../../../types/user";
 import { userProfile } from "../../../../utils/ImageUrlHelper";
+import { ConversationType } from "../../../../types/MessengerTypes";
 
 interface ConversationListPorp {
   currentUser: FetchedUserType;
@@ -52,11 +57,29 @@ const ConversationList = ({ currentUser }: ConversationListPorp) => {
     fetchData();
   }, []);
 
-  const openConversation = (contactId: string, participantId: string) => {
-    // close dropdown fist
-    closeDropDown();
+  const fetchAndOpenConversation = async (
+    contactId: string,
+    participantId: string
+  ) => {
+    try {
+      const data: openConversationPayload = {
+        otherUser: participantId,
+        contactId,
+      };
+      const res = await dispatch(openConversation(data)).unwrap();
+      const convoData = res?.conversations as ConversationType;
 
-    dispatch(openChatWindow({ contactId, participantId }));
+      const chatWindowPayload = {
+        conversationId: convoData._id,
+        participantId,
+      };
+
+      dispatch(openChatWindow(chatWindowPayload));
+
+      closeDropDown();
+    } catch (error) {
+      console.error("Failed to fetchAndOpenConversation, ", error);
+    }
   };
 
   return (
@@ -74,7 +97,7 @@ const ConversationList = ({ currentUser }: ConversationListPorp) => {
             </span>
           </div>
         </div>
-        <ContactList openConversation={openConversation} />
+        <ContactList openConversation={fetchAndOpenConversation} />
         <div className="chat-list">
           {loading ? (
             <Spinner />
@@ -106,7 +129,7 @@ const ConversationList = ({ currentUser }: ConversationListPorp) => {
                     className={`chat-container ${addBold}`}
                     key={index}
                     onClick={() =>
-                      openConversation(
+                      fetchAndOpenConversation(
                         conversation.contactId,
                         conversation.participant._id
                       )

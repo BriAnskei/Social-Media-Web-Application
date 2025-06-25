@@ -41,7 +41,7 @@ export interface ViewUserFollow {
 }
 
 export interface ChatWindowType {
-  contactId: string;
+  conversationId: string;
   participantId: string;
   minimized: boolean;
 }
@@ -163,15 +163,15 @@ const globalSlice = createSlice({
       state.viewFollow.show = !state.viewFollow.show;
     },
     openChatWindow: (state, action) => {
-      const { contactId, participantId } = action.payload;
+      const { conversationId, participantId } = action.payload;
 
       const isWindowExist = state.chatWindows.findIndex(
-        (chatWindow) => chatWindow.contactId === contactId
+        (chatWindow) => chatWindow.conversationId === conversationId
       );
       if (isWindowExist !== -1) {
       } else {
         const chatWindowPayload: ChatWindowType = {
-          contactId,
+          conversationId,
           participantId,
           minimized: false,
         };
@@ -180,19 +180,19 @@ const globalSlice = createSlice({
       }
     },
     closeWindow: (state, action) => {
-      const { contactId } = action.payload;
+      const { conversationId } = action.payload;
 
-      console.log("ContacT id: ", contactId);
+      console.log("SLICE CONVOiD id: ", conversationId);
 
       state.chatWindows = state.chatWindows.filter(
-        (chatWindow) => chatWindow.contactId !== contactId
+        (chatWindow) => chatWindow.conversationId !== conversationId
       );
     },
     toggleMinimize: (state, action) => {
-      const { contactId } = action.payload;
+      const { conversationId } = action.payload;
 
       state.chatWindows.map((chatWindow) => {
-        if (chatWindow.contactId === contactId) {
+        if (chatWindow.conversationId === conversationId) {
           chatWindow.minimized = !chatWindow.minimized;
         }
       });
