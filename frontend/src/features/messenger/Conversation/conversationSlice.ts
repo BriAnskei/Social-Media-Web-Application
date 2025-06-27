@@ -90,8 +90,6 @@ export const openConversation = createAsyncThunk(
       const payload = { ...data, token };
       const res = await MessageApi.conversation.findOrUpdate(payload);
 
-      console.log(res.conversations);
-
       return res;
     } catch (error) {
       rejectWithValue("Failed to open conversation: " + error);
@@ -113,10 +111,16 @@ const conversationSlice = createSlice({
     },
     setLatestMessage: (state, action: PayloadAction<latestMessagePayload>) => {
       const { conversationId, messageData, updatedAt } = action.payload;
+      console.log("Recieved data: ", action.payload);
 
       state.byId[conversationId].lastMessage = messageData;
       state.byId[conversationId].lastMessageAt = updatedAt;
       state.byId[conversationId].updatedAt = updatedAt;
+    },
+    setLatestMessageToRead: (state, action) => {
+      const { convoId, readAt } = action.payload;
+      state.byId[convoId].lastMessage.read = true;
+      state.byId[convoId].lastMessage.readAt = readAt;
     },
     setConvoToValid: (state, action) => {
       const convoId = action.payload;

@@ -17,7 +17,11 @@ import {
   setConvoToValid,
   setLatestMessage,
 } from "../Conversation/conversationSlice";
-import { fetchMessagesByConvoId, sentMessage } from "./messengeSlice";
+import {
+  dropMessageOnClose,
+  fetchMessagesByConvoId,
+  sentMessage,
+} from "./messengeSlice";
 import { Message } from "../../../types/MessengerTypes";
 import { getMessageImageUrl, userProfile } from "../../../utils/ImageUrlHelper";
 import { data, useNavigate } from "react-router";
@@ -28,6 +32,7 @@ import { useChatSocket } from "../../../hooks/socket/useChatSocket";
 import { useConversationById } from "../../../hooks/useConversation";
 import { followToggled } from "../../users/userSlice";
 import { useMessagesByConversation } from "../../../hooks/useMessages";
+import ChatArea from "./ChatArea";
 
 interface MessageBoxProp {
   ChatWindowData: ChatWindowType;
@@ -37,7 +42,7 @@ interface MessageBoxProp {
 const MessageBox = ({ ChatWindowData, currentUserData }: MessageBoxProp) => {
   const navigate = useNavigate();
   const dispatch = useDispatch<AppDispatch>();
-  const { conversationId, participantId, minimized } = ChatWindowData;
+  const { conversationId, minimized } = ChatWindowData;
 
   const conversation = useConversationById(conversationId);
   const userParticipant = useUserById(ChatWindowData.participantId);
@@ -58,14 +63,15 @@ const MessageBox = ({ ChatWindowData, currentUserData }: MessageBoxProp) => {
   const lastScrollRef = useRef<number>(0);
   const lastMessageIndexRef = useRef<number>(0);
 
-  const { socket, toggleViewConversation } = useChatSocket();
+  const { socket, emitConvoViewStatus } = useChatSocket();
 
   const closeChat = () => {
     if (ChatWindowData.minimized) return;
     const conversationId = conversation._id;
 
-    toggleViewConversation(false, conversation?._id!);
+    emitConvoViewStatus(false, conversation?._id!);
     dispatch(closeWindow({ conversationId }));
+    dispatch(dropMessageOnClose(conversationId));
   };
 
   const fetchMessages = async (
@@ -85,13 +91,7 @@ const MessageBox = ({ ChatWindowData, currentUserData }: MessageBoxProp) => {
   };
 
   useEffect(() => {
-    console.log("conversaiton update: ", conversation);
-
-    console.log("mesages update: ", messageInput, loading);
-  }, [loading, messages]);
-
-  useEffect(() => {
-    toggleViewConversation(true, conversation?._id!);
+    emitConvoViewStatus(true, conversation?._id!);
     async function fetchAllData() {
       await fetchMessages(conversationId, null);
     }
@@ -101,6 +101,8 @@ const MessageBox = ({ ChatWindowData, currentUserData }: MessageBoxProp) => {
 
   useEffect(() => {
     function setViewportToBottom() {
+      if (!messages) return;
+
       if (!isFetchingMore && messages.length <= 7) {
         messagesRef.current?.scrollIntoView({
           behavior: "instant",
@@ -110,6 +112,8 @@ const MessageBox = ({ ChatWindowData, currentUserData }: MessageBoxProp) => {
     }
 
     function smoothScroll() {
+      if (!messages) return;
+
       if (loading || messages.length > 7) {
         messagesRef.current?.scrollIntoView({
           behavior: "smooth",
@@ -123,8 +127,9 @@ const MessageBox = ({ ChatWindowData, currentUserData }: MessageBoxProp) => {
 
   const handleScroll = () => {
     const element = scrollRef.current;
+
     // Check if we're near the top (with a small buffer)
-    if (element.scrollTop === 0 && !isFetchingMore && hasMore) {
+    if (element && element.scrollTop === 0 && !isFetchingMore && hasMore) {
       loadMoreMessages();
     }
   };
@@ -144,33 +149,22 @@ const MessageBox = ({ ChatWindowData, currentUserData }: MessageBoxProp) => {
       e.preventDefault();
       if (loading || (!messageInput && !imageFile)) return;
 
-      const newDate = new Date();
-
       const messageDataPayload: Message = {
         sender: currentUserData._id,
         recipient: conversation?.participant._id!,
         content: messageInput,
-        attachments: imageFile ? "loading" : null,
+        attachments: imageFile,
         conversationId: conversation?._id!,
-        createdAt: newDate.toISOString(),
+        createdAt: new Date().toISOString(),
       };
 
       setMessageInput("");
       setImageUrl("");
+      setImageFile(null);
 
       lastMessageIndexRef.current = messages.length - 1;
 
-      dispatch(
-        setLatestMessage({
-          conversationId: conversation?._id!,
-          messageData: messageDataPayload,
-          updatedAt: messageDataPayload.createdAt,
-        })
-      );
-
-      await dispatch(
-        sentMessage({ ...messageDataPayload, attachments: imageFile })
-      ).unwrap();
+      await dispatch(sentMessage({ ...messageDataPayload })).unwrap();
     } catch (error) {
       console.error("Failed to sent message, ", error);
     }
@@ -223,7 +217,7 @@ const MessageBox = ({ ChatWindowData, currentUserData }: MessageBoxProp) => {
   };
 
   const isConversationNotReady = !conversation;
-  const isMessagesNotReady = loading || !messages;
+  const isMessagesNotReady = !messages;
 
   let isImageAttach = Boolean(imageUrl);
 
@@ -264,105 +258,17 @@ const MessageBox = ({ ChatWindowData, currentUserData }: MessageBoxProp) => {
               </span>
             </div>
           </div>
-          <div className="chat-area" ref={scrollRef} onScroll={handleScroll}>
-            {/* No Conversation to fetch */}
-            {!hasMore && (
-              <div className="no-message-left">
-                <span>No older messages</span>
-              </div>
-            )}
-
-            {/* Fetching loading flag */}
-            {isFetchingMore && hasMore && (
-              <div className="message-loading">
-                Loading.... <MessageSpinner />
-              </div>
-            )}
-
-            {isMessagesNotReady ? (
-              <Spinner />
-            ) : (
-              messages.map((msg, index) => {
-                const isoString = msg.createdAt;
-                const date = new Date(isoString);
-
-                const nextMsg = messages![index + 1];
-                let nxtMsgDate;
-                if (nextMsg) {
-                  const isoString = nextMsg.createdAt;
-                  nxtMsgDate = new Date(isoString);
-                }
-
-                const isMessageOwner = msg.sender === currentUserData._id;
-
-                const isMessageDiffDate =
-                  nxtMsgDate &&
-                  date.toDateString() !== nxtMsgDate.toDateString();
-
-                return (
-                  <div key={index} className="message-containter">
-                    {/* Message image attachment */}
-                    {msg.attachments && (
-                      <div
-                        className={`chat-window-img ${
-                          isMessageOwner ? "img-sent" : "img-recieved"
-                        }`}
-                        onClick={() =>
-                          dispatch(
-                            toggleViewMessageImage(
-                              getMessageImageUrl(
-                                msg.attachments! as string,
-                                msg.sender,
-                                conversation._id
-                              )
-                            )
-                          )
-                        }
-                      >
-                        <img
-                          src={getMessageImageUrl(
-                            msg.attachments! as string,
-                            msg.sender,
-                            conversation._id
-                          )}
-                          alt=""
-                        />
-                      </div>
-                    )}
-                    {/* message content */}
-                    {msg.content && (
-                      <div
-                        key={msg._id}
-                        className={`message ${
-                          isMessageOwner ? "sent" : "recieved"
-                        }`}
-                      >
-                        {msg.content}
-                      </div>
-                    )}
-
-                    <div
-                      className={`time ${
-                        isMessageOwner ? "img-sent" : "img-recieved"
-                      }`}
-                    >
-                      {date.toLocaleTimeString([], {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </div>
-                    {isMessageDiffDate && (
-                      <div className="message-date">
-                        {monthNames[date.getMonth()]}
-                        {"  " + date.getDate() + " " + date.getFullYear()}
-                      </div>
-                    )}
-                  </div>
-                );
-              })
-            )}
-            <div ref={messagesRef}></div>
-          </div>
+          <ChatArea
+            hasMore={hasMore}
+            isFetchingMore={isFetchingMore}
+            isMessagesNotReady={isMessagesNotReady}
+            messages={messages}
+            handleScroll={handleScroll}
+            scrollRef={scrollRef}
+            conversationId={conversation._id}
+            currentUserId={currentUserData._id}
+            messagesRef={messagesRef}
+          />
 
           {isImageAttach && (
             <div className="message-images-container">

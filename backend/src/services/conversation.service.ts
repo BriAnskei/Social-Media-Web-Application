@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import { Conversation, IConversation } from "../models/conversationModel";
 import { messageService } from "./message.service";
+import { IMessage } from "../models/messageModel";
 
 export const ConvoService = {
   deleteConvoByContactId: async (contactId: string, userId: string) => {
@@ -50,32 +51,39 @@ export const ConvoService = {
       );
     }
   },
-
-  validateConversation: async (contactId: string, userId: string) => {
+  setLatestCovoMessage: async (convoId: string, messageData: IMessage) => {
+    try {
+      await Conversation.updateOne(
+        { _id: convoId },
+        { lastMessage: messageData }
+      );
+    } catch (error) {
+      throw new Error(
+        `Failed to update unread counts: ${(error as Error).message}`
+      );
+    }
+  },
+  updateForValidUser: async (
+    contactId: string,
+    validUsers: mongoose.Types.ObjectId[]
+  ) => {
     try {
       const conversation = await Conversation.findOne({ contactId });
 
       if (!conversation) {
         throw new Error(
-          "Failed to validate user on Conversation: Conversation with this contactId does not exist"
+          "Failed to validate user for convo: Conversation with this contactId does not exist"
         );
       }
 
-      const isUserValid = conversation.validFor.includes(
-        new mongoose.Types.ObjectId(userId)
-      );
+      conversation.validFor = validUsers;
 
-      if (!isUserValid) {
-        await Conversation.updateOne(
-          { _id: conversation._id },
-          { $push: { validFor: userId } }
-        );
-      }
+      await conversation.save();
+
+      return conversation.validFor;
     } catch (error) {
       throw new Error(
-        `Failed to  validate user for this conversation: ${
-          (error as Error).message
-        }`
+        `Failed toto undelete convo, ${(error as Error).message}`
       );
     }
   },
@@ -108,30 +116,31 @@ export const ConvoService = {
       );
     }
   },
-
-  updateForValidUser: async (
-    contactId: string,
-    validUsers: mongoose.Types.ObjectId[]
-  ) => {
+  validateConversation: async (contactId: string, userId: string) => {
     try {
       const conversation = await Conversation.findOne({ contactId });
 
       if (!conversation) {
         throw new Error(
-          "Failed to validate user for convo: Conversation with this contactId does not exist"
+          "Failed to validate user on Conversation: Conversation with this contactId does not exist"
         );
       }
 
-      conversation.validFor = validUsers;
+      const isUserValid = conversation.validFor.includes(
+        new mongoose.Types.ObjectId(userId)
+      );
 
-      console.log("Upadting valid users for convo", conversation);
-
-      await conversation.save();
-
-      return conversation.validFor;
+      if (!isUserValid) {
+        await Conversation.updateOne(
+          { _id: conversation._id },
+          { $push: { validFor: userId } }
+        );
+      }
     } catch (error) {
       throw new Error(
-        `Failed toto undelete convo, ${(error as Error).message}`
+        `Failed to  validate user for this conversation: ${
+          (error as Error).message
+        }`
       );
     }
   },

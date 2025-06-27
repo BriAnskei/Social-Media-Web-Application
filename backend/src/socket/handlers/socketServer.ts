@@ -72,9 +72,10 @@ const SOCKET_EVENTS = {
 
 export class SocketServer {
   private io: Server;
-  private messagetHandler: MessageHanlder;
   private connectedUSers: Map<string, ConnectedUser> = new Map();
   private serverEventListeberInitialized = false;
+
+  public messagetHandler: MessageHanlder;
 
   // https://chatgpt.com/c/67cd8457-6eb0-8012-a2a5-c81d87368d1f
   // .on(event, callback)	Listens for a specific event from the client.
@@ -91,7 +92,7 @@ export class SocketServer {
       pingTimeout: 60000, // Close connection if client doesn't respond to ping within 60s
       pingInterval: 25000, // Send ping every 25s
     });
-    this.messagetHandler = new MessageHanlder(this.io);
+    this.messagetHandler = new MessageHanlder(this.io, this);
 
     this.initializeServer();
   }
@@ -142,7 +143,7 @@ export class SocketServer {
     });
 
     appEvents.on(
-      "message_on_sent",
+      "app_message_on_sent",
       (data: { conversationId: string; messageData: IMessage }) => {
         this.messagetHandler.sentMessageGlobal(data);
       }
@@ -203,6 +204,10 @@ export class SocketServer {
         socket.emit("error", "An error occured");
       });
     });
+  }
+
+  public getConnectedUser(userId: string): ConnectedUser | undefined {
+    return this.connectedUSers.get(userId);
   }
 
   private handleConnection(socket: any): void {
@@ -310,6 +315,11 @@ export class SocketServer {
       socket.emit("error", "Failed to process comment action");
     }
   }
+
+  public isUserOnline(userId: string): boolean {
+    return this.connectedUSers.has(userId);
+  }
+
   private async onCommentEventGlobal(
     data: CommentEventPayload,
     allIds: mongoose.Types.ObjectId[]

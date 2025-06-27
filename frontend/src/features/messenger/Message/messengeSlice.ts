@@ -41,6 +41,8 @@ export const fetchMessagesByConvoId = createAsyncThunk(
         token
       );
 
+      console.log("Fetced messages:d", res);
+
       const { messages, hasMore } = res;
       return { messages, hasMore };
     } catch (error) {
@@ -89,6 +91,14 @@ const messengerSlice = createSlice({
       }
       state.byId[conversationId] = [...state.byId[conversationId], messageData];
     },
+    dropMessageOnClose: (state, action) => {
+      const convoId = action.payload;
+
+      delete state.byId[convoId];
+      delete state.hasMore[convoId];
+      delete state.loading[convoId];
+      delete state.error[convoId];
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -130,5 +140,5 @@ const messengerSlice = createSlice({
   },
 });
 
-export const { addMessage } = messengerSlice.actions;
+export const { addMessage, dropMessageOnClose } = messengerSlice.actions;
 export default messengerSlice.reducer;

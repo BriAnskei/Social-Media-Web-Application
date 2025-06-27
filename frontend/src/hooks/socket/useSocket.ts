@@ -26,6 +26,7 @@ import {
 } from "../../features/messenger/Contact/ContactSlice";
 import { setConvoToValid } from "../../features/messenger/Conversation/conversationSlice";
 import { ContactType } from "../../types/contactType";
+import { useChatSocket } from "./useChatSocket";
 
 export interface DataOutput {
   // for post-like notification
@@ -87,6 +88,7 @@ export const useSocket = () => {
   const dispatch = useDispatch<AppDispatch>();
   const { socket, isConnected } = useContext(SocketContext);
   const { accessToken } = useSelector((state: RootState) => state.auth);
+  const { registerUnviewChatEvents } = useChatSocket();
   const isInitialized = useRef(false); //  ensure that the socket event listeners (like postLiked, likeNotify) are only set up once, even if the useEffect runs multiple times.
 
   // like events function
@@ -178,7 +180,7 @@ export const useSocket = () => {
     }
 
     if (!socket || isInitialized.current) return;
-
+    registerUnviewChatEvents();
     const setupSocket = () => {
       if (!isConnected) {
         socket.auth = { accessToken };
@@ -207,6 +209,7 @@ export const useSocket = () => {
       };
 
       removeAllListener();
+
       // global event
       socket.on("postLiked", handleLikeEvent);
       socket.on("postCommented", handleCommentEvent);

@@ -3,6 +3,7 @@ import { Conversation } from "../models/conversationModel";
 import { contactService } from "./contact.service";
 import { ConvoService } from "./conversation.service";
 import { messageService } from "./message.service";
+import { IMessage } from "../models/messageModel";
 
 export interface ChatRelationPayload {
   payload: {
@@ -52,6 +53,18 @@ export const UserChatRelationService = {
     } catch (error) {
       console.log("failed to updateChatValidUsers, ", error);
     }
+  },
+  emitMessageAndUpdateConvoMessage: async (
+    messageData: IMessage,
+    conversationId: string
+  ) => {
+    try {
+      messageService.emitMessageOnSend({
+        conversationId,
+        messageData,
+      });
+      await ConvoService.setLatestCovoMessage(conversationId, messageData);
+    } catch (error) {}
   },
   updateChatRelation: async (data: ChatRelationPayload) => {
     const { payload, isUnfollowing } = data;

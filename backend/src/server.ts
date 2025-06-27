@@ -27,7 +27,8 @@ connectDb();
 
 // calling the socket connection
 const httpServer = createServer(app);
-new SocketServer(httpServer);
+const socketServer = new SocketServer(httpServer);
+const messageHanlder = socketServer.messagetHandler;
 
 // Static images
 app.use("/images/posts", express.static(`${process.env.UPLOAD_PATH}/posts`));
@@ -58,3 +59,6 @@ httpServer.listen(PORT, "0.0.0.0", () => {
   console.log(`Server running on http://0.0.0.0:${PORT}`);
   console.log(`Server running on port http://localhost:${PORT}`);
 });
+
+// export for controller service usage
+export { messageHanlder };

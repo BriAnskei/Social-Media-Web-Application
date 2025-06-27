@@ -191,7 +191,7 @@ const globalSlice = createSlice({
     toggleMinimize: (state, action) => {
       const { conversationId } = action.payload;
 
-      state.chatWindows.map((chatWindow) => {
+      state.chatWindows.forEach((chatWindow) => {
         if (chatWindow.conversationId === conversationId) {
           chatWindow.minimized = !chatWindow.minimized;
         }

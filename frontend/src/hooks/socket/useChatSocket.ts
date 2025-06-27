@@ -4,6 +4,7 @@ import { Message } from "../../types/MessengerTypes";
 import { useDispatch } from "react-redux";
 import { AppDispatch } from "../../store/store";
 import { addMessage } from "../../features/messenger/Message/messengeSlice";
+import { setLatestMessage } from "../../features/messenger/Conversation/conversationSlice";
 
 const CHAT_EVENTS = {
   open_conversation: "conversation_room-active",
@@ -18,12 +19,82 @@ export const useChatSocket = () => {
 
   const eventInitialize = useRef(false);
 
-  const toggleViewConversation = useCallback(
+  const handleIncomingMessage = useCallback(
+    (data: { conversationId: string; messageData: Message }) => {
+      const { conversationId, messageData } = data;
+
+      dispatch(addMessage(data));
+      dispatch(
+        setLatestMessage({
+          conversationId,
+          messageData,
+          updatedAt: messageData.createdAt,
+        })
+      );
+    },
+    [socket, isConnected]
+  );
+
+  interface ClosedConversationMessagePayload {
+    conversationId: string;
+    messageData: Message;
+  }
+
+  const handleClosedConversationMessage = useCallback(
+    (data: ClosedConversationMessagePayload) => {
+      console.log("🎯 CLOSED CONVO EVENT RECEIVED!", data);
+      dispatch(
+        setLatestMessage({
+          conversationId: data.conversationId,
+          messageData: data.messageData,
+          updatedAt: data.messageData.createdAt,
+        })
+      );
+    },
+    [dispatch]
+  );
+
+  const registerUnviewChatEvents = useCallback(() => {
+    if (!socket || !isConnected) return;
+    console.log("Early register for close convo events");
+
+    socket.on("message_on_sent_closedConvo", handleClosedConversationMessage);
+  }, [socket, isConnected]);
+
+  useEffect(() => {
+    if (!socket || !isConnected) {
+      console.log("Socket not ready:", { socket: !!socket, isConnected });
+      return;
+    }
+
+    if (eventInitialize.current) {
+      return;
+    }
+
+    const removeAllPrevListeners = () => {
+      socket.off(CHAT_EVENTS.message_on_sent);
+      socket.off("message_on_sent_closedConvo");
+    };
+
+    removeAllPrevListeners();
+
+    // Register event listeners
+    socket.on(CHAT_EVENTS.message_on_sent, handleIncomingMessage);
+
+    eventInitialize.current = true;
+
+    return () => {
+      if (socket) {
+        removeAllPrevListeners();
+        eventInitialize.current = false;
+      }
+    };
+  }, [socket, isConnected, dispatch]); // Added isConnected as dependency
+
+  const emitConvoViewStatus = useCallback(
     (isUserActive: Boolean, conversationId: string) => {
       if (!socket) {
-        throw new Error(
-          "Failed to emit active convo, socket is not initialize"
-        );
+        throw new Error("Failed emitConvoViewStatus: Socket is not initialize");
       }
 
       const eventType = isUserActive
@@ -35,56 +106,9 @@ export const useChatSocket = () => {
     [socket]
   );
 
-  const onSentMessage = useCallback(
-    (conversationId: string, messageData: Message) => {
-      console.log("Sending data");
-      if (!socket) {
-        throw new Error(
-          "Failed to emit active convo, socket is not initialize"
-        );
-      }
-
-      socket.emit(CHAT_EVENTS.message_sent, { conversationId, messageData });
-    },
-    [socket]
-  );
-
-  useEffect(() => {
-    if (!socket || eventInitialize.current) {
-      return;
-    }
-
-    const removeAllListener = () => {
-      socket.off(CHAT_EVENTS.message_on_sent);
-    };
-
-    removeAllListener();
-
-    const eventHanlders = {
-      messageOnSent: (data: {
-        conversationId: string;
-        messageData: Message;
-      }) => {
-        dispatch(addMessage(data));
-      },
-    };
-
-    socket.on(CHAT_EVENTS.message_on_sent, eventHanlders.messageOnSent);
-
-    eventInitialize.current = true;
-
-    return () => {
-      if (socket) {
-        socket.off(CHAT_EVENTS.message_on_sent, eventHanlders.messageOnSent);
-
-        eventInitialize.current = false;
-      }
-    };
-  }, [socket]);
-
   return {
     socket,
-    toggleViewConversation,
-    onSentMessage,
+    emitConvoViewStatus,
+    registerUnviewChatEvents,
   };
 };

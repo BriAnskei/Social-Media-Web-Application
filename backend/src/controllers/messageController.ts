@@ -1,35 +1,19 @@
 import { Request, Response } from "express";
 import { MessageModel } from "../models/messageModel";
-import { ConvoService } from "../services/conversation.service";
-import { messageService } from "../services/message.service";
 
-interface ReqAuth extends Request {
+import { messageService } from "../services/message.service";
+import { buildMessagePayload } from "../utils/buildMessagePayload";
+
+export interface ReqAuth extends Request {
   userId?: string;
 }
 
 export const addMessage = async (req: ReqAuth, res: Response): Promise<any> => {
   try {
-    const userId = req.userId;
-    const { conversationId } = req.params;
-    const { recipient, content, createdAt } = req.body;
-
-    const message = await MessageModel.create({
-      conversationId,
-      sender: userId,
-      recipient,
-      content,
-      createdAt: new Date(createdAt),
-      attachments: req.file?.filename,
-    });
-
-    // call this in the messageHanlder and check if the user is active(view) on convo or not
-    await ConvoService.increamentUnread(
-      conversationId,
-      recipient,
-      message._id as string
-    );
-
-    messageService.emitMessageOnSend({ conversationId, messageData: message });
+    const messagePayload = messageService.createPayloadForActiveRecipient(req);
+    const message = await messageService.createMessageAndUpdateConvo(
+      messagePayload
+    ); // this is where the error
 
     res.json({ success: true, message: "message sent", messages: message });
   } catch (error) {
