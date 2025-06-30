@@ -1,26 +1,31 @@
 import { ReqAuth } from "../controllers/messageController";
 import { appEvents } from "../events/appEvents";
+import { IConversation } from "../models/conversationModel";
 import { IMessage, MessageModel } from "../models/messageModel";
 import { messageHanlder } from "../server";
 import {
-  buildMessagePayload,
+  builtMessagePayloadBasedOnRecipeintStatus,
   IMessageInput,
 } from "../utils/buildMessagePayload";
+import { FormattedConversation } from "./conversation.service";
+
 import { UserChatRelationService } from "./UserChatRelation.service";
 export const messageService = {
-  createMessageAndUpdateConvo: async (messageData: IMessageInput) => {
+  createMessageAndUpdateConvo: async (
+    messageData: IMessageInput,
+    convoId: string
+  ) => {
     try {
       const message = await MessageModel.create(messageData);
-      const conversationId = message.conversationId.toString();
 
       await UserChatRelationService.emitMessageAndUpdateConvoMessage(
         message,
-        conversationId
+        convoId
       );
       return message;
     } catch (error) {
-      console.log("Failed to createMessageAndEmit", error);
-      throw new Error("Error in createMessageAndEmit" + error);
+      console.log("Failed to createMessageAndUpdateConvo", error);
+      throw new Error("Error in createMessageAndUpdateConvo" + error);
     }
   },
   deleteMessages: async (
@@ -48,7 +53,7 @@ export const messageService = {
     }
   },
   emitMessageOnSend: (data: {
-    conversationId: string;
+    conversation: FormattedConversation;
     messageData: IMessage;
   }) => {
     try {
@@ -77,15 +82,14 @@ export const messageService = {
     try {
       const convoId = req.params.conversationId;
       const recipientId = req.body.recipient;
-
-      const messagePayload = buildMessagePayload(
+      const messagePayload = builtMessagePayloadBasedOnRecipeintStatus(
         req,
         messageHanlder.isActiveRecipient(convoId, recipientId)
       );
 
-      return messagePayload;
+      return { messagePayload, convoId };
     } catch (error) {
-      console.log("Failed to buildPayloadOnActiveConvoRecipient", error);
+      console.log("Failed to createPayloadForActiveRecipient", error);
       throw error;
     }
   },

@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import { ReqAuth } from "../controllers/messageController";
+import { IConversation } from "../models/conversationModel";
 
 export interface IMessageInput {
   conversationId: mongoose.Types.ObjectId;
@@ -12,7 +13,7 @@ export interface IMessageInput {
   createdAt: Date;
 }
 
-export const buildMessagePayload = (
+export const builtMessagePayloadBasedOnRecipeintStatus = (
   req: ReqAuth,
   isActiveRecipient: boolean
 ): IMessageInput => {

@@ -8,8 +8,8 @@ import {
   ConvoService,
 } from "../services/conversation.service";
 import { contactService } from "../services/contact.service";
-1;
-interface ReqAuth extends Request {
+
+export interface ReqAuth extends Request {
   userId?: string;
 }
 
@@ -95,51 +95,24 @@ export const getConversations = async (
   res: Response
 ): Promise<any> => {
   try {
-    const { userId } = req;
+    const userConvoPayload = ConvoService.buildPayloadForFetchingConvo(req);
 
-    const { page = 1, limit = 20 } = req.query;
-
-    if (!userId) throw new Error("Id is required to fetch conversation");
-
-    const pageNum = parseInt(page as string);
-    const limitNum = parseInt(limit as string);
-    const skip = (pageNum - 1) * limitNum; // no skip at page one
-    // we will fetch this using pagination method
-
-    // Find all conversation where user is a participant
-    const conversations = await Conversation.find({
-      participants: userId,
-      deletedFor: { $ne: userId }, // filder out convo where the user is in the deletedFor field
-      lastMessage: { $ne: null },
-    })
-      .sort({ lastMessaageAt: -1 }) // sort from the latest(decending)
-      .skip(skip)
-      .limit(limitNum)
-      .populate("participants")
-      .populate("lastMessage")
-      .lean();
-
-    // Format data
-    const formatedData = conversationFormatHelper.formatConversationArray(
-      conversations,
-      userId
+    const response = await ConvoService.fetchConvosBasedOnCursor(
+      userConvoPayload
     );
+    const { conversations, hasMore } = response;
 
-    // Total documents for pagimation
-    const total = await Conversation.countDocuments({
-      participants: userId,
-      deletedFor: { $ne: userId },
-    });
+    const formattedConvoDatas =
+      conversationFormatHelper.formatConversationArray(
+        conversations,
+        userConvoPayload.userId
+      );
+
     res.json({
       success: true,
-      message: "conversations find",
-      conversations: formatedData,
-      pagimation: {
-        total,
-        page: pageNum,
-        limit: limitNum,
-        pages: Math.ceil(total / limitNum),
-      },
+      message: "conversations fetched",
+      conversations: formattedConvoDatas,
+      hasMore,
     });
   } catch (error) {
     console.log(error);

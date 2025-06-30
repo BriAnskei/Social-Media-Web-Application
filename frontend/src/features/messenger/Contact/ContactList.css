@@ -4,9 +4,8 @@
   overflow: auto;
   scrollbar-width: none; /* Firefox */
   -ms-overflow-style: none; /* Internet Explorer 10+ */
-  margin: 0 5px 8px 5px;
-
   border-bottom: 1px solid gray;
+  padding: 6px;
 }
 
 .no-contact {

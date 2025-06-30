@@ -22,6 +22,8 @@ import { notifService } from "../../services/notification.service";
 import { appEvents } from "../../events/appEvents";
 import { MessageHanlder } from "./messageHanlder";
 import { IMessage } from "../../models/messageModel";
+import { IConversation } from "../../models/conversationModel";
+import { FormattedConversation } from "../../services/conversation.service";
 
 interface ConnectedUser {
   userId: string;
@@ -144,7 +146,10 @@ export class SocketServer {
 
     appEvents.on(
       "app_message_on_sent",
-      (data: { conversationId: string; messageData: IMessage }) => {
+      (data: {
+        conversation: FormattedConversation;
+        messageData: IMessage;
+      }) => {
         this.messagetHandler.sentMessageGlobal(data);
       }
     );

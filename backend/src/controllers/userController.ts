@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import bcrypt from "bcrypt";
 import validator from "validator";
 import UserModel, { IUser } from "../models/userModel";
-import jwt from "jsonwebtoken";
+
 import path from "path";
 import fs from "fs";
 
@@ -13,54 +13,7 @@ import {
   ChatRelationPayload,
   UserChatRelationService,
 } from "../services/UserChatRelation.service";
-
-const createToken = (userId: string) => {
-  if (!process.env.ACCESS_SECRET || !process.env.REFRESH_SECRET) {
-    throw new Error("token must be defined");
-  }
-
-  const refreshToken = jwt.sign({ userId }, process.env.REFRESH_SECRET, {
-    expiresIn: "7d",
-  });
-
-  const accessToken = jwt.sign({ userId }, process.env.ACCESS_SECRET, {
-    expiresIn: "30min",
-  });
-  return { refreshToken, accessToken };
-};
-// fOR UPLOADING DEFAULT PROFILE FUNCTION
-// async function getDefaultImageBuffer(): Promise<Buffer> {
-//   // _dirname returns the head point directory of the file
-//   const defaultImagePath = path.join(
-//     __dirname,
-//     "../assets/Default_Profile.jpg"
-//   );
-//   try {
-//     return await fsValidation.readFile(defaultImagePath);
-//   } catch (error) {
-//     throw new Error("Default image not found.");
-//   }
-// }
-
-// function checkDefaultImage() {
-//   const defaultImagePath = "uploads/profile/Default_Profile.jpg";
-
-//   // Check if the file exists and if it's not empty
-//   fs.stat(defaultImagePath, (err, stats) => {
-//     if (err) {
-//       console.log("Error: File does not exist or cannot be accessed");
-//       return false;
-//     }
-
-//     if (stats.size > 0) {
-//       console.log("The default image file exists and is not empty");
-//       return true;
-//     } else {
-//       console.log("The default image file is empty");
-//       return false;
-//     }
-//   });
-// }
+import { createToken } from "../services/user.service";
 
 interface ExtendReq extends Request {
   userId?: string; //explicitly extend the Request type from Express to include the userId property.

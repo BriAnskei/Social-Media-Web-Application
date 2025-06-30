@@ -2,7 +2,6 @@ import { Request, Response } from "express";
 import { MessageModel } from "../models/messageModel";
 
 import { messageService } from "../services/message.service";
-import { buildMessagePayload } from "../utils/buildMessagePayload";
 
 export interface ReqAuth extends Request {
   userId?: string;
@@ -10,10 +9,13 @@ export interface ReqAuth extends Request {
 
 export const addMessage = async (req: ReqAuth, res: Response): Promise<any> => {
   try {
-    const messagePayload = messageService.createPayloadForActiveRecipient(req);
+    const { messagePayload, convoId } =
+      messageService.createPayloadForActiveRecipient(req);
+
     const message = await messageService.createMessageAndUpdateConvo(
-      messagePayload
-    ); // this is where the error
+      messagePayload,
+      convoId
+    );
 
     res.json({ success: true, message: "message sent", messages: message });
   } catch (error) {
@@ -40,14 +42,16 @@ export const getMessages = async (
         createdAt: { $lt: new Date(cursor) },
       })
         .sort({ createdAt: -1 })
-        .limit(limit + 1);
+        .limit(limit + 1)
+        .lean();
     } else {
       messages = await MessageModel.find({
         conversationId,
         hideFrom: { $ne: userId },
       })
         .sort({ createdAt: -1 })
-        .limit(limit + 1);
+        .limit(limit + 1)
+        .lean();
     }
 
     const hasMore = messages.length > limit;

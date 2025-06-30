@@ -1,7 +1,7 @@
-import mongoose from "mongoose";
-import { Conversation } from "../models/conversationModel";
+import mongoose, { ObjectId } from "mongoose";
+import { Conversation, IConversation } from "../models/conversationModel";
 import { contactService } from "./contact.service";
-import { ConvoService } from "./conversation.service";
+import { conversationFormatHelper, ConvoService } from "./conversation.service";
 import { messageService } from "./message.service";
 import { IMessage } from "../models/messageModel";
 
@@ -19,7 +19,7 @@ export const UserChatRelationService = {
       const conversation = await ConvoService.getConvoByContactId(contactId);
       const isPermanent = true;
 
-      await ConvoService.deleteConvoByContactId(contactId, userId);
+      await ConvoService.deleteConvoByContactId(contactId);
 
       await messageService.deleteMessages(
         isPermanent,
@@ -56,15 +56,38 @@ export const UserChatRelationService = {
   },
   emitMessageAndUpdateConvoMessage: async (
     messageData: IMessage,
-    conversationId: string
+    convoId: string
   ) => {
     try {
+      const { sender, _id, recipient } = messageData;
+      const convoData = await ConvoService.setLatestCovoMessage(
+        convoId,
+        messageData
+      );
+
+      await ConvoService.incrementMessageUnreadOnNotViewConvo(
+        convoId,
+        recipient._id.toString(),
+        _id as string
+      );
+      const formattedConvoData =
+        conversationFormatHelper.formatConversationData(
+          convoData!,
+          sender.toString(),
+          convoData?.validFor!
+        );
+
       messageService.emitMessageOnSend({
-        conversationId,
+        conversation: formattedConvoData,
         messageData,
       });
-      await ConvoService.setLatestCovoMessage(conversationId, messageData);
-    } catch (error) {}
+    } catch (error) {
+      throw new Error(
+        `Failed to emitMessageAndUpdateConvoMessage: ${
+          (error as Error).message
+        }`
+      );
+    }
   },
   updateChatRelation: async (data: ChatRelationPayload) => {
     const { payload, isUnfollowing } = data;

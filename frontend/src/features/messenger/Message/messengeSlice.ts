@@ -1,10 +1,9 @@
+import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
 import {
-  createAsyncThunk,
-  createSlice,
-  current,
-  PayloadAction,
-} from "@reduxjs/toolkit";
-import { Message, SentMessagePayload } from "../../../types/MessengerTypes";
+  ConversationType,
+  Message,
+  SentMessagePayload,
+} from "../../../types/MessengerTypes";
 import { MessageNormalizeSate } from "../../../types/NormalizeType";
 
 import { RootState } from "../../../store/store";
@@ -41,8 +40,6 @@ export const fetchMessagesByConvoId = createAsyncThunk(
         token
       );
 
-      console.log("Fetced messages:d", res);
-
       const { messages, hasMore } = res;
       return { messages, hasMore };
     } catch (error) {
@@ -58,7 +55,10 @@ export interface MessagePayloadContent {
 
 export const sentMessage = createAsyncThunk(
   "message/sent",
-  async (data: Message, { rejectWithValue, getState }) => {
+  async (
+    data: { mesage: Message; conversationId: string },
+    { rejectWithValue, getState }
+  ) => {
     try {
       const state = getState() as RootState;
       const token = state.auth.accessToken;
@@ -120,13 +120,6 @@ const messengerSlice = createSlice({
         state.loading[convoId] = false;
         state.byId[convoId] = [...messages.reverse(), ...state.byId[convoId]];
         state.hasMore[convoId] = hasMore as boolean;
-
-        console.log(
-          "State not in slice: ",
-          current(state.loading),
-          current(state.byId),
-          current(state.hasMore)
-        );
       })
       .addCase(fetchMessagesByConvoId.rejected, (state, action) => {
         const convoId = action.meta.arg.conversationId;

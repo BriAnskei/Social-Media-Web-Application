@@ -4,7 +4,7 @@ import { FollowPayload } from "../types/user";
 import { CommentApiResponse, CommentEventPayload } from "../types/PostType";
 import { ApiResponse, MessageApiResponse } from "../types/ApiResponseType";
 import { openConversationPayload } from "../features/messenger/Conversation/conversationSlice";
-import { Message, SentMessagePayload } from "../types/MessengerTypes";
+import { ConversationType, Message } from "../types/MessengerTypes";
 
 // Axion instance
 export const api = axios.create({
@@ -519,11 +519,16 @@ export const MessageApi = {
         };
       }
     },
-    getAll: async (token: string): Promise<MessageApiResponse> => {
+    getAll: async (data: {
+      token: string;
+      cursor?: string | null;
+    }): Promise<MessageApiResponse & { hasMore?: boolean }> => {
       try {
+        const { token, cursor } = data;
+
         const res = await api.post(
           "api/messages/conversation/get",
-          {},
+          { cursor },
           {
             headers: {
               token,
@@ -569,19 +574,20 @@ export const MessageApi = {
     },
     sentMessage: async (
       token: string,
-      data: Message
+      data: { mesage: Message; conversationId: string }
     ): Promise<MessageApiResponse> => {
       try {
         const formData = new FormData();
-        const { sender, recipient, content, conversationId, createdAt } = data;
+        const { sender, recipient, content, conversationId, createdAt } =
+          data.mesage;
 
         formData.append("sender", sender);
         formData.append("recipient", recipient);
         formData.append("content", content);
         formData.append("createdAt", createdAt.toString());
 
-        if (data.attachments) {
-          formData.append("image", data.attachments as File);
+        if (data.mesage.attachments) {
+          formData.append("image", data.mesage.attachments as File);
         }
 
         const res = await api.post(

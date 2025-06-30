@@ -19,7 +19,7 @@ export interface ConversationType {
   isUserValidToRply: boolean;
   lastMessage: Message;
   lastMessageAt: string;
-  unreadCounts: number;
+  unreadCount: number;
   createdAt: string;
   updatedAt: string;
 }

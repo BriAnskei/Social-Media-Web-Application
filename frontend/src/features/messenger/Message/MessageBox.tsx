@@ -7,24 +7,19 @@ import {
   ChatWindowType,
   closeWindow,
   toggleMinimize,
-  toggleViewMessageImage,
   viewProfile,
 } from "../../../Components/Modal/globalSlice";
-import Spinner, { MessageSpinner } from "../../../Components/Spinner/Spinner";
+import Spinner from "../../../Components/Spinner/Spinner";
 import { FetchedUserType, FollowPayload } from "../../../types/user";
-import { monthNames } from "../../../assets/monthNames";
-import {
-  setConvoToValid,
-  setLatestMessage,
-} from "../Conversation/conversationSlice";
+import { setConvoToValid } from "../Conversation/conversationSlice";
 import {
   dropMessageOnClose,
   fetchMessagesByConvoId,
   sentMessage,
 } from "./messengeSlice";
 import { Message } from "../../../types/MessengerTypes";
-import { getMessageImageUrl, userProfile } from "../../../utils/ImageUrlHelper";
-import { data, useNavigate } from "react-router";
+import { userProfile } from "../../../utils/ImageUrlHelper";
+import { useNavigate } from "react-router";
 import { useUserById } from "../../../hooks/useUsers";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faImage } from "@fortawesome/free-solid-svg-icons";
@@ -164,7 +159,12 @@ const MessageBox = ({ ChatWindowData, currentUserData }: MessageBoxProp) => {
 
       lastMessageIndexRef.current = messages.length - 1;
 
-      await dispatch(sentMessage({ ...messageDataPayload })).unwrap();
+      await dispatch(
+        sentMessage({
+          mesage: messageDataPayload,
+          conversationId: conversation._id,
+        })
+      ).unwrap();
     } catch (error) {
       console.error("Failed to sent message, ", error);
     }
@@ -209,7 +209,7 @@ const MessageBox = ({ ChatWindowData, currentUserData }: MessageBoxProp) => {
 
       setIsFetchingMore(false);
     }, 0);
-  }, [hasMore, hasMore, messages]);
+  }, [hasMore, messages]);
 
   const viewUserProfile = () => {
     dispatch(viewProfile(userParticipant));

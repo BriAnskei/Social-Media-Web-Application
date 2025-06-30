@@ -32,7 +32,7 @@ const Upload = () => {
         />
         <div className="upload" onClick={toggleUpload}>
           <span className="material-symbols-outlined">add_a_photo</span>
-          <span id="text">Photo/Video</span>
+          <span id="text">Photo</span>
         </div>
         <button onClick={toggleUpload}>CREATE</button>
       </div>

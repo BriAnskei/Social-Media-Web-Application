@@ -88,16 +88,13 @@ export const useSocket = () => {
   const dispatch = useDispatch<AppDispatch>();
   const { socket, isConnected } = useContext(SocketContext);
   const { accessToken } = useSelector((state: RootState) => state.auth);
-  const { registerUnviewChatEvents } = useChatSocket();
+  useChatSocket();
+
   const isInitialized = useRef(false); //  ensure that the socket event listeners (like postLiked, likeNotify) are only set up once, even if the useEffect runs multiple times.
 
   // like events function
   const handleLikeEvent = useCallback(
-    (data: LikeHandlerTypes) => {
-      console.log("Like event triggered", data);
-
-      dispatch(postLiked(data));
-    },
+    (data: LikeHandlerTypes) => dispatch(postLiked(data)),
     [dispatch]
   );
 
@@ -180,7 +177,7 @@ export const useSocket = () => {
     }
 
     if (!socket || isInitialized.current) return;
-    registerUnviewChatEvents();
+
     const setupSocket = () => {
       if (!isConnected) {
         socket.auth = { accessToken };
@@ -209,6 +206,10 @@ export const useSocket = () => {
       };
 
       removeAllListener();
+
+      socket.onAny((e, ...args) => {
+        console.log(`Received event: ${e}`, args);
+      });
 
       // global event
       socket.on("postLiked", handleLikeEvent);

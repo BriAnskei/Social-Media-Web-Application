@@ -1,10 +1,13 @@
 import { useCallback, useContext, useEffect, useRef } from "react";
 import { SocketContext } from "../../context/SocketContext";
-import { Message } from "../../types/MessengerTypes";
+import { ConversationType, Message } from "../../types/MessengerTypes";
 import { useDispatch } from "react-redux";
 import { AppDispatch } from "../../store/store";
 import { addMessage } from "../../features/messenger/Message/messengeSlice";
-import { setLatestMessage } from "../../features/messenger/Conversation/conversationSlice";
+import {
+  increamentUnread,
+  setLatestMessage,
+} from "../../features/messenger/Conversation/conversationSlice";
 
 const CHAT_EVENTS = {
   open_conversation: "conversation_room-active",
@@ -20,13 +23,17 @@ export const useChatSocket = () => {
   const eventInitialize = useRef(false);
 
   const handleIncomingMessage = useCallback(
-    (data: { conversationId: string; messageData: Message }) => {
-      const { conversationId, messageData } = data;
-
-      dispatch(addMessage(data));
+    (data: { conversation: ConversationType; messageData: Message }) => {
+      const { conversation, messageData } = data;
+      dispatch(
+        addMessage({
+          conversationId: data.conversation._id,
+          messageData: data.messageData,
+        })
+      );
       dispatch(
         setLatestMessage({
-          conversationId,
+          conversation,
           messageData,
           updatedAt: messageData.createdAt,
         })
@@ -36,38 +43,27 @@ export const useChatSocket = () => {
   );
 
   interface ClosedConversationMessagePayload {
-    conversationId: string;
+    conversation: ConversationType;
     messageData: Message;
   }
 
   const handleClosedConversationMessage = useCallback(
     (data: ClosedConversationMessagePayload) => {
-      console.log("🎯 CLOSED CONVO EVENT RECEIVED!", data);
       dispatch(
         setLatestMessage({
-          conversationId: data.conversationId,
+          conversation: data.conversation,
           messageData: data.messageData,
           updatedAt: data.messageData.createdAt,
         })
       );
+
+      dispatch(increamentUnread(data.conversation._id));
     },
     [dispatch]
   );
 
-  const registerUnviewChatEvents = useCallback(() => {
-    if (!socket || !isConnected) return;
-    console.log("Early register for close convo events");
-
-    socket.on("message_on_sent_closedConvo", handleClosedConversationMessage);
-  }, [socket, isConnected]);
-
   useEffect(() => {
-    if (!socket || !isConnected) {
-      console.log("Socket not ready:", { socket: !!socket, isConnected });
-      return;
-    }
-
-    if (eventInitialize.current) {
+    if (!socket || !isConnected || eventInitialize.current) {
       return;
     }
 
@@ -76,10 +72,14 @@ export const useChatSocket = () => {
       socket.off("message_on_sent_closedConvo");
     };
 
-    removeAllPrevListeners();
+    const listeOnAnyEvents = () => {
+      // Register event listeners
+      socket.on(CHAT_EVENTS.message_on_sent, handleIncomingMessage);
+      socket.on("message_on_sent_closedConvo", handleClosedConversationMessage);
+    };
 
-    // Register event listeners
-    socket.on(CHAT_EVENTS.message_on_sent, handleIncomingMessage);
+    removeAllPrevListeners();
+    listeOnAnyEvents();
 
     eventInitialize.current = true;
 
@@ -109,6 +109,5 @@ export const useChatSocket = () => {
   return {
     socket,
     emitConvoViewStatus,
-    registerUnviewChatEvents,
   };
 };

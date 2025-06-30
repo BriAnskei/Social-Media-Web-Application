@@ -2,16 +2,109 @@ import mongoose from "mongoose";
 import { Conversation, IConversation } from "../models/conversationModel";
 import { messageService } from "./message.service";
 import { IMessage } from "../models/messageModel";
+import { ReqAuth } from "../controllers/convoController";
+import { IUser } from "../models/userModel";
+import { messageHanlder } from "../server";
 
 export const ConvoService = {
-  deleteConvoByContactId: async (contactId: string, userId: string) => {
+  buildPayloadForFetchingConvo: (req: ReqAuth) => {
+    const { userId } = req;
+    if (!userId)
+      throw new Error("Failed to buildPayloadForFetchingConvo: no userId");
+    return {
+      userId,
+      cursor: req.body.cursor ? req.body.cursor.toString() : null,
+      limit: Number(req.body.limit) || 10,
+    };
+  },
+  deleteConvoByContactId: async (contactId: string) => {
     try {
       await Conversation.deleteOne({ contactId });
     } catch (error) {
       console.log("Failed to deleteConvoByContactId, ", error);
     }
   },
+  fetchConvosBasedOnCursor: async (data: {
+    userId: string;
+    cursor?: string | null;
+    limit: number;
+  }) => {
+    try {
+      const { cursor, limit } = data;
 
+      let conversations: IConversation[];
+
+      if (cursor) {
+        conversations = await ConvoService.fetchConvosByCursor({
+          ...data,
+          cursor,
+        });
+      } else {
+        conversations = await ConvoService.fetchConvosNoCursor(data);
+      }
+
+      const hasMore = conversations.length > limit;
+
+      if (hasMore) conversations.pop();
+
+      return {
+        hasMore,
+        conversations,
+      };
+    } catch (error) {
+      throw new Error(
+        `Failed to fetchConvosBasedOnCursor: ${(error as Error).message}`
+      );
+    }
+  },
+  fetchConvosByCursor: async (data: {
+    userId: string;
+    cursor: string;
+    limit: number;
+  }) => {
+    try {
+      const { userId, cursor, limit } = data;
+
+      return await Conversation.find({
+        participants: userId,
+        deletedFor: { $ne: userId },
+        lastMessageAt: { $lt: new Date(cursor) },
+      })
+        .sort({ lastMessageAt: -1 })
+        .limit(limit + 1)
+        .populate("participants")
+        .populate("lastMessage")
+        .lean();
+    } catch (error) {
+      throw new Error(
+        `Failed to fetchConvosByCursor: ${(error as Error).message}`
+      );
+    }
+  },
+  fetchConvosNoCursor: async (data: {
+    userId: string;
+    cursor?: string | null;
+    limit: number;
+  }) => {
+    try {
+      const { userId, limit } = data;
+
+      return await Conversation.find({
+        participants: new mongoose.Types.ObjectId(userId),
+        deletedFor: { $ne: new mongoose.Types.ObjectId(userId) }, // filder out convo where the user is in the deletedFor field
+        lastMessage: { $ne: null },
+      })
+        .sort({ lastMessageAt: -1 })
+        .limit(limit + 1)
+        .populate("participants")
+        .populate("lastMessage")
+        .lean();
+    } catch (error) {
+      throw new Error(
+        `Failed to fetchConvosNoCursor: ${(error as Error).message}`
+      );
+    }
+  },
   getConvoByContactId: async (contactId: string) => {
     try {
       return await Conversation.findOne({ contactId });
@@ -20,7 +113,7 @@ export const ConvoService = {
     }
   },
 
-  increamentUnread: async (
+  incrementMessageUnreadOnNotViewConvo: async (
     conversationId: string,
     recipentId: string,
     newMessageId: string
@@ -34,28 +127,42 @@ export const ConvoService = {
         );
       }
 
-      return await Conversation.updateOne(
-        {
-          _id: conversation._id,
-          "unreadCounts.user": recipentId,
-        },
-        {
-          $inc: { "unreadCounts.$.count": 1 }, // using  positional $ operator  in which index is to update
-          lastMessage: newMessageId,
-          lastMessageAt: new Date(),
-        }
+      const isRecipentViewingConvo = messageHanlder.isActiveRecipient(
+        conversationId,
+        recipentId
       );
+
+      if (!isRecipentViewingConvo) {
+        await Conversation.updateOne(
+          {
+            _id: conversation._id,
+            "unreadCounts.user": recipentId,
+          },
+          {
+            $inc: { "unreadCounts.$.count": 1 }, // using  positional $ operator  in which index is to update
+            lastMessage: newMessageId,
+            lastMessageAt: new Date(),
+          }
+        );
+      }
     } catch (error) {
       throw new Error(
         `Failed to update unread counts: ${(error as Error).message}`
       );
     }
   },
-  setLatestCovoMessage: async (convoId: string, messageData: IMessage) => {
+  setLatestCovoMessage: async (
+    convoId: string,
+    messageData: IMessage
+  ): Promise<IConversation | null> => {
     try {
-      await Conversation.updateOne(
+      return await Conversation.findByIdAndUpdate(
         { _id: convoId },
-        { lastMessage: messageData }
+        {
+          lastMessage: messageData,
+          updatedAt: messageData.createdAt,
+          lastMessageAt: messageData.createdAt,
+        }
       );
     } catch (error) {
       throw new Error(
@@ -146,13 +253,24 @@ export const ConvoService = {
   },
 };
 
+export interface FormattedConversation {
+  _id: string; //
+  contactId: mongoose.Types.ObjectId;
+  participant: IUser | mongoose.Types.ObjectId;
+  isUserValidToRply: boolean;
+  lastMessage?: IMessage | mongoose.Types.ObjectId;
+  lastMessageAt: Date | string;
+  unreadCount: number;
+  createdAt: Date | string;
+  updatedAt: Date | string;
+}
+
 export const conversationFormatHelper = {
   formatConversationData: (
     conversation: IConversation,
-
     userId: string,
     validUser: mongoose.Types.ObjectId[]
-  ) => {
+  ): FormattedConversation => {
     // format data for frontend
     const isUserValidToRply = validUser.toString().includes(userId.toString());
 
@@ -169,8 +287,8 @@ export const conversationFormatHelper = {
       throw new Error("Missing format dataa");
     }
 
-    const formatedData = {
-      _id: conversation._id,
+    return {
+      _id: conversation._id as string,
       contactId: conversation.contactId,
       participant: otherParticipant,
       isUserValidToRply,
@@ -180,8 +298,6 @@ export const conversationFormatHelper = {
       createdAt: conversation.createdAt,
       updatedAt: conversation.updatedAt,
     };
-
-    return formatedData;
   },
 
   formatConversationArray: (conversations: IConversation[], userId: string) => {

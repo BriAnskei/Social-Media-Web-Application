@@ -35,10 +35,12 @@ const ChatArea = (prop: ChatAreaProp) => {
 
   const dispatch = useDispatch<AppDispatch>();
 
+  const noMoreOlderMessages = messages && messages.length >= 7 && !hasMore;
+
   return (
     <div className="chat-area" ref={scrollRef} onScroll={handleScroll}>
       {/* No Conversation to fetch */}
-      {!hasMore && (
+      {noMoreOlderMessages && (
         <div className="no-message-left">
           <span>No older messages</span>
         </div>

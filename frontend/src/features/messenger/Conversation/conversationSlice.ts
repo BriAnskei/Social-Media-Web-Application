@@ -12,19 +12,19 @@ import { RootState } from "../../../store/store";
 import { normalizeResponse } from "../../../utils/normalizeResponse";
 
 interface ConversationState extends NormalizeState<ConversationType> {
-  openingConvoLoading: Boolean;
+  isFetchingMore: boolean;
 }
 
 const initialState: ConversationState = {
   byId: {},
   allIds: [],
-  openingConvoLoading: false,
+  isFetchingMore: false,
   loading: false,
   error: null,
 };
 
 export interface latestMessagePayload {
-  conversationId: string;
+  conversation: ConversationType;
   messageData: Message;
   updatedAt: string;
 }
@@ -50,9 +50,13 @@ export const deleteConversation = createAsyncThunk(
   }
 );
 
+export interface FetchConvosProps {
+  cursor?: string | null;
+}
+
 export const fetchAllConvoList = createAsyncThunk(
   "conversation/fetchAll",
-  async (_: void, { rejectWithValue, getState }) => {
+  async (data: FetchConvosProps, { rejectWithValue, getState }) => {
     try {
       const state = getState() as RootState;
       const { accessToken } = state.auth;
@@ -60,9 +64,14 @@ export const fetchAllConvoList = createAsyncThunk(
         return rejectWithValue("No access token to process this request");
       }
 
-      const res = await MessageApi.conversation.getAll(accessToken);
+      const res = await MessageApi.conversation.getAll({
+        token: accessToken,
+        cursor: data.cursor,
+      });
 
-      return res.conversations;
+      const { hasMore, conversations } = res;
+
+      return { hasMore, conversations };
     } catch (error) {
       rejectWithValue("Failed to fetch convo list: " + error || "Error");
     }
@@ -109,48 +118,81 @@ const conversationSlice = createSlice({
         delete state.byId[convoId];
       }
     },
-    setLatestMessage: (state, action: PayloadAction<latestMessagePayload>) => {
-      const { conversationId, messageData, updatedAt } = action.payload;
-      console.log("Recieved data: ", action.payload);
+    increamentUnread: (state, action) => {
+      const convoId = action.payload;
 
-      state.byId[conversationId].lastMessage = messageData;
-      state.byId[conversationId].lastMessageAt = updatedAt;
-      state.byId[conversationId].updatedAt = updatedAt;
+      state.byId[convoId].unreadCount += 1;
     },
-    setLatestMessageToRead: (state, action) => {
-      const { convoId, readAt } = action.payload;
-      state.byId[convoId].lastMessage.read = true;
-      state.byId[convoId].lastMessage.readAt = readAt;
+    setLatestMessage: (state, action: PayloadAction<latestMessagePayload>) => {
+      const { conversation, messageData, updatedAt } = action.payload;
+      const { allIds, byId } = normalizeResponse(conversation);
+
+      const dataIndex = state.allIds.findIndex((id) => id === allIds[0]);
+
+      if (dataIndex === -1) {
+        state.allIds = [allIds[0], ...state.allIds];
+        state.byId = { ...state.byId, ...byId };
+      } else {
+        state.allIds.splice(dataIndex, 1);
+        state.allIds.unshift(allIds[0]);
+
+        state.byId[conversation._id].lastMessage = messageData;
+        state.byId[conversation._id].lastMessageAt = updatedAt;
+        state.byId[conversation._id].updatedAt = updatedAt;
+      }
     },
     setConvoToValid: (state, action) => {
       const convoId = action.payload;
 
       if (convoId && state.byId[convoId]) {
         state.byId[convoId].isUserValidToRply = true;
-
-        console.log("COnvo now", current(state.byId[convoId]));
       }
+    },
+    setReadConvoMessages: (state, action) => {
+      const convoId = action.payload;
+
+      state.byId[convoId].lastMessage.read = true;
+      state.byId[convoId].unreadCount = 0;
     },
   },
   extraReducers: (builder) => {
     builder
-      .addCase(fetchAllConvoList.pending, (state) => {
-        state.loading = true;
+      .addCase(fetchAllConvoList.pending, (state, action) => {
+        const cursor = action.meta.arg.cursor;
+
+        if (cursor) {
+          state.isFetchingMore = true;
+        } else {
+          state.loading = true;
+        }
+
         state.error = null;
       })
       .addCase(fetchAllConvoList.fulfilled, (state, action) => {
-        const { byId, allIds } = normalizeResponse(action.payload);
+        const cursor = action.meta.arg.cursor;
+        const { byId, allIds } = normalizeResponse(
+          action.payload?.conversations
+        );
 
-        state.loading = false;
-        state.byId = { ...byId };
-        state.allIds = allIds;
+        state.byId = { ...state.byId, ...byId };
+        state.allIds = [...state.allIds, ...allIds];
+
+        if (cursor) {
+          state.isFetchingMore = false;
+        } else {
+          state.loading = false;
+        }
       })
       .addCase(fetchAllConvoList.rejected, (state, action) => {
-        state.loading = false;
+        const cursor = action.meta.arg.cursor;
+        if (cursor) {
+          state.isFetchingMore = false;
+        } else {
+          state.loading = false;
+        }
         state.error = action.payload as string;
       })
       .addCase(openConversation.pending, (state) => {
-        state.openingConvoLoading = true;
         state.error = null;
       })
       .addCase(openConversation.fulfilled, (state, action) => {
@@ -164,15 +206,19 @@ const conversationSlice = createSlice({
           state.allIds.push(allIds[0]);
           state.byId = { ...state.byId, ...byId };
         }
-        state.openingConvoLoading = false;
       })
       .addCase(openConversation.rejected, (state, action) => {
-        state.openingConvoLoading = false;
         state.error = action.payload as string;
       });
   },
 });
 
-export const { setLatestMessage, dropConversation, setConvoToValid } =
-  conversationSlice.actions;
+export const {
+  setLatestMessage,
+  increamentUnread,
+  dropConversation,
+  setConvoToValid,
+
+  setReadConvoMessages,
+} = conversationSlice.actions;
 export default conversationSlice.reducer;
