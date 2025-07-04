@@ -2,11 +2,7 @@ import "./ConversationList.css";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "../../../../store/store";
-import {
-  fetchAllConvoList,
-  setLatestConvoMessagesToRead,
-  setReadConvoMessages,
-} from "../conversationSlice";
+import { fetchAllConvoList, setReadConvoMessages } from "../conversationSlice";
 
 import ContactList from "../../Contact/ContactList";
 import { fetchAllContact } from "../../Contact/ContactSlice";

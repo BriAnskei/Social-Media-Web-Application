@@ -6,7 +6,6 @@ import { FetchPostType } from "../../../types/PostType";
 import { FollowPayload } from "../../../types/user";
 import { AppDispatch } from "../../../store/store";
 import { useSocket } from "../../../hooks/socket/useSocket";
-import { useGlobal } from "../../../hooks/useModal";
 
 import { useCurrentUser, useUserById } from "../../../hooks/useUsers";
 import { followToggled } from "../../users/userSlice";
@@ -15,6 +14,7 @@ import {
   viewProfile,
 } from "../../../Components/Modal/globalSlice";
 import { useNavigate } from "react-router";
+import { usePopoverContext } from "../../../hooks/usePopover";
 
 interface Post {
   post: FetchPostType;
@@ -23,7 +23,7 @@ interface Post {
 
 const Post = ({ post, ownerId }: Post) => {
   const { currentUser } = useCurrentUser();
-  const { popover } = useGlobal();
+  const { popover } = usePopoverContext();
   const { emitLike, emitFollow } = useSocket();
   const navigate = useNavigate();
 

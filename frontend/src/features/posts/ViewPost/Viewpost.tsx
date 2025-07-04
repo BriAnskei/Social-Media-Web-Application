@@ -14,9 +14,9 @@ import { useSocket } from "../../../hooks/socket/useSocket";
 import AutoResizeTextarea from "../../../utils/AutoResizeTextaria";
 import { CommentEventPayload } from "../../../types/PostType";
 import { useNavigate } from "react-router";
-import { useGlobal } from "../../../hooks/useModal";
 import { FetchedUserType } from "../../../types/user";
 import { viewProfile } from "../../../Components/Modal/globalSlice";
+import { usePopoverContext } from "../../../hooks/usePopover";
 
 interface Post {
   postId: string;
@@ -29,7 +29,7 @@ const ViewPost = ({ postId }: Post) => {
   const { currentUser } = useCurrentUser();
 
   const { emitLike, emitComment } = useSocket();
-  const { popover } = useGlobal();
+  const { popover } = usePopoverContext();
 
   const postData = usePostById(postId);
   const postOwnerData = useUserById(postData.user);

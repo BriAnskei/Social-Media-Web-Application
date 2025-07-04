@@ -54,7 +54,15 @@ const ChatArea = (prop: ChatAreaProp) => {
       )}
 
       {isMessagesNotReady ? (
-        <Spinner />
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+        >
+          <Spinner />
+        </div>
       ) : (
         messages.map((msg, index) => {
           const isoString = msg.createdAt;

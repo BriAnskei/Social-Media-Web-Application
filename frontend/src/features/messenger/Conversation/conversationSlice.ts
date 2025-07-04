@@ -110,14 +110,6 @@ const conversationSlice = createSlice({
   name: "conversation",
   initialState,
   reducers: {
-    dropConversation: (state, action) => {
-      const convoId = action.payload;
-      if (convoId && state.byId[convoId]) {
-        state.allIds = state.allIds.filter((id) => id !== convoId);
-
-        delete state.byId[convoId];
-      }
-    },
     increamentUnread: (state, action) => {
       const convoId = action.payload;
 
@@ -141,6 +133,13 @@ const conversationSlice = createSlice({
         state.byId[conversation._id].updatedAt = updatedAt;
       }
     },
+    setConvoToInvalid: (state, action) => {
+      const convoId = action.payload;
+
+      if (convoId && state.byId[convoId]) {
+        state.byId[convoId].isUserValidToRply = false;
+      }
+    },
     setConvoToValid: (state, action) => {
       const convoId = action.payload;
 
@@ -157,6 +156,14 @@ const conversationSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
+      .addCase(deleteConversation.fulfilled, (state, action) => {
+        const convoId = action.meta.arg;
+        state.allIds = state.allIds.filter((id) => id !== convoId);
+        delete state.byId[convoId];
+      })
+      .addCase(deleteConversation.rejected, (state, action) => {
+        state.error = action.payload as string;
+      })
       .addCase(fetchAllConvoList.pending, (state, action) => {
         const cursor = action.meta.arg.cursor;
 
@@ -216,9 +223,9 @@ const conversationSlice = createSlice({
 export const {
   setLatestMessage,
   increamentUnread,
-  dropConversation,
-  setConvoToValid,
 
+  setConvoToValid,
+  setConvoToInvalid,
   setReadConvoMessages,
 } = conversationSlice.actions;
 export default conversationSlice.reducer;

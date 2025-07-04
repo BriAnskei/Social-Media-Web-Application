@@ -11,7 +11,7 @@ import {
 } from "../../../Components/Modal/globalSlice";
 import Spinner from "../../../Components/Spinner/Spinner";
 import { FetchedUserType, FollowPayload } from "../../../types/user";
-import { setConvoToValid } from "../Conversation/conversationSlice";
+
 import {
   dropMessageOnClose,
   fetchMessagesByConvoId,
@@ -28,6 +28,8 @@ import { useConversationById } from "../../../hooks/useConversation";
 import { followToggled } from "../../users/userSlice";
 import { useMessagesByConversation } from "../../../hooks/useMessages";
 import ChatArea from "./ChatArea";
+import { useLoadMoreMessages } from "../../../hooks/chatBox/useLoadMoreMessages";
+import { deleteConversation } from "../Conversation/conversationSlice";
 
 interface MessageBoxProp {
   ChatWindowData: ChatWindowType;
@@ -58,7 +60,11 @@ const MessageBox = ({ ChatWindowData, currentUserData }: MessageBoxProp) => {
   const lastScrollRef = useRef<number>(0);
   const lastMessageIndexRef = useRef<number>(0);
 
-  const { socket, emitConvoViewStatus } = useChatSocket();
+  const { emitConvoViewStatus } = useChatSocket();
+
+  useEffect(() => {
+    console.log("Opning convoId:", conversationId);
+  }, []);
 
   const closeChat = () => {
     if (ChatWindowData.minimized) return;
@@ -67,6 +73,15 @@ const MessageBox = ({ ChatWindowData, currentUserData }: MessageBoxProp) => {
     emitConvoViewStatus(false, conversation?._id!);
     dispatch(closeWindow({ conversationId }));
     dispatch(dropMessageOnClose(conversationId));
+  };
+
+  const handleDelete = async () => {
+    try {
+      dispatch(closeWindow({ conversationId }));
+      await dispatch(deleteConversation(conversation._id));
+    } catch (error) {
+      console.log(error);
+    }
   };
 
   const fetchMessages = async (
@@ -172,15 +187,10 @@ const MessageBox = ({ ChatWindowData, currentUserData }: MessageBoxProp) => {
 
   const handleFollow = async () => {
     try {
-      const convoId = conversation._id;
       const followPayload: FollowPayload = {
         userId: conversation.participant._id,
         followerId: currentUserData._id,
       };
-
-      console.log("Conversation Id", convoId);
-
-      dispatch(setConvoToValid(convoId));
 
       await dispatch(followToggled(followPayload));
     } catch (error) {
@@ -188,28 +198,15 @@ const MessageBox = ({ ChatWindowData, currentUserData }: MessageBoxProp) => {
     }
   };
 
-  const loadMoreMessages = useCallback(async () => {
-    if (!hasMore) return;
-
-    setIsFetchingMore(true);
-
-    const scrollElement = scrollRef.current;
-    lastScrollRef.current = scrollElement.scrollHeight;
-
-    const lastMessageDateAsCursor = messages[0].createdAt;
-
-    await fetchMessages(conversation?._id!, lastMessageDateAsCursor);
-
-    // use setTimeout to ensure scroll adjustment runs after component rendered and  has updated the DOM with the new messages
-    setTimeout(() => {
-      const newScrollHeight = scrollElement.scrollHeight;
-      const scrollDiff = newScrollHeight - lastScrollRef.current;
-
-      scrollElement.scrollTop = scrollDiff;
-
-      setIsFetchingMore(false);
-    }, 0);
-  }, [hasMore, messages]);
+  const loadMoreMessages = useLoadMoreMessages({
+    hasMore,
+    messages,
+    conversationId: conversation._id!,
+    scrollRef,
+    lastScrollRef,
+    fetchMessages,
+    setIsFetchingMore,
+  });
 
   const viewUserProfile = () => {
     dispatch(viewProfile(userParticipant));
@@ -287,7 +284,7 @@ const MessageBox = ({ ChatWindowData, currentUserData }: MessageBoxProp) => {
               </div>
               <div className="unreplyable_buttons">
                 <button onClick={handleFollow}>follow</button>
-                <button>delete</button>
+                <button onClick={handleDelete}>delete</button>
               </div>
             </div>
           ) : (

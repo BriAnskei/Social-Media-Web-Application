@@ -52,15 +52,6 @@ const contactSlice = createSlice({
         state.allIds.push(allIds[0]);
         state.byId = { ...state.byId, ...byId };
       }
-
-      // Short emplementation
-      // // If new, record the ID
-      // if (!isContactExist) {
-      //   state.allIds.push(allIds[0]);
-      // }
-
-      // // Always merge in the fresh data
-      // Object.assign(state.byId, byId);
     },
     deleteContact: (state, action) => {
       const { contactId } = action.payload;

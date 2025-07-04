@@ -13,9 +13,10 @@ import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "../../store/store";
 import { fetchAllNotifs } from "../../features/notifications/notificationsSlice";
-import { useGlobal } from "../../hooks/useModal";
+
 import ViewPostModal from "../../Components/Modal/ViewPostModal/ViewPostModal";
 import PopoverMenu from "../../Components/Popover/Popover";
+import PopoverDeleteConvo from "../../Components/Popover/popoverDeleteConvo";
 import EditPostModal from "../../Components/Modal/EditPostModal/EditPostModal";
 import DeletePostModal from "../../Components/Modal/DeletePostModal/DeletePostModal";
 import {
@@ -31,6 +32,7 @@ import MessageBox from "../../features/messenger/Message/MessageBox";
 import Followers from "../../Components/Modal/Followers/Followers";
 import ViewMessageImage from "../../features/messenger/Message/ViewMessageImage";
 import { useCurrentUser } from "../../hooks/useUsers";
+import { usePopoverContext } from "../../hooks/usePopover";
 
 const MainLayout = () => {
   const dispatch = useDispatch<AppDispatch>();
@@ -58,7 +60,7 @@ const MainLayout = () => {
   );
 
   const { chatWindows } = useSelector((state: RootState) => state.global);
-  const { popover } = useGlobal();
+  const { popover, chatProp } = usePopoverContext();
 
   const closeEditProfModal = () => {
     dispatch(closeEditProfileModal());
@@ -134,7 +136,16 @@ const MainLayout = () => {
         onClose={closePostModalToggle}
         postId={viewPostModalId}
       />
+
+      {/* Post deletion component */}
       <PopoverMenu target={popover.target!} show={popover.show} />
+
+      <PopoverDeleteConvo
+        target={chatProp.ref}
+        show={chatProp.show}
+        convoId={chatProp.convoId}
+      />
+
       <EditPostModal
         postId={postIdEdit}
         show={showEditModal}

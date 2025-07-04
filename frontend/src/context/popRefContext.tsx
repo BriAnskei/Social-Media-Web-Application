@@ -1,20 +1,27 @@
-import React, { createContext, ReactNode, useRef, useState } from "react";
+import React, { createContext, ReactNode, useState } from "react";
+import { PopoverDeleteConvoType } from "../Components/Popover/PopOverType";
 
 interface PopoverProp {
   show: boolean;
-  target: React.MutableRefObject<null>;
+  target: React.MutableRefObject<null> | null;
   postId: string;
   popOverToggle: (postId: string, target: React.MutableRefObject<null>) => void;
   popOverClose: () => void;
 }
 
+interface toggleChatPayload {
+  ref: React.MutableRefObject<null>;
+  convoId: string;
+}
+
 interface ChatProp {
   show: boolean;
   ref: React.MutableRefObject<null>;
-  toogleChat: (ref: React.MutableRefObject<null>) => void;
+  convoId: string;
+  deleteConvoToggle: (data: toggleChatPayload) => void;
 }
 
-interface GlobalContextValue {
+export interface PopoverContextValue {
   popover: PopoverProp;
   chatProp: ChatProp;
 }
@@ -23,11 +30,13 @@ interface ModalProviderProps {
   children: ReactNode;
 }
 
-export const GlobalContext = createContext<GlobalContextValue | undefined>(
+export const PopoverContext = createContext<PopoverContextValue | undefined>(
   undefined
 );
 
-export const GlobalProvider: React.FC<ModalProviderProps> = ({ children }) => {
+export const PopoverRefProvider: React.FC<ModalProviderProps> = ({
+  children,
+}) => {
   const [popoverData, setPopoverData] = useState<{
     show: boolean;
     postId: string;
@@ -38,12 +47,10 @@ export const GlobalProvider: React.FC<ModalProviderProps> = ({ children }) => {
     target: null,
   });
 
-  const [chatPopover, setChatPopover] = useState<{
-    show: boolean;
-    ref: React.MutableRefObject<null> | any;
-  }>({
+  const [chatPopover, setChatPopover] = useState<PopoverDeleteConvoType>({
     show: false,
-    ref: null,
+    target: null,
+    convoId: "",
   });
 
   // Popover events
@@ -68,23 +75,50 @@ export const GlobalProvider: React.FC<ModalProviderProps> = ({ children }) => {
   };
 
   const popOverClose = () => {
-    setPopoverData((prev) => ({ ...prev, show: false }));
+    const empyPayload = {} as PopoverProp;
+    setPopoverData(() => ({ ...empyPayload, show: false }));
   };
 
-  // chats
-  const toogleChat = (ref: React.MutableRefObject<null>) => {
-    if (!ref || !ref.current) {
-      throw new Error("no reference to open chat list");
-    }
+  const deleteConvoToggle = (payload: toggleChatPayload) => {
+    try {
+      const { ref, convoId } = payload;
 
-    if (chatPopover.ref && chatPopover.ref.current) {
-      setChatPopover((prev) => ({ ...prev, ref: null, show: false }));
-    } else {
-      setChatPopover((prev) => ({ ...prev, ref: ref, show: true }));
+      if (chatPopover.target && chatPopover.target.current) {
+        if (chatPopover.target.current !== ref.current) {
+          setChatPopover((prev) => ({ ...prev, target: ref, convoId }));
+        } else {
+          closeConvoPopover();
+        }
+      } else {
+        initializeConvoPopoverRef(payload);
+      }
+    } catch (error) {
+      console.error("Failed to toggle delete convo popover, ", error);
     }
   };
 
-  const globalContextValue: GlobalContextValue = {
+  const closeConvoPopover = () => {
+    setTimeout(() => {
+      setChatPopover((prev) => ({
+        ...prev,
+        target: null,
+        show: false,
+        convoId: "",
+      }));
+    }, 200);
+  };
+
+  const initializeConvoPopoverRef = (payload: toggleChatPayload) => {
+    try {
+      const { ref, convoId } = payload;
+
+      setChatPopover({ target: ref, show: true, convoId });
+    } catch (error) {
+      throw new Error((error as Error).message);
+    }
+  };
+
+  const popoverContextValue: PopoverContextValue = {
     popover: {
       show: popoverData.show,
       target: popoverData.target,
@@ -93,15 +127,16 @@ export const GlobalProvider: React.FC<ModalProviderProps> = ({ children }) => {
       popOverClose,
     },
     chatProp: {
+      convoId: chatPopover.convoId,
       show: chatPopover.show,
-      ref: chatPopover.ref,
-      toogleChat,
+      ref: chatPopover.target,
+      deleteConvoToggle,
     },
   };
 
   return (
-    <GlobalContext.Provider value={globalContextValue}>
+    <PopoverContext.Provider value={popoverContextValue}>
       {children}
-    </GlobalContext.Provider>
+    </PopoverContext.Provider>
   );
 };

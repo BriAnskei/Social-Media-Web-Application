@@ -1,109 +1,173 @@
-import { useCallback, useContext, useEffect, useRef } from "react";
-import { SocketContext } from "../../context/SocketContext";
-import { ConversationType, Message } from "../../types/MessengerTypes";
-import { useDispatch } from "react-redux";
+import { Socket } from "socket.io-client";
 import { AppDispatch } from "../../store/store";
+import { ConversationType, Message } from "../../types/MessengerTypes";
 import { addMessage } from "../../features/messenger/Message/messengeSlice";
 import {
   increamentUnread,
   setLatestMessage,
 } from "../../features/messenger/Conversation/conversationSlice";
+import { useContext, useRef, useEffect, useCallback } from "react";
+import { useDispatch } from "react-redux";
+import { SocketContext } from "../../context/SocketContext";
 
 const CHAT_EVENTS = {
   open_conversation: "conversation_room-active",
   close_conversation: "conversation_room-inactive",
   message_on_sent: "message_on_sent",
+  message_on_sent_closed: "message_on_sent_closedConvo",
   message_sent: "message-sent",
 };
 
+interface ClosedConversationMessagePayload {
+  conversation: ConversationType;
+  messageData: Message;
+}
+
+interface ChatSocketSetupParams {
+  socket: Socket;
+  dispatch: AppDispatch;
+  isConnected: boolean;
+}
+
+// Regular function that sets up chat socket events
+export const setupChatSocket = ({
+  socket,
+  dispatch,
+  isConnected,
+}: ChatSocketSetupParams) => {
+  if (!socket || !isConnected) {
+    return null;
+  }
+
+  // Event handlers
+  const handleIncomingMessage = (data: {
+    conversation: ConversationType;
+    messageData: Message;
+  }) => {
+    const { conversation, messageData } = data;
+
+    dispatch(
+      addMessage({
+        conversationId: conversation._id,
+        messageData: messageData,
+      })
+    );
+
+    dispatch(
+      setLatestMessage({
+        conversation,
+        messageData,
+        updatedAt: messageData.createdAt,
+      })
+    );
+  };
+
+  const handleClosedConversationMessage = (
+    data: ClosedConversationMessagePayload
+  ) => {
+    dispatch(
+      setLatestMessage({
+        conversation: data.conversation,
+        messageData: data.messageData,
+        updatedAt: data.messageData.createdAt,
+      })
+    );
+
+    dispatch(increamentUnread(data.conversation._id));
+  };
+
+  // Setup event listeners
+  const setupEventListeners = () => {
+    // Clean up any existing listeners first
+    socket.off(CHAT_EVENTS.message_on_sent);
+    socket.off(CHAT_EVENTS.message_on_sent_closed);
+
+    socket.onAny((e, ...args) => {
+      console.log(`Received in chat handler event: ${e}`, args);
+    });
+
+    // Add new listeners
+    socket.on(CHAT_EVENTS.message_on_sent, handleIncomingMessage);
+    socket.on(
+      CHAT_EVENTS.message_on_sent_closed,
+      (data: ClosedConversationMessagePayload) => {
+        handleClosedConversationMessage(data);
+      }
+    );
+  };
+
+  // Cleanup function
+  const cleanup = () => {
+    socket.off(CHAT_EVENTS.message_on_sent, handleIncomingMessage);
+    socket.off(
+      CHAT_EVENTS.message_on_sent_closed,
+      handleClosedConversationMessage
+    );
+  };
+
+  // Emit function
+  const emitConvoViewStatus = (
+    isUserActive: boolean,
+    conversationId: string
+  ) => {
+    if (!socket) {
+      throw new Error("Failed emitConvoViewStatus: Socket is not initialized");
+    }
+
+    const eventType = isUserActive
+      ? CHAT_EVENTS.open_conversation
+      : CHAT_EVENTS.close_conversation;
+
+    socket.emit(eventType, conversationId);
+  };
+
+  // Setup the listeners
+  setupEventListeners();
+
+  // Return cleanup and emit functions
+  return {
+    cleanup,
+    emitConvoViewStatus,
+  };
+};
+
+// Hook version that uses the setup function
 export const useChatSocket = () => {
   const dispatch = useDispatch<AppDispatch>();
   const { socket, isConnected } = useContext(SocketContext);
-
-  const eventInitialize = useRef(false);
-
-  const handleIncomingMessage = useCallback(
-    (data: { conversation: ConversationType; messageData: Message }) => {
-      const { conversation, messageData } = data;
-      dispatch(
-        addMessage({
-          conversationId: data.conversation._id,
-          messageData: data.messageData,
-        })
-      );
-      dispatch(
-        setLatestMessage({
-          conversation,
-          messageData,
-          updatedAt: messageData.createdAt,
-        })
-      );
-    },
-    [socket, isConnected]
-  );
-
-  interface ClosedConversationMessagePayload {
-    conversation: ConversationType;
-    messageData: Message;
-  }
-
-  const handleClosedConversationMessage = useCallback(
-    (data: ClosedConversationMessagePayload) => {
-      dispatch(
-        setLatestMessage({
-          conversation: data.conversation,
-          messageData: data.messageData,
-          updatedAt: data.messageData.createdAt,
-        })
-      );
-
-      dispatch(increamentUnread(data.conversation._id));
-    },
-    [dispatch]
-  );
+  const chatSocketRef = useRef<{
+    cleanup: () => void;
+    emitConvoViewStatus: (
+      isUserActive: boolean,
+      conversationId: string
+    ) => void;
+  } | null>(null);
 
   useEffect(() => {
-    if (!socket || !isConnected || eventInitialize.current) {
+    if (!socket || !isConnected) {
       return;
     }
 
-    const removeAllPrevListeners = () => {
-      socket.off(CHAT_EVENTS.message_on_sent);
-      socket.off("message_on_sent_closedConvo");
-    };
+    // Setup chat socket
+    const chatSocket = setupChatSocket({ socket, dispatch, isConnected });
+    chatSocketRef.current = chatSocket;
 
-    const listeOnAnyEvents = () => {
-      // Register event listeners
-      socket.on(CHAT_EVENTS.message_on_sent, handleIncomingMessage);
-      socket.on("message_on_sent_closedConvo", handleClosedConversationMessage);
-    };
-
-    removeAllPrevListeners();
-    listeOnAnyEvents();
-
-    eventInitialize.current = true;
-
+    // Cleanup on unmount
     return () => {
-      if (socket) {
-        removeAllPrevListeners();
-        eventInitialize.current = false;
+      if (chatSocketRef.current) {
+        chatSocketRef.current.cleanup();
+        chatSocketRef.current = null;
       }
     };
-  }, [socket, isConnected, dispatch]); // Added isConnected as dependency
+  }, [socket, isConnected, dispatch]);
 
   const emitConvoViewStatus = useCallback(
-    (isUserActive: Boolean, conversationId: string) => {
-      if (!socket) {
-        throw new Error("Failed emitConvoViewStatus: Socket is not initialize");
+    (isUserActive: boolean, conversationId: string) => {
+      if (chatSocketRef.current) {
+        chatSocketRef.current.emitConvoViewStatus(isUserActive, conversationId);
       }
-
-      const eventType = isUserActive
-        ? CHAT_EVENTS.open_conversation
-        : CHAT_EVENTS.close_conversation;
-
-      socket.emit(eventType, conversationId);
     },
-    [socket]
+    []
   );
 
   return {

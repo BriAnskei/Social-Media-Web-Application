@@ -50,21 +50,39 @@ export const contactService = {
       console.log("Failed to create/update contact, " + error);
     }
   },
-  updateValidUserOrDropContact: async (userId: string, otherUserId: string) => {
+  findContactByParticipants: async (userId: string, otherUserId: string) => {
     try {
       let contact = await Contact.findOne({
         $and: [{ user: userId }, { user: otherUserId }],
       });
 
-      if (!contact) {
-        throw new Error(
-          "Failed to Drop/update contact, contact does not exist"
-        );
-      }
+      return contact;
+    } catch (error) {
+      throw new Error((error as Error).message);
+    }
+  },
+  filterUserOnValidPariticipants: (
+    validFor: mongoose.Types.ObjectId[],
+    userId: string
+  ) => {
+    validFor = validFor.filter((user) => user.toString() !== userId.toString());
+    return validFor;
+  },
+  updateValidUserOrDropContact: async (userId: string, otherUserId: string) => {
+    try {
+      const contact = await contactService.findContactByParticipants(
+        userId,
+        otherUserId
+      );
 
-      // remove user in the validFor filter
-      contact.validFor = contact.validFor.filter(
-        (user) => user.toString() !== userId.toString()
+      if (!contact)
+        throw new Error(
+          "Failed on updateValidUserOrDropContact: Contact does not exist"
+        );
+
+      contact.validFor = contactService.filterUserOnValidPariticipants(
+        contact.validFor,
+        userId
       );
 
       // delete contact if both user does not exist in the validFor
@@ -81,8 +99,13 @@ export const contactService = {
         contact.validFor
       );
 
+      const conversation = await ConvoService.getConvoByContactId(
+        contact._id!.toString()
+      );
+
       let emitPayload = {
         contactId: contact._id as string,
+        convoId: conversation?._id as string,
         userId,
       };
 
@@ -105,6 +128,9 @@ export const contactService = {
     } catch (error) {
       console.log("Faild to get vaolid users, " + error);
     }
+  },
+  logError: (e: Error) => {
+    console.error(e.message);
   },
 };
 

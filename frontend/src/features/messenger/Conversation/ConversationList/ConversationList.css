@@ -108,6 +108,21 @@
   font-size: 0.8rem;
 }
 
+.time-delete-act {
+  display: flex;
+  gap: 5px;
+}
+
+.time-delete-act .delete-convo-icon {
+  font-size: medium;
+
+  cursor: pointer;
+}
+
+.delete-convo-icon:hover {
+  font-weight: bolder;
+}
+
 .chat-content-count {
   display: flex;
   justify-content: space-between;

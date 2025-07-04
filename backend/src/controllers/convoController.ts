@@ -126,7 +126,7 @@ export const deleteConversation = async (
 ): Promise<any> => {
   try {
     const userId = req.userId;
-    const { convoId } = req.body;
+    const convoId = req.body.conversationId;
 
     if (!userId || !convoId)
       throw new Error("no user id or conversation id recieved");
@@ -136,6 +136,8 @@ export const deleteConversation = async (
     if (!conversation) {
       return res.json({ success: false, message: "conversation not exist" });
     }
+
+    console.log("Deleting this conversation: ", conversation);
 
     // add user in deleteFor(filter field)
     conversation.deletedFor.push(new mongoose.Types.ObjectId(userId));

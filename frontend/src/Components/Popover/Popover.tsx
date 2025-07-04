@@ -1,23 +1,20 @@
 // PopoverMenu.tsx
 import React from "react";
 import { Overlay, Popover, Button } from "react-bootstrap";
-import { useGlobal } from "../../hooks/useModal";
+
 import { useDispatch } from "react-redux";
 import { AppDispatch } from "../../store/store";
 import { toggleDeleteModal, toggleEditModal } from "../Modal/globalSlice";
+import { PopoverDeletePost } from "./PopOverType";
+import { usePopoverContext } from "../../hooks/usePopover";
 
-interface PopoverProp {
-  target: React.MutableRefObject<null>;
-  show: boolean;
-}
-
-const PopoverMenu: React.FC<PopoverProp> = ({ target, show }) => {
+const PopoverMenu: React.FC<PopoverDeletePost> = ({ target, show }) => {
   if (!target || !target.current) {
     return;
   }
 
   const dispatch = useDispatch<AppDispatch>();
-  const { popover } = useGlobal();
+  const { popover } = usePopoverContext();
 
   const popoverEventMenu = (type: string) => {
     switch (type) {

@@ -6,7 +6,7 @@ import store from "./store/store.ts";
 import { BrowserRouter } from "react-router-dom";
 import { setupIntercpetor } from "./utils/axiosHelper.ts";
 import { SocketProvider } from "./context/SocketContext.tsx";
-import { GlobalProvider } from "./context/popRefContext.tsx";
+import { PopoverRefProvider } from "./context/popRefContext.tsx";
 
 setupIntercpetor(store);
 
@@ -14,9 +14,9 @@ createRoot(document.getElementById("root")!).render(
   <BrowserRouter>
     <Provider store={store}>
       <SocketProvider>
-        <GlobalProvider>
+        <PopoverRefProvider>
           <App />
-        </GlobalProvider>
+        </PopoverRefProvider>
       </SocketProvider>
     </Provider>
   </BrowserRouter>

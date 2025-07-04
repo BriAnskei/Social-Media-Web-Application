@@ -214,8 +214,7 @@ const userSlice = createSlice({
       })
 
       .addCase(followToggled.rejected, (state, action) => {
-        // Handle API failure - roll back the state
-        const { userId, followerId } = action.meta.arg; // accessing the payload in the follow toggle
+        const { userId, followerId } = action.meta.arg;
         const userToBeFollowed = state.byId[userId];
         const userWhoFollowed = state.byId[followerId];
 

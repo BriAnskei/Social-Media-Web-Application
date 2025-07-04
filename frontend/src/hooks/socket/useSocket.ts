@@ -24,7 +24,10 @@ import {
   createOrUpdateContact,
   deleteContact,
 } from "../../features/messenger/Contact/ContactSlice";
-import { setConvoToValid } from "../../features/messenger/Conversation/conversationSlice";
+import {
+  setConvoToInvalid,
+  setConvoToValid,
+} from "../../features/messenger/Conversation/conversationSlice";
 import { ContactType } from "../../types/contactType";
 import { useChatSocket } from "./useChatSocket";
 
@@ -154,7 +157,7 @@ export const useSocket = () => {
     [dispatch]
   );
 
-  // Contact, conversation events
+  // state update of convo and contacts for current user
   const handleCreateOrUpdateContact = useCallback(
     (data: RefreshContactPayload) => {
       dispatch(createOrUpdateContact(data));
@@ -166,6 +169,7 @@ export const useSocket = () => {
   const handleUpdateOrDropContact = useCallback(
     (data: DropChatPayload) => {
       dispatch(deleteContact(data));
+      dispatch(setConvoToInvalid(data.convoId));
     },
     [dispatch]
   );
@@ -208,7 +212,7 @@ export const useSocket = () => {
       removeAllListener();
 
       socket.onAny((e, ...args) => {
-        console.log(`Received event: ${e}`, args);
+        console.log(`Received in  global handler event: ${e}`, args);
       });
 
       // global event

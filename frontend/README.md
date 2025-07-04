@@ -531,3 +531,270 @@ setTimeout(() => {
 ## Result
 
 This technique ensures a smooth and accurate scroll experience in infinite scroll/message applications.
+
+# React Best Practices - Development Notes
+
+## 📋 Table of Contents
+
+- [Component Naming Convention](#component-naming-convention)
+- [Moving Complex Logic Out of Components](#moving-complex-logic-out-of-components)
+- [Clean Code: Reducing Function Arguments](#clean-code-reducing-function-arguments)
+- [Folder Structure Best Practices](#folder-structure-best-practices)
+
+---
+
+## Component Naming Convention
+
+### ✅ Problem Statement
+
+React components must start with an uppercase letter (PascalCase) in both definition and usage. If a component name starts with a lowercase letter, JSX will treat it as a native HTML element, not a custom React component.
+
+### ❌ Common Error
+
+```typescript
+Property 'componentName' does not exist on type 'JSX.IntrinsicElements'.ts(2339)
+```
+
+### Examples
+
+#### ❌ Incorrect Implementation
+
+```tsx
+export const myComponent = () => <div>Hello</div>;
+
+<myComponent />; // ❌ This will cause an error
+```
+
+#### ✅ Correct Implementation
+
+```tsx
+export const MyComponent = () => <div>Hello</div>;
+
+<MyComponent />; // ✅ This works as expected
+```
+
+### 📝 Best Practice Rules
+
+Always use **PascalCase** for:
+
+- Exported component names
+- JSX usage of components
+
+This makes it clear to React that the tag is a custom component, not a native HTML tag.
+
+---
+
+## Moving Complex Logic Out of Components
+
+### 🎯 Single Responsibility Principle
+
+To keep React components clean and maintainable, follow the Single Responsibility Principle and move complex logic out of the component file.
+
+### ✅ When to Extract Logic
+
+| Scenario                                          | Solution                       |
+| ------------------------------------------------- | ------------------------------ |
+| Logic uses React features (state, refs, effects)  | Create a **custom hook**       |
+| Logic is pure JavaScript (no React-specific code) | Move to a **utility function** |
+
+### 🔧 Example: Moving `loadMoreMessages` Out
+
+#### Custom Hook File
+
+```tsx
+// hooks/useLoadMoreMessages.ts
+import { useCallback } from "react";
+
+export const useLoadMoreMessages = (
+  hasMore: boolean,
+  messages: Message[],
+  conversationId: string,
+  scrollRef: React.RefObject<HTMLElement>,
+  lastScrollRef: React.MutableRefObject<number>,
+  fetchMessages: (id: string, cursor: string) => Promise<void>,
+  setIsFetchingMore: (fetching: boolean) => void
+) => {
+  const loadMoreMessages = useCallback(async () => {
+    if (!hasMore || !scrollRef.current || !conversationId) return;
+
+    setIsFetchingMore(true);
+
+    const scrollElement = scrollRef.current;
+    lastScrollRef.current = scrollElement.scrollHeight;
+
+    const cursor = messages[0]?.createdAt;
+    if (!cursor) return;
+
+    await fetchMessages(conversationId, cursor);
+
+    setTimeout(() => {
+      const newHeight = scrollElement.scrollHeight;
+      scrollElement.scrollTop = newHeight - lastScrollRef.current;
+      setIsFetchingMore(false);
+    }, 0);
+  }, [hasMore, messages, conversationId]);
+
+  return loadMoreMessages;
+};
+```
+
+#### Usage in Component
+
+```tsx
+import { useLoadMoreMessages } from "../hooks/useLoadMoreMessages";
+
+const loadMoreMessages = useLoadMoreMessages(
+  hasMore,
+  messages,
+  conversation._id!,
+  scrollRef,
+  lastScrollRef,
+  fetchMessages,
+  setIsFetchingMore
+);
+```
+
+---
+
+## Clean Code: Reducing Function Arguments
+
+### ❌ Problem: Too Many Arguments
+
+When a function or hook has more than 2 arguments, especially unrelated ones, it violates clean code principles (as suggested by _Clean Code_ by Robert C. Martin).
+
+**Issues with many arguments:**
+
+- Harder to read
+- More error-prone
+- Difficult to test and maintain
+
+#### Example of Problematic Function
+
+```tsx
+useLoadMoreMessages(
+  hasMore,
+  messages,
+  conversationId,
+  scrollRef,
+  lastScrollRef,
+  fetchMessages,
+  setIsFetchingMore
+);
+```
+
+### ✅ Solution: Group Arguments into an Object
+
+#### 1. Create Configuration Interface
+
+```tsx
+interface LoadMoreConfig {
+  hasMore: boolean;
+  messages: Message[];
+  conversationId: string;
+  scrollRef: React.RefObject<HTMLElement>;
+  lastScrollRef: React.MutableRefObject<number>;
+  fetchMessages: (id: string, cursor: string) => Promise<void>;
+  setIsFetchingMore: (fetching: boolean) => void;
+}
+```
+
+#### 2. Refactor Hook to Use Config Object
+
+```tsx
+export const useLoadMoreMessages = (config: LoadMoreConfig) => {
+  const {
+    hasMore,
+    messages,
+    conversationId,
+    scrollRef,
+    lastScrollRef,
+    fetchMessages,
+    setIsFetchingMore,
+  } = config;
+
+  const loadMoreMessages = useCallback(async () => {
+    if (!hasMore || !scrollRef.current || !conversationId) return;
+
+    setIsFetchingMore(true);
+    const scrollElement = scrollRef.current;
+    lastScrollRef.current = scrollElement.scrollHeight;
+
+    const cursor = messages[0]?.createdAt;
+    if (!cursor) return;
+
+    await fetchMessages(conversationId, cursor);
+
+    setTimeout(() => {
+      const newHeight = scrollElement.scrollHeight;
+      scrollElement.scrollTop = newHeight - lastScrollRef.current;
+      setIsFetchingMore(false);
+    }, 0);
+  }, [hasMore, messages, conversationId]);
+
+  return loadMoreMessages;
+};
+```
+
+#### 3. Clean Usage
+
+```tsx
+const loadMoreMessages = useLoadMoreMessages({
+  hasMore,
+  messages,
+  conversationId,
+  scrollRef,
+  lastScrollRef,
+  fetchMessages,
+  setIsFetchingMore,
+});
+```
+
+### 🧩 Benefits of This Approach
+
+- Function only takes 1 argument
+- Cleaner and easier to extend
+- Reduces confusion and coupling
+- Encourages logical grouping of related data
+
+---
+
+## Folder Structure Best Practices
+
+### 📁 Recommended Structure
+
+```
+src/
+├── components/
+│   └── ChatBox/
+│       ├── ChatBox.tsx
+│       └── hooks/
+│           └── useLoadMoreMessages.ts
+├── utils/
+│   └── scrollHelpers.ts
+```
+
+### 📈 Benefits of This Structure
+
+- **Code readability** - Clear separation of concerns
+- **Reusability** - Logic can be shared across components
+- **Easier testing** - Isolated functions are easier to test
+- **Maintenance** - Changes are localized and predictable
+
+---
+
+## 🪜 Advanced Considerations
+
+### Optional Next Step: React Context
+
+If these props are reused or deeply nested, consider storing them in a React Context for easier access across components.
+
+### 💡 Pro Tips
+
+1. **Use TypeScript interfaces** for better type safety
+2. **Keep hooks focused** on a single responsibility
+3. **Test custom hooks** separately from components
+4. **Document complex logic** with clear comments
+
+---
+
+_Last updated: July 2025_
