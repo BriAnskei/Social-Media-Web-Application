@@ -62,10 +62,6 @@ const MessageBox = ({ ChatWindowData, currentUserData }: MessageBoxProp) => {
 
   const { emitConvoViewStatus } = useChatSocket();
 
-  useEffect(() => {
-    console.log("Opning convoId:", conversationId);
-  }, []);
-
   const closeChat = () => {
     if (ChatWindowData.minimized) return;
     const conversationId = conversation._id;

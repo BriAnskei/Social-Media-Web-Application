@@ -5,6 +5,7 @@ import { addMessage } from "../../features/messenger/Message/messengeSlice";
 import {
   increamentUnread,
   setLatestMessage,
+  setReadConvoMessages,
 } from "../../features/messenger/Conversation/conversationSlice";
 import { useContext, useRef, useEffect, useCallback } from "react";
 import { useDispatch } from "react-redux";
@@ -16,6 +17,7 @@ const CHAT_EVENTS = {
   message_on_sent: "message_on_sent",
   message_on_sent_closed: "message_on_sent_closedConvo",
   message_sent: "message-sent",
+  conversation_on_view: "conversation_on_view",
 };
 
 interface ClosedConversationMessagePayload {
@@ -76,11 +78,22 @@ export const setupChatSocket = ({
     dispatch(increamentUnread(data.conversation._id));
   };
 
+  const handleConvoOnview = (payload: {
+    conversationId: string;
+    openedAt: string;
+  }) => {
+    const { conversationId, openedAt } = payload;
+    console.log("CONVOONVIEW", payload);
+
+    dispatch(setReadConvoMessages(conversationId));
+  };
+
   // Setup event listeners
   const setupEventListeners = () => {
     // Clean up any existing listeners first
     socket.off(CHAT_EVENTS.message_on_sent);
     socket.off(CHAT_EVENTS.message_on_sent_closed);
+    socket.off(CHAT_EVENTS.conversation_on_view);
 
     socket.onAny((e, ...args) => {
       console.log(`Received in chat handler event: ${e}`, args);
@@ -94,6 +107,7 @@ export const setupChatSocket = ({
         handleClosedConversationMessage(data);
       }
     );
+    socket.on(CHAT_EVENTS.conversation_on_view, handleConvoOnview);
   };
 
   // Cleanup function
@@ -103,6 +117,7 @@ export const setupChatSocket = ({
       CHAT_EVENTS.message_on_sent_closed,
       handleClosedConversationMessage
     );
+    socket.off(CHAT_EVENTS.conversation_on_view, handleConvoOnview);
   };
 
   // Emit function

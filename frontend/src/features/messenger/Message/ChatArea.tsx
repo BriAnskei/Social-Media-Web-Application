@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useCallback } from "react";
 import { Message } from "../../../types/MessengerTypes";
 import { Spinner } from "react-bootstrap";
 import { monthNames } from "../../../assets/monthNames";
@@ -7,6 +7,7 @@ import { MessageSpinner } from "../../../Components/Spinner/Spinner";
 import { getMessageImageUrl } from "../../../utils/ImageUrlHelper";
 import { useDispatch } from "react-redux";
 import { AppDispatch } from "../../../store/store";
+import { useConversationById } from "../../../hooks/useConversation";
 
 interface ChatAreaProp {
   hasMore: boolean;
@@ -33,7 +34,20 @@ const ChatArea = (prop: ChatAreaProp) => {
     messagesRef,
   } = prop;
 
+  const conversation = useConversationById(conversationId);
+
   const dispatch = useDispatch<AppDispatch>();
+
+  const isLastMessageRead = useCallback(
+    (index: number) => {
+      if (!conversation || !messages) return false;
+      const { lastMessage } = conversation;
+      const isLastMessageUser = lastMessage.sender === currentUserId;
+      const isMessageLast = index === messages.length - 1;
+      return isLastMessageUser && lastMessage.read && isMessageLast;
+    },
+    [conversation, messages]
+  );
 
   const noMoreOlderMessages = messages && messages.length >= 7 && !hasMore;
 
@@ -128,8 +142,10 @@ const ChatArea = (prop: ChatAreaProp) => {
                 {date.toLocaleTimeString([], {
                   hour: "2-digit",
                   minute: "2-digit",
-                })}
+                })}{" "}
+                {isLastMessageRead(index) && <>Read</>}
               </div>
+
               {isMessageDiffDate && (
                 <div className="message-date">
                   {monthNames[date.getMonth()]}

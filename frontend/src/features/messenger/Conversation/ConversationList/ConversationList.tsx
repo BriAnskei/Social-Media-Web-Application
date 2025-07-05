@@ -2,13 +2,13 @@ import "./ConversationList.css";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "../../../../store/store";
-import { fetchAllConvoList, setReadConvoMessages } from "../conversationSlice";
 
 import ContactList from "../../Contact/ContactList";
 import { fetchAllContact } from "../../Contact/ContactSlice";
 import { FetchedUserType } from "../../../../types/user";
 import { ConversationService } from "../../../../services/conversation.service";
 import MessageBoxGroup from "../MessageBoxGroup/MessageBoxGroup";
+import { fetchAllConvoList } from "../conversationSlice";
 
 interface ConversationListPorp {
   currentUser: FetchedUserType;
@@ -93,7 +93,6 @@ const ConversationList = ({ currentUser }: ConversationListPorp) => {
         dispatch
       );
 
-      dispatch(setReadConvoMessages(conversation?._id));
       closeDropDown();
     } catch (error) {
       console.error("Failed to openConvoOnMessageBox, ", error);

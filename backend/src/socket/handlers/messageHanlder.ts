@@ -65,15 +65,18 @@ export class MessageHanlder {
       this.activeConversations.get(conversationId)
     );
 
-    console.log(this.activeConversations.get(conversationId));
-
     if (!isCovoRoomInitialized) {
       console.log("Setting a new room for conversation");
 
       this.activeConversations.set(conversationId, new Set());
     }
     socket.join(conversationId);
+    this.io
+      .to(conversationId)
+      .emit("conversation_on_view", { conversationId, openedAt: new Date() });
+
     this.activeConversations.get(conversationId)?.add(userId);
+
     console.group(
       "an user has been active in conversation. UserId: ",
       userId,

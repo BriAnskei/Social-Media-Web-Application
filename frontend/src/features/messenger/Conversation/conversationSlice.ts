@@ -1,11 +1,6 @@
 import { NormalizeState } from "../../../types/NormalizeType";
 import { ConversationType, Message } from "../../../types/MessengerTypes";
-import {
-  createAsyncThunk,
-  createSlice,
-  current,
-  PayloadAction,
-} from "@reduxjs/toolkit";
+import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
 
 import { MessageApi } from "../../../utils/api";
 import { RootState } from "../../../store/store";
