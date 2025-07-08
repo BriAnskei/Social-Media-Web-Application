@@ -66,6 +66,8 @@ export const fetchAllConvoList = createAsyncThunk(
 
       const { hasMore, conversations } = res;
 
+      console.log("fetched conversation: ", conversations);
+
       return { hasMore, conversations };
     } catch (error) {
       rejectWithValue("Failed to fetch convo list: " + error || "Error");
@@ -143,10 +145,24 @@ const conversationSlice = createSlice({
       }
     },
     setReadConvoMessages: (state, action) => {
-      const convoId = action.payload;
+      const { convoId, messageOnReadId } = action.payload;
 
       state.byId[convoId].lastMessage.read = true;
       state.byId[convoId].unreadCount = 0;
+
+      state.byId[convoId].lastMessageOnRead = messageOnReadId;
+    },
+    setLastMessageReadByParticipant: (state, action) => {
+      const { userId, convoId } = action.payload;
+      const lastMessage = state.byId[convoId].lastMessage;
+
+      const isUserRecipient = userId === lastMessage.recipient;
+
+      if (isUserRecipient) {
+        state.byId[convoId].lastMessageOnRead = lastMessage._id;
+        state.byId[convoId].lastMessage.read = true;
+        state.byId[convoId].unreadCount = 0;
+      }
     },
   },
   extraReducers: (builder) => {
@@ -222,5 +238,6 @@ export const {
   setConvoToValid,
   setConvoToInvalid,
   setReadConvoMessages,
+  setLastMessageReadByParticipant,
 } = conversationSlice.actions;
 export default conversationSlice.reducer;

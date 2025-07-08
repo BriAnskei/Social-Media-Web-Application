@@ -1,6 +1,5 @@
 import { ReqAuth } from "../controllers/messageController";
 import { appEvents } from "../events/appEvents";
-import { IConversation } from "../models/conversationModel";
 import { IMessage, MessageModel } from "../models/messageModel";
 import { messageHanlder } from "../server";
 import {
@@ -63,6 +62,13 @@ export const messageService = {
       throw error;
     }
   },
+  getMessgeById: async (msgId: string): Promise<IMessage | null> => {
+    try {
+      return await MessageModel.findOne({ _id: msgId });
+    } catch (error) {
+      throw error;
+    }
+  },
 
   markReadMessages: async (conversationId: string, userId: string) => {
     try {
@@ -78,6 +84,7 @@ export const messageService = {
       );
     }
   },
+
   createPayloadForActiveRecipient: (req: ReqAuth) => {
     try {
       const convoId = req.params.conversationId;

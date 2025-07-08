@@ -136,7 +136,6 @@ const userSlice = createSlice({
       const { userId, followerId } = action.payload;
       const userToBeFollowed = state.byId[userId];
       const userWhoFollowed = state.byId[followerId];
-      console.log("FOLLOW FUNCTION TRIIGERED");
 
       if (!userToBeFollowed || !userWhoFollowed) {
         throw new Error("Failed, user might not exist");

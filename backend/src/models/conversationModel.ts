@@ -1,5 +1,10 @@
 import mongoose, { Document, Schema } from "mongoose";
 
+interface ParticipantOnRead {
+  user: mongoose.Types.ObjectId;
+  message: mongoose.Types.ObjectId;
+}
+
 export interface IUnreadCount {
   user: mongoose.Types.ObjectId;
   count: number;
@@ -13,9 +18,24 @@ export interface IConversation extends Document {
   lastMessage?: mongoose.Types.ObjectId; // user who message
   unreadCounts: IUnreadCount[];
   lastMessageAt: Date;
+  lastMessageOnRead?: ParticipantOnRead[];
   createdAt: Date;
   updatedAt: Date;
 }
+
+const ParticipantOnReadSchema = new Schema<ParticipantOnRead>(
+  {
+    user: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+    },
+    message: {
+      type: Schema.Types.ObjectId,
+      ref: "Message",
+    },
+  },
+  { _id: false }
+);
 
 // Sub schema fo the converttion model
 const UnreadCountSchema = new Schema<IUnreadCount>(
@@ -68,6 +88,7 @@ const ConversationSchema = new Schema<IConversation>(
       default: Date.now,
     },
     unreadCounts: [UnreadCountSchema],
+    lastMessageOnRead: [ParticipantOnReadSchema],
   },
   { timestamps: true }
 );

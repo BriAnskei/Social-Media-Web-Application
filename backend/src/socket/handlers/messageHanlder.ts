@@ -50,9 +50,7 @@ export class MessageHanlder {
     return socket.data.userId;
   }
 
-  /**
-   * isActiveRecipient
-   */
+  // Used on creating model doc on sent message
   public isActiveRecipient(convoId: string, recipientId: string) {
     const convoRoom = this.activeConversations.get(convoId);
 
@@ -60,31 +58,46 @@ export class MessageHanlder {
   }
 
   private registerConvoParticipant(socket: Socket, conversationId: string) {
-    const userId = this.getUserIdFromSocket(socket);
-    const isCovoRoomInitialized = Boolean(
-      this.activeConversations.get(conversationId)
-    );
+    try {
+      const userId = this.getUserIdFromSocket(socket);
+      const isCovoRoomInitialized = Boolean(
+        this.activeConversations.get(conversationId)
+      );
 
-    if (!isCovoRoomInitialized) {
-      console.log("Setting a new room for conversation");
+      if (!isCovoRoomInitialized) {
+        console.log("Setting a new room for conversation");
 
-      this.activeConversations.set(conversationId, new Set());
+        this.activeConversations.set(conversationId, new Set());
+      }
+      socket.join(conversationId);
+      this.activeConversations.get(conversationId)?.add(userId);
+
+      this.emitConversationOnView({ convoId: conversationId, userId: userId });
+
+      console.group(
+        "an user has been active in conversation. UserId: ",
+        userId,
+        " conversatonId: ",
+        conversationId,
+        this.activeConversations
+      );
+    } catch (error) {
+      console.error("Error on registerConvoParticipant, ", error);
     }
-    socket.join(conversationId);
-    this.io
-      .to(conversationId)
-      .emit("conversation_on_view", { conversationId, openedAt: new Date() });
-
-    this.activeConversations.get(conversationId)?.add(userId);
-
-    console.group(
-      "an user has been active in conversation. UserId: ",
-      userId,
-      " conversatonId: ",
-      conversationId,
-      this.activeConversations
-    );
   }
+
+  private emitConversationOnView(payload: {
+    convoId: string;
+    userId: string;
+  }): void {
+    try {
+      const { convoId, userId } = payload;
+      this.io.to(convoId).emit("conversation_on_view", { convoId, userId });
+    } catch (error) {
+      throw new Error((error as Error).message);
+    }
+  }
+
   public sentMessageGlobal(data: {
     conversation: FormattedConversation;
     messageData: IMessage;
@@ -103,15 +116,25 @@ export class MessageHanlder {
       .get(convoId)
       ?.has(recipientId);
 
-    if (recipientSocket && isUserOnline && !isUserViewingConvo) {
+    const isRecipientOnlineButNotViewingConvo =
+      recipientSocket && isUserOnline && !isUserViewingConvo;
+
+    if (isRecipientOnlineButNotViewingConvo) {
       console.log(
         "Emitting message for unview but active user: ",
         recipientSocket
       );
 
-      this.io
-        .to(recipientSocket.socketId)
-        .emit("message_on_sent_closedConvo", data);
+      this.sentMessageOnRecipClosedConvo(recipientSocket.socketId, data);
     }
+  }
+  private sentMessageOnRecipClosedConvo(
+    recipientSocketId: string,
+    payload: {
+      conversation: FormattedConversation;
+      messageData: IMessage;
+    }
+  ): void {
+    this.io.to(recipientSocketId).emit("message_on_sent_closedConvo", payload);
   }
 }

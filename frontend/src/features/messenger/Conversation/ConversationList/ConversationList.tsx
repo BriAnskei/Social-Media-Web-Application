@@ -87,7 +87,7 @@ const ConversationList = ({ currentUser }: ConversationListPorp) => {
     participantId: string
   ) => {
     try {
-      const conversation = await ConversationService.fetchAndOpenConversation(
+      await ConversationService.findConversation(
         participantId,
         contactId,
         dispatch

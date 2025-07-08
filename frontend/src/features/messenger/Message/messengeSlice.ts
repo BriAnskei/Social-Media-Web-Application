@@ -1,9 +1,5 @@
 import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
-import {
-  ConversationType,
-  Message,
-  SentMessagePayload,
-} from "../../../types/MessengerTypes";
+import { Message, SentMessagePayload } from "../../../types/MessengerTypes";
 import { MessageNormalizeSate } from "../../../types/NormalizeType";
 
 import { RootState } from "../../../store/store";

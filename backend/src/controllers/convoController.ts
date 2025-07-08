@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { Conversation } from "../models/conversationModel";
+import { Conversation, IConversation } from "../models/conversationModel";
 import mongoose, { ObjectId } from "mongoose";
 import { messageService } from "../services/message.service";
 
@@ -18,15 +18,10 @@ export const findOrCreateConversation = async (
   res: Response
 ): Promise<any> => {
   try {
-    const userId = req.userId;
-    const otherUser = req.body.otherUser;
-    const { contactId } = req.params;
+    const payload = ConvoService.buildViewPayload(req);
+    const { userId, otherUser, contactId } = payload;
 
-    let conversation = await Conversation.findOne({
-      contactId,
-    })
-      .populate("participants")
-      .populate("lastMessage");
+    let conversation = await ConvoService.findOneByContactIdPopulate(contactId);
     const validUser = await contactService.validUsers(contactId);
 
     if (!validUser || !userId) {
@@ -36,41 +31,13 @@ export const findOrCreateConversation = async (
     }
 
     if (!conversation) {
-      conversation = await Conversation.create({
-        contactId,
-        validFor: validUser,
-        participants: [userId, otherUser],
-        unreadCounts: [
-          {
-            user: userId,
-            count: 0,
-          },
-          { user: otherUser, count: 0 },
-        ],
-      });
-
-      conversation = await Conversation.findById(conversation._id).populate(
-        "participants"
-      );
+      const createPayload = { ...payload, validUser };
+      conversation = await ConvoService.createConversation(createPayload);
     } else {
-      const isDeleted = conversation.deletedFor?.includes(
-        new mongoose.Types.ObjectId(userId)
-      );
-
-      if (isDeleted) {
-        conversation.deletedFor = await ConvoService.undeleteConversation(
-          contactId,
-          userId
-        );
-      }
-
-      // set unread counts to 0 and unread messages to read
-      await Conversation.updateOne(
-        { _id: conversation._id, "unreadCounts.user": userId },
-        { "unreadCounts.$.count": 0 }
-      );
-
-      await messageService.markReadMessages(conversation._id as string, userId);
+      conversation = await ConvoService.refreshConversation({
+        conversation,
+        userId,
+      });
     }
 
     const formatedData = conversationFormatHelper.formatConversationData(

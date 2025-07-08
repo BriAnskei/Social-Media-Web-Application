@@ -211,9 +211,9 @@ export const useSocket = () => {
 
       removeAllListener();
 
-      socket.onAny((e, ...args) => {
-        console.log(`Received in  global handler event: ${e}`, args);
-      });
+      // socket.onAny((e, ...args) => {
+      //   console.log(`Received in  global handler event: ${e}`, args);
+      // });
 
       // global event
       socket.on("postLiked", handleLikeEvent);

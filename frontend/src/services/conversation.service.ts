@@ -7,7 +7,7 @@ import { AppDispatch } from "../store/store";
 import { ConversationType } from "../types/MessengerTypes";
 
 export class ConversationService {
-  static async fetchAndOpenConversation(
+  static async findConversation(
     participantId: string,
     contactId: string,
     dispatch: AppDispatch
@@ -31,7 +31,7 @@ export class ConversationService {
       return convoData;
     } catch (error) {
       throw new Error(
-        `Failed to fetchAndOpenConversation: ${(error as Error).message}`
+        `Failed to findConversation: ${(error as Error).message}`
       );
     }
   }

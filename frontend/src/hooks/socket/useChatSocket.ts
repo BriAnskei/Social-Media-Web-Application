@@ -4,12 +4,15 @@ import { ConversationType, Message } from "../../types/MessengerTypes";
 import { addMessage } from "../../features/messenger/Message/messengeSlice";
 import {
   increamentUnread,
+  setLastMessageReadByParticipant,
   setLatestMessage,
   setReadConvoMessages,
 } from "../../features/messenger/Conversation/conversationSlice";
 import { useContext, useRef, useEffect, useCallback } from "react";
 import { useDispatch } from "react-redux";
 import { SocketContext } from "../../context/SocketContext";
+import { FetchedUserType } from "../../types/user";
+import { useCurrentUser } from "../useUsers";
 
 const CHAT_EVENTS = {
   open_conversation: "conversation_room-active",
@@ -29,6 +32,7 @@ interface ChatSocketSetupParams {
   socket: Socket;
   dispatch: AppDispatch;
   isConnected: boolean;
+  currUser: FetchedUserType;
 }
 
 // Regular function that sets up chat socket events
@@ -36,6 +40,7 @@ export const setupChatSocket = ({
   socket,
   dispatch,
   isConnected,
+  currUser,
 }: ChatSocketSetupParams) => {
   if (!socket || !isConnected) {
     return null;
@@ -47,7 +52,9 @@ export const setupChatSocket = ({
     messageData: Message;
   }) => {
     const { conversation, messageData } = data;
+    console.log("handleIncomingMessage ", data);
 
+    // add message in the conversation messages
     dispatch(
       addMessage({
         conversationId: conversation._id,
@@ -55,6 +62,7 @@ export const setupChatSocket = ({
       })
     );
 
+    // set the latest message of that conversation
     dispatch(
       setLatestMessage({
         conversation,
@@ -62,6 +70,18 @@ export const setupChatSocket = ({
         updatedAt: messageData.createdAt,
       })
     );
+
+    // if this message is read by the recipent we will set messageData._id as the messageOnReadId
+    if (messageData.read) {
+      console.log("Conversation is viewed by the participant", messageData);
+
+      dispatch(
+        setReadConvoMessages({
+          convoId: conversation._id,
+          messageOnReadId: messageData._id,
+        })
+      );
+    }
   };
 
   const handleClosedConversationMessage = (
@@ -78,14 +98,12 @@ export const setupChatSocket = ({
     dispatch(increamentUnread(data.conversation._id));
   };
 
-  const handleConvoOnview = (payload: {
-    conversationId: string;
-    openedAt: string;
-  }) => {
-    const { conversationId, openedAt } = payload;
-    console.log("CONVOONVIEW", payload);
+  const handleConvoOnview = (payload: { convoId: string; userId: string }) => {
+    const { convoId, userId } = payload;
 
-    dispatch(setReadConvoMessages(conversationId));
+    console.log("COnversation on view emition: ", payload);
+
+    dispatch(setLastMessageReadByParticipant({ userId, convoId }));
   };
 
   // Setup event listeners
@@ -95,9 +113,9 @@ export const setupChatSocket = ({
     socket.off(CHAT_EVENTS.message_on_sent_closed);
     socket.off(CHAT_EVENTS.conversation_on_view);
 
-    socket.onAny((e, ...args) => {
-      console.log(`Received in chat handler event: ${e}`, args);
-    });
+    // socket.onAny((e, ...args) => {
+    //   console.log(`Received in chat handler event: ${e}`, args);
+    // });
 
     // Add new listeners
     socket.on(CHAT_EVENTS.message_on_sent, handleIncomingMessage);
@@ -146,9 +164,9 @@ export const setupChatSocket = ({
   };
 };
 
-// Hook version that uses the setup function
 export const useChatSocket = () => {
   const dispatch = useDispatch<AppDispatch>();
+  const { currentUser } = useCurrentUser();
   const { socket, isConnected } = useContext(SocketContext);
   const chatSocketRef = useRef<{
     cleanup: () => void;
@@ -164,7 +182,12 @@ export const useChatSocket = () => {
     }
 
     // Setup chat socket
-    const chatSocket = setupChatSocket({ socket, dispatch, isConnected });
+    const chatSocket = setupChatSocket({
+      socket,
+      dispatch,
+      isConnected,
+      currUser: currentUser,
+    });
     chatSocketRef.current = chatSocket;
 
     // Cleanup on unmount

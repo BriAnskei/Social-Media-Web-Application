@@ -6,7 +6,28 @@ import { ReqAuth } from "../controllers/convoController";
 import { IUser } from "../models/userModel";
 import { messageHanlder } from "../server";
 
+interface ViewConvoPayload {
+  userId: string;
+  otherUser: string;
+  contactId: string;
+}
+
 export const ConvoService = {
+  buildViewPayload: (req: ReqAuth): ViewConvoPayload => {
+    try {
+      const userId = req.userId;
+      const otherUser = req.body.otherUser;
+      const { contactId } = req.params;
+
+      return {
+        userId: userId as string,
+        otherUser,
+        contactId,
+      };
+    } catch (error) {
+      throw error;
+    }
+  },
   buildPayloadForFetchingConvo: (req: ReqAuth) => {
     const { userId } = req;
     if (!userId)
@@ -17,11 +38,48 @@ export const ConvoService = {
       limit: Number(req.body.limit) || 10,
     };
   },
+  createConversation: async (payload: {
+    userId: string;
+    otherUser: string;
+    validUser: mongoose.Types.ObjectId[] | undefined;
+    contactId: string;
+  }): Promise<IConversation> => {
+    try {
+      const { userId, otherUser, validUser, contactId } = payload;
+      const conversation = await Conversation.create({
+        contactId,
+        validFor: validUser,
+        participants: [userId, otherUser],
+        unreadCounts: [
+          { user: new mongoose.Types.ObjectId(userId), count: 0 },
+          { user: new mongoose.Types.ObjectId(otherUser), count: 0 },
+        ],
+      });
+      return await (
+        await conversation.populate("participants")
+      ).populate("lastMessage");
+    } catch (error) {
+      throw error;
+    }
+  },
   deleteConvoByContactId: async (contactId: string) => {
     try {
       await Conversation.deleteOne({ contactId });
     } catch (error) {
       console.log("Failed to deleteConvoByContactId, ", error);
+    }
+  },
+  findOneByContactIdPopulate: async (
+    contactId: string
+  ): Promise<IConversation | null> => {
+    try {
+      return await Conversation.findOne({
+        contactId,
+      })
+        .populate("participants")
+        .populate("lastMessage");
+    } catch (error) {
+      throw error;
     }
   },
   fetchConvosBasedOnCursor: async (data: {
@@ -151,6 +209,127 @@ export const ConvoService = {
       );
     }
   },
+  refreshConversation: async (data: {
+    conversation: IConversation;
+    userId: string;
+  }): Promise<IConversation> => {
+    try {
+      const { _id: convoId, contactId } = data.conversation;
+      const userId = data.userId;
+
+      let conversation = data.conversation;
+
+      const isConvoDeleted = conversation.deletedFor?.includes(
+        new mongoose.Types.ObjectId(userId)
+      );
+
+      if (isConvoDeleted) {
+        conversation.deletedFor = await ConvoService.undeleteConversation(
+          contactId.toString(),
+          userId
+        );
+      }
+      console.log("Refreshing conversation");
+
+      await ConvoService.setLastMessageOnRead({ conversation, userId });
+      await messageService.markReadMessages(convoId as string, userId);
+      await ConvoService.resetUnreadCounts({
+        convoId: convoId as string,
+        userId,
+      });
+
+      return conversation;
+    } catch (error) {
+      throw error;
+    }
+  },
+  resetUnreadCounts: async (payload: { convoId: string; userId: string }) => {
+    try {
+      const { convoId, userId } = payload;
+
+      // set unread counts to 0 and unread messages to read
+      await Conversation.updateOne(
+        { _id: convoId, "unreadCounts.user": userId },
+        { "unreadCounts.$.count": 0 }
+      );
+    } catch (error) {
+      throw error;
+    }
+  },
+  setLastMessageOnRead: async (payload: {
+    conversation: IConversation;
+    userId: string;
+  }) => {
+    try {
+      console.log("setLastMessageOnRead".toLocaleUpperCase());
+      const { conversation, userId } = payload;
+      const { _id: convoId } = payload.conversation;
+      const msgId = conversation.lastMessage?._id;
+
+      if (!msgId) {
+        console.log("No Message to Read");
+        return;
+      }
+
+      console.log("Setting message onread");
+
+      // Use aggregation pipeline to check recipient and update in one query
+      const result = await Conversation.aggregate([
+        {
+          $match: { _id: convoId },
+        },
+        {
+          $lookup: {
+            from: "messages", // Replace with your actual message collection name
+            localField: "lastMessage",
+            foreignField: "_id",
+            as: "lastMessageDoc",
+          },
+        },
+        {
+          $match: {
+            "lastMessageDoc.recipient": new mongoose.Types.ObjectId(userId),
+          },
+        },
+      ]);
+
+      // If the user is the recipient, proceed with update
+      if (result.length > 0) {
+        // First try to update existing entry
+        const updateResult = await Conversation.updateOne(
+          {
+            _id: convoId,
+            "lastMessageOnRead.user": new mongoose.Types.ObjectId(userId),
+          },
+          {
+            "lastMessageOnRead.$.message": msgId,
+          }
+        );
+
+        // If no existing entry, create new one
+        if (updateResult.matchedCount === 0) {
+          await Conversation.updateOne(
+            { _id: convoId },
+            {
+              $push: {
+                lastMessageOnRead: {
+                  user: new mongoose.Types.ObjectId(userId),
+                  message: msgId,
+                },
+              },
+            }
+          );
+        }
+
+        console.log("LastMessageOnRead updated successfully");
+      } else {
+        console.log("User is not the recipient of the last message");
+      }
+    } catch (error) {
+      console.error("Error in setLastMessageOnRead:", error);
+      throw error;
+    }
+  },
   setLatestCovoMessage: async (
     convoId: string,
     messageData: IMessage
@@ -204,23 +383,16 @@ export const ConvoService = {
           "Failed to undelete convo: Conversation with this contactId does not exist"
         );
       }
-
       const { deletedFor } = conversation;
       const userObjectId = new mongoose.Types.ObjectId(userId);
-
       conversation.deletedFor = deletedFor.filter(
         (id) => id.toString() !== userObjectId.toString()
       );
-
       await conversation.save();
-
-      console.log("COnversation update:d", deletedFor);
 
       return conversation.deletedFor;
     } catch (error) {
-      throw new Error(
-        `Failed toto undelete convo, ${(error as Error).message}`
-      );
+      throw error;
     }
   },
   validateConversation: async (contactId: string, userId: string) => {
@@ -261,6 +433,7 @@ export interface FormattedConversation {
   lastMessage?: IMessage | mongoose.Types.ObjectId;
   lastMessageAt: Date | string;
   unreadCount: number;
+  lastMessageOnRead?: mongoose.Types.ObjectId;
   createdAt: Date | string;
   updatedAt: Date | string;
 }
@@ -271,43 +444,60 @@ export const conversationFormatHelper = {
     userId: string,
     validUser: mongoose.Types.ObjectId[]
   ): FormattedConversation => {
-    // format data for frontend
-    const isUserValidToRply = validUser.toString().includes(userId.toString());
+    try {
+      // format data for frontend
+      const isUserValidToRply = validUser
+        .toString()
+        .includes(userId.toString());
 
-    const otherParticipant = conversation.participants.find(
-      (user) => user._id.toString() !== userId!.toString()
-    );
+      const otherParticipant = conversation.participants.find(
+        (user) => user._id.toString() !== userId!.toString()
+      );
 
-    // for unreadt counts
-    const unreadData = conversation.unreadCounts.find(
-      (unrd) => unrd.user.toString() === userId!.toString()
-    );
+      // for unreadt counts
+      const unreadData = conversation.unreadCounts.find(
+        (unrd) => unrd.user.toString() === userId!.toString()
+      );
 
-    if (!otherParticipant || !unreadData) {
-      throw new Error("Missing format dataa");
+      const lastMessageReadByParticipant = conversation.lastMessageOnRead?.find(
+        (data) => data.user === otherParticipant
+      );
+
+      if (!otherParticipant || !unreadData) {
+        throw new Error("Missing format dataa");
+      }
+
+      return {
+        _id: conversation._id as string,
+        contactId: conversation.contactId,
+        participant: otherParticipant,
+        isUserValidToRply,
+        lastMessage: conversation?.lastMessage,
+        lastMessageAt: conversation.lastMessageAt,
+        unreadCount: unreadData ? unreadData.count : 0,
+        lastMessageOnRead: lastMessageReadByParticipant?.message,
+        createdAt: conversation.createdAt,
+        updatedAt: conversation.updatedAt,
+      };
+    } catch (error) {
+      throw error;
     }
-
-    return {
-      _id: conversation._id as string,
-      contactId: conversation.contactId,
-      participant: otherParticipant,
-      isUserValidToRply,
-      lastMessage: conversation?.lastMessage,
-      lastMessageAt: conversation.lastMessageAt,
-      unreadCount: unreadData ? unreadData.count : 0,
-      createdAt: conversation.createdAt,
-      updatedAt: conversation.updatedAt,
-    };
   },
 
   formatConversationArray: (conversations: IConversation[], userId: string) => {
+    console.log("COnversation to be formatedd: ", conversations);
+
     const formatedData = conversations.map((convo) => {
-      const otherParticipants = convo.participants.find(
+      const otherParticipant = convo.participants.find(
         (user) => user._id.toString() !== userId!.toString()
       );
 
       const unreadData = convo.unreadCounts.find(
         (unread) => unread.user._id.toString() === userId!.toString()
+      );
+
+      const lastMessageReadByParticipant = convo.lastMessageOnRead?.find(
+        (data) => data.user.toString() === otherParticipant?._id.toString()
       );
 
       const isUserValidToRply = convo.validFor
@@ -317,15 +507,18 @@ export const conversationFormatHelper = {
       return {
         _id: convo._id,
         contactId: convo.contactId,
-        participant: otherParticipants,
+        participant: otherParticipant,
         isUserValidToRply,
         lastMessage: convo.lastMessage,
         lastMessageAt: convo.lastMessageAt,
         unreadCount: unreadData ? unreadData.count : 0,
+        lastMessageOnRead: lastMessageReadByParticipant?.message,
         createdAt: convo.createdAt,
         updatedAt: convo.updatedAt,
       };
     });
+
+    console.log("Conversations: ", formatedData);
 
     return formatedData;
   },

@@ -25,8 +25,6 @@ const UploadModal: React.FC<ModalTypes> = ({ showModal, onClose }) => {
     const file = e.target?.files;
 
     if (file && file.length > 0) {
-      console.log(URL.createObjectURL(file[0]));
-
       setPostInputData((prev) => {
         return { ...prev, image: file[0] };
       });

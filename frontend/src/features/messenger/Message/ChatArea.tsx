@@ -1,4 +1,4 @@
-import React, { useCallback } from "react";
+import React, { useCallback, useEffect } from "react";
 import { Message } from "../../../types/MessengerTypes";
 import { Spinner } from "react-bootstrap";
 import { monthNames } from "../../../assets/monthNames";
@@ -38,13 +38,13 @@ const ChatArea = (prop: ChatAreaProp) => {
 
   const dispatch = useDispatch<AppDispatch>();
 
-  const isLastMessageRead = useCallback(
+  const ismessageOnRead = useCallback(
     (index: number) => {
       if (!conversation || !messages) return false;
-      const { lastMessage } = conversation;
-      const isLastMessageUser = lastMessage.sender === currentUserId;
-      const isMessageLast = index === messages.length - 1;
-      return isLastMessageUser && lastMessage.read && isMessageLast;
+      return (
+        messages[index]._id === conversation.lastMessageOnRead &&
+        messages[index].sender === currentUserId
+      );
     },
     [conversation, messages]
   );
@@ -143,7 +143,7 @@ const ChatArea = (prop: ChatAreaProp) => {
                   hour: "2-digit",
                   minute: "2-digit",
                 })}{" "}
-                {isLastMessageRead(index) && <>Read</>}
+                {ismessageOnRead(index) && <>Read</>}
               </div>
 
               {isMessageDiffDate && (
