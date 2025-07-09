@@ -18,6 +18,8 @@ import ViewPost from "./features/posts/ViewPost/Viewpost";
 
 import ViewProfilePage from "./pages/ViewProfilePage/ViewProfilePage";
 import { fetchAllPost } from "./features/posts/postSlice";
+import { Toaster } from "react-hot-toast";
+
 function App() {
   const dispatch = useDispatch<AppDispatch>();
 
@@ -40,6 +42,7 @@ function App() {
   return (
     <>
       <div className="app">
+        <Toaster position="top-right" reverseOrder={false} />
         <Routes>
           {/* Public Routes */}
           <Route element={<AuthLayout />}>

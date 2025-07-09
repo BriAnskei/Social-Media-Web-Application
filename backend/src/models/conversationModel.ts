@@ -1,8 +1,9 @@
 import mongoose, { Document, Schema } from "mongoose";
+import { IMessage } from "./messageModel";
 
-interface ParticipantOnRead {
+export interface ParticipantOnRead {
   user: mongoose.Types.ObjectId;
-  message: mongoose.Types.ObjectId;
+  message: mongoose.Types.ObjectId | undefined;
 }
 
 export interface IUnreadCount {
@@ -15,7 +16,7 @@ export interface IConversation extends Document {
   participants: mongoose.Types.ObjectId[];
   deletedFor: mongoose.Types.ObjectId[];
   validFor: mongoose.Types.ObjectId[]; // user who can rply
-  lastMessage?: mongoose.Types.ObjectId; // user who message
+  lastMessage?: mongoose.Types.ObjectId | IMessage; // user who message
   unreadCounts: IUnreadCount[];
   lastMessageAt: Date;
   lastMessageOnRead?: ParticipantOnRead[];

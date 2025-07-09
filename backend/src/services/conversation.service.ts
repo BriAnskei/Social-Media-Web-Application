@@ -54,6 +54,10 @@ export const ConvoService = {
           { user: new mongoose.Types.ObjectId(userId), count: 0 },
           { user: new mongoose.Types.ObjectId(otherUser), count: 0 },
         ],
+        lastMessageOnRead: [
+          { user: new mongoose.Types.ObjectId(userId), message: undefined },
+          { user: new mongoose.Types.ObjectId(otherUser), message: undefined },
+        ],
       });
       return await (
         await conversation.populate("participants")
@@ -170,7 +174,15 @@ export const ConvoService = {
       console.log("Failed to getConvoByContactId", error);
     }
   },
-
+  getConvoById: async (convId: string): Promise<IConversation | null> => {
+    try {
+      return await Conversation.findOne({ _id: convId }).populate(
+        "lastMessage"
+      );
+    } catch (error) {
+      throw error;
+    }
+  },
   incrementMessageUnreadOnNotViewConvo: async (
     conversationId: string,
     recipentId: string,
@@ -231,12 +243,12 @@ export const ConvoService = {
       }
       console.log("Refreshing conversation");
 
-      await ConvoService.setLastMessageOnRead({ conversation, userId });
       await messageService.markReadMessages(convoId as string, userId);
       await ConvoService.resetUnreadCounts({
         convoId: convoId as string,
         userId,
       });
+      await ConvoService.setLastMessageOnRead({ conversation, userId });
 
       return conversation;
     } catch (error) {
@@ -253,7 +265,7 @@ export const ConvoService = {
         { "unreadCounts.$.count": 0 }
       );
     } catch (error) {
-      throw error;
+      throw new Error("resetUnreadCounts, " + (error as Error).message);
     }
   },
   setLastMessageOnRead: async (payload: {
@@ -261,73 +273,43 @@ export const ConvoService = {
     userId: string;
   }) => {
     try {
-      console.log("setLastMessageOnRead".toLocaleUpperCase());
       const { conversation, userId } = payload;
       const { _id: convoId } = payload.conversation;
-      const msgId = conversation.lastMessage?._id;
+      const msg = conversation.lastMessage as IMessage;
 
-      if (!msgId) {
+      console.log("LastMessage: ", msg);
+
+      if (!msg) {
         console.log("No Message to Read");
         return;
       }
 
-      console.log("Setting message onread");
+      const userRead = conversation.lastMessageOnRead?.find(
+        (rd) => rd.user.toString() === userId
+      );
 
-      // Use aggregation pipeline to check recipient and update in one query
-      const result = await Conversation.aggregate([
-        {
-          $match: { _id: convoId },
-        },
-        {
-          $lookup: {
-            from: "messages", // Replace with your actual message collection name
-            localField: "lastMessage",
-            foreignField: "_id",
-            as: "lastMessageDoc",
-          },
-        },
-        {
-          $match: {
-            "lastMessageDoc.recipient": new mongoose.Types.ObjectId(userId),
-          },
-        },
-      ]);
+      console.log(
+        "userRead: ",
+        userRead,
+        msg.recipient.toString(),
+        conversation.lastMessageOnRead
+      );
 
-      // If the user is the recipient, proceed with update
-      if (result.length > 0) {
-        // First try to update existing entry
-        const updateResult = await Conversation.updateOne(
+      if (userRead && userRead.message === msg._id) {
+        return; // do nothing if it is already setted
+      }
+
+      if (msg && msg.recipient.toString() === userId.toString()) {
+        const res = await Conversation.updateOne(
+          { _id: convoId, "lastMessageOnRead.user": userId },
           {
-            _id: convoId,
-            "lastMessageOnRead.user": new mongoose.Types.ObjectId(userId),
-          },
-          {
-            "lastMessageOnRead.$.message": msgId,
+            "lastMessageOnRead.$.message": msg._id,
           }
         );
-
-        // If no existing entry, create new one
-        if (updateResult.matchedCount === 0) {
-          await Conversation.updateOne(
-            { _id: convoId },
-            {
-              $push: {
-                lastMessageOnRead: {
-                  user: new mongoose.Types.ObjectId(userId),
-                  message: msgId,
-                },
-              },
-            }
-          );
-        }
-
-        console.log("LastMessageOnRead updated successfully");
-      } else {
-        console.log("User is not the recipient of the last message");
+        console.log("LastMessageOnRead updated successfully", res);
       }
     } catch (error) {
-      console.error("Error in setLastMessageOnRead:", error);
-      throw error;
+      throw new Error("setLastMessageOnRead, " + (error as Error));
     }
   },
   setLatestCovoMessage: async (
@@ -341,12 +323,11 @@ export const ConvoService = {
           lastMessage: messageData,
           updatedAt: messageData.createdAt,
           lastMessageAt: messageData.createdAt,
-        }
-      );
+        },
+        { new: true }
+      ).populate("lastMessage");
     } catch (error) {
-      throw new Error(
-        `Failed to update unread counts: ${(error as Error).message}`
-      );
+      throw new Error(`setLatestCovoMessage,  ${(error as Error).message}`);
     }
   },
   updateForValidUser: async (
@@ -485,8 +466,6 @@ export const conversationFormatHelper = {
   },
 
   formatConversationArray: (conversations: IConversation[], userId: string) => {
-    console.log("COnversation to be formatedd: ", conversations);
-
     const formatedData = conversations.map((convo) => {
       const otherParticipant = convo.participants.find(
         (user) => user._id.toString() !== userId!.toString()
@@ -517,8 +496,6 @@ export const conversationFormatHelper = {
         updatedAt: convo.updatedAt,
       };
     });
-
-    console.log("Conversations: ", formatedData);
 
     return formatedData;
   },

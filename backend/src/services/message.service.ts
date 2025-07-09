@@ -1,5 +1,6 @@
 import { ReqAuth } from "../controllers/messageController";
 import { appEvents } from "../events/appEvents";
+import { IConversation } from "../models/conversationModel";
 import { IMessage, MessageModel } from "../models/messageModel";
 import { messageHanlder } from "../server";
 import {
@@ -13,18 +14,25 @@ export const messageService = {
   createMessageAndUpdateConvo: async (
     messageData: IMessageInput,
     convoId: string
-  ) => {
+  ): Promise<{ message: IMessage; conversation: IConversation }> => {
     try {
       const message = await MessageModel.create(messageData);
 
-      await UserChatRelationService.emitMessageAndUpdateConvoMessage(
-        message,
-        convoId
-      );
-      return message;
+      const conversation =
+        await UserChatRelationService.emitMessageAndUpdateConvoMessage(
+          message,
+          convoId
+        );
+
+      if (!message || !conversation) {
+        throw new Error(
+          "createMessageAndUpdateConvo, Error: invalid return type"
+        );
+      }
+
+      return { message, conversation };
     } catch (error) {
-      console.log("Failed to createMessageAndUpdateConvo", error);
-      throw new Error("Error in createMessageAndUpdateConvo" + error);
+      throw new Error("createMessageAndUpdateConvo, " + (error as Error));
     }
   },
   deleteMessages: async (

@@ -148,8 +148,6 @@ const conversationSlice = createSlice({
       const { convoId, messageOnReadId } = action.payload;
 
       state.byId[convoId].lastMessage.read = true;
-      state.byId[convoId].unreadCount = 0;
-
       state.byId[convoId].lastMessageOnRead = messageOnReadId;
     },
     setLastMessageReadByParticipant: (state, action) => {
@@ -161,8 +159,8 @@ const conversationSlice = createSlice({
       if (isUserRecipient) {
         state.byId[convoId].lastMessageOnRead = lastMessage._id;
         state.byId[convoId].lastMessage.read = true;
-        state.byId[convoId].unreadCount = 0;
       }
+      state.byId[convoId].unreadCount = 0;
     },
   },
   extraReducers: (builder) => {

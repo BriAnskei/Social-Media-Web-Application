@@ -72,13 +72,11 @@ export const updateCurrentUser = createAsyncThunk<
 
 export const followToggled = createAsyncThunk(
   "user/follow",
-  async (data: FollowPayload, { rejectWithValue, dispatch }) => {
+  async (data: FollowPayload, { rejectWithValue }) => {
     try {
       if (!data) {
         return rejectWithValue("No data recieved");
       }
-
-      dispatch(updateFollow(data));
 
       const res = await userApi.followToggle(data);
 

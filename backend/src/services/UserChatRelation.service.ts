@@ -57,36 +57,65 @@ export const UserChatRelationService = {
   emitMessageAndUpdateConvoMessage: async (
     messageData: IMessage,
     convoId: string
-  ) => {
+  ): Promise<IConversation | null> => {
     try {
-      const { sender, _id, recipient } = messageData;
+      const { sender, recipient } = messageData;
       const convoData = await ConvoService.setLatestCovoMessage(
         convoId,
         messageData
       );
 
-      await ConvoService.incrementMessageUnreadOnNotViewConvo(
-        convoId,
-        recipient._id.toString(),
-        _id as string
-      );
+      // Add null check before proceeding
+      if (!convoData || !convoData.validFor) {
+        throw new Error(
+          "emitMessageAndUpdateConvoMessage, Error:  returned null | Conversation data missing validFor property"
+        );
+      }
+
       const formattedConvoData =
         conversationFormatHelper.formatConversationData(
-          convoData!,
+          convoData,
           sender.toString(),
-          convoData?.validFor!
+          convoData.validFor
         );
 
       messageService.emitMessageOnSend({
         conversation: formattedConvoData,
         messageData,
       });
+
+      return convoData;
     } catch (error) {
+      console.log("Error in emitMessageAndUpdateConvoMessage:", error);
       throw new Error(
         `Failed to emitMessageAndUpdateConvoMessage: ${
           (error as Error).message
         }`
       );
+    }
+  },
+  updateConvoMsgReadOnSend: async (payload: {
+    conversation: IConversation;
+    userId: string;
+  }) => {
+    try {
+      const { conversation, userId } = payload;
+
+      if (!conversation) {
+        throw new Error(
+          "updateConvoMsgReadOnSend, Error: no conversation has this in payload"
+        );
+      }
+
+      console.log(
+        "updateConvoMsgReadOnSend".toUpperCase(),
+        "COnversation last lasg messaage: ",
+        payload.conversation.lastMessage
+      );
+
+      await ConvoService.setLastMessageOnRead({ conversation, userId });
+    } catch (error) {
+      throw new Error("updateConvoMsgReadOnSend,  " + (error as Error).message);
     }
   },
   updateChatRelation: async (data: ChatRelationPayload) => {

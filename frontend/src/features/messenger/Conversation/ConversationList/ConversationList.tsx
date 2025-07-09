@@ -9,6 +9,7 @@ import { FetchedUserType } from "../../../../types/user";
 import { ConversationService } from "../../../../services/conversation.service";
 import MessageBoxGroup from "../MessageBoxGroup/MessageBoxGroup";
 import { fetchAllConvoList } from "../conversationSlice";
+import toast from "react-hot-toast";
 
 interface ConversationListPorp {
   currentUser: FetchedUserType;
@@ -150,3 +151,8 @@ const ConversationList = ({ currentUser }: ConversationListPorp) => {
 };
 
 export default ConversationList;
+function saveSettings(
+  settings: any
+): Promise<unknown> | (() => Promise<unknown>) {
+  throw new Error("Function not implemented.");
+}

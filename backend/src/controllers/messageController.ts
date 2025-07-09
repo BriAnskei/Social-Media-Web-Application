@@ -2,6 +2,8 @@ import { Request, Response } from "express";
 import { MessageModel } from "../models/messageModel";
 
 import { messageService } from "../services/message.service";
+import { UserChatRelationService } from "../services/UserChatRelation.service";
+import { ConvoService } from "../services/conversation.service";
 
 export interface ReqAuth extends Request {
   userId?: string;
@@ -12,15 +14,40 @@ export const addMessage = async (req: ReqAuth, res: Response): Promise<any> => {
     const { messagePayload, convoId } =
       messageService.createPayloadForActiveRecipient(req);
 
-    const message = await messageService.createMessageAndUpdateConvo(
+    const response = await messageService.createMessageAndUpdateConvo(
       messagePayload,
       convoId
     );
 
+    const { message, conversation } = response;
+
+    const isMsgReadByRecipient = message.read;
+
+    if (isMsgReadByRecipient) {
+      console.log("Setting new messageOnRead", {
+        conversation,
+        userId: message.recipient.toString(),
+      });
+
+      await UserChatRelationService.updateConvoMsgReadOnSend({
+        conversation,
+        userId: message.recipient.toString(),
+      });
+    } else {
+      await ConvoService.incrementMessageUnreadOnNotViewConvo(
+        convoId,
+        message.recipient.toString(),
+        message._id as string
+      );
+    }
+
     res.json({ success: true, message: "message sent", messages: message });
   } catch (error) {
     console.log("Failed to sent message, " + error);
-    res.json({ success: false, message: "Error" });
+    res.json({
+      success: false,
+      message: `Failed to  send message: ${(error as Error).message}`,
+    });
   }
 };
 

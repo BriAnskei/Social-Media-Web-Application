@@ -52,7 +52,7 @@ export const setupChatSocket = ({
     messageData: Message;
   }) => {
     const { conversation, messageData } = data;
-    console.log("handleIncomingMessage ", data);
+    const { _id: currUserId } = currUser;
 
     // add message in the conversation messages
     dispatch(
@@ -72,9 +72,7 @@ export const setupChatSocket = ({
     );
 
     // if this message is read by the recipent we will set messageData._id as the messageOnReadId
-    if (messageData.read) {
-      console.log("Conversation is viewed by the participant", messageData);
-
+    if (messageData.read && messageData.sender === currUserId) {
       dispatch(
         setReadConvoMessages({
           convoId: conversation._id,
@@ -100,8 +98,6 @@ export const setupChatSocket = ({
 
   const handleConvoOnview = (payload: { convoId: string; userId: string }) => {
     const { convoId, userId } = payload;
-
-    console.log("COnversation on view emition: ", payload);
 
     dispatch(setLastMessageReadByParticipant({ userId, convoId }));
   };

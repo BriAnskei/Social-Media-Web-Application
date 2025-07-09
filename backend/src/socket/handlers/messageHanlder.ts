@@ -1,11 +1,15 @@
 import { Server, Socket } from "socket.io";
 import { IMessage } from "../../models/messageModel";
 import { SocketServer } from "./socketServer";
-import { FormattedConversation } from "../../services/conversation.service";
+import {
+  ConvoService,
+  FormattedConversation,
+} from "../../services/conversation.service";
 
 export class MessageHanlder {
   private io: Server;
   private activeConversations: Map<string, Set<string>> = new Map(); // { key: convoId, Set:{participants})}
+
   private socketServer;
 
   constructor(io: Server, socketServer: SocketServer) {
@@ -22,29 +26,36 @@ export class MessageHanlder {
     });
 
     socket.on("conversation_room-inactive", (conversationId: string) => {
-      this.DropActiveConvoParticipant(socket, conversationId);
+      this.convoRoomOnCLosed(socket, conversationId);
     });
   }
-  private DropActiveConvoParticipant(socket: Socket, conversationId: string) {
-    const conversationRoom = this.activeConversations.get(conversationId);
+  private async convoRoomOnCLosed(socket: Socket, conversationId: string) {
+    try {
+      const conversationRoom = this.activeConversations.get(conversationId);
 
-    const userId: string = this.getUserIdFromSocket(socket);
+      const userId: string = this.getUserIdFromSocket(socket);
 
-    if (conversationRoom) {
-      conversationRoom.delete(userId);
-      socket.leave(conversationId);
-      if (conversationRoom.size === 0) {
-        console.log("Deleting convo for no active in room");
-
-        this.activeConversations.delete(conversationId);
+      if (conversationRoom) {
+        conversationRoom.delete(userId);
+        socket.leave(conversationId);
+        if (conversationRoom.size === 0) {
+          this.activeConversations.delete(conversationId);
+        }
+        const conversation = await ConvoService.getConvoById(conversationId);
+        await ConvoService.setLastMessageOnRead({
+          conversation: conversation!,
+          userId,
+        });
       }
-    }
 
-    console.log(
-      "an user has been inactive in conversation",
-      userId,
-      this.activeConversations.get(conversationId)
-    );
+      console.log(
+        "an user has been inactive in conversation",
+        userId,
+        this.activeConversations.get(conversationId)
+      );
+    } catch (error) {
+      console.error("Failed in convoRoomOnCLosed", error);
+    }
   }
   private getUserIdFromSocket(socket: Socket) {
     return socket.data.userId;

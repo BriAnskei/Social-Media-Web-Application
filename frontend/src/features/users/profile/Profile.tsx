@@ -8,8 +8,9 @@ import {
   openEditProfileModal,
   toggleViewFollow,
 } from "../../../Components/Modal/globalSlice";
-import { followToggled } from "../userSlice";
+import { followToggled, updateFollow } from "../userSlice";
 import { useSocket } from "../../../hooks/socket/useSocket";
+import toast from "react-hot-toast";
 
 interface ProfileProp {
   data: FetchedUserType;
@@ -52,6 +53,8 @@ const Profile: React.FC<ProfileProp> = ({ data }) => {
 
       const res = await dispatch(followToggled(dataPayload)).unwrap();
 
+      dispatch(updateFollow(dataPayload));
+
       if (!res.success) {
         console.error(res.message || "Faild to follow use");
         return;
@@ -69,6 +72,38 @@ const Profile: React.FC<ProfileProp> = ({ data }) => {
     } finally {
       setFollowingProgress(false);
     }
+  };
+
+  const followToggle = () => {
+    toast.promise(
+      handleFollow(),
+      {
+        loading: "Loading...",
+        success: (
+          <b>
+            {`You ${
+              isUserFollowed ? "Unfollowed" : "Followed"
+            } ${data.fullName.replace(/ .*/, "")}`}
+            !
+          </b>
+        ),
+        error: <b>Failed to follow this user.</b>,
+      },
+      {
+        success: {
+          style: {
+            border: "2px solidrgb(70, 74, 72)",
+            padding: "13px",
+            color: "black",
+            backgroundColor: "white",
+          },
+          iconTheme: {
+            primary: "#10b981",
+            secondary: "black",
+          },
+        },
+      }
+    );
   };
 
   const viewFollowers = () => {
@@ -102,11 +137,13 @@ const Profile: React.FC<ProfileProp> = ({ data }) => {
         <button
           id={currentUser._id !== data._id ? followStyleId : "edit-button"}
           onClick={() =>
-            data._id === currentUser._id ? toggleEdit() : handleFollow()
+            data._id === currentUser._id ? toggleEdit() : followToggle()
           }
         >
           {currentUser._id !== data._id
-            ? isUserFollowed
+            ? followingProgress
+              ? "loading..."
+              : isUserFollowed
               ? "✔Followed"
               : "+ Follow"
             : "Edit Profile "}

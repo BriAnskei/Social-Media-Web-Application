@@ -19,19 +19,21 @@ export const findOrCreateConversation = async (
 ): Promise<any> => {
   try {
     const payload = ConvoService.buildViewPayload(req);
-    const { userId, otherUser, contactId } = payload;
+    const { userId, contactId } = payload;
 
     let conversation = await ConvoService.findOneByContactIdPopulate(contactId);
     const validUser = await contactService.validUsers(contactId);
 
     if (!validUser || !userId) {
-      throw new Error(
-        "Failed  on 'openOrUpdateConvo'. UserId is undifined or there is no valid user for this conversation"
-      );
+      return res.json({
+        success: false,
+        message: "Failed to open convo, no userId or valid user",
+      });
     }
 
     if (!conversation) {
       const createPayload = { ...payload, validUser };
+
       conversation = await ConvoService.createConversation(createPayload);
     } else {
       conversation = await ConvoService.refreshConversation({
