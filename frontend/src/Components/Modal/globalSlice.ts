@@ -212,6 +212,10 @@ const globalSlice = createSlice({
         state.viewMessageImage.url = url;
       }
     },
+    resetGlobalState: () => {
+      console.log("RESITING GLOBAL STATE");
+      return initialState;
+    },
   },
 });
 
@@ -234,7 +238,7 @@ export const {
   openChatWindow,
   closeWindow,
   toggleMinimize,
-
+  resetGlobalState,
   toggleViewMessageImage,
 } = globalSlice.actions;
 export default globalSlice.reducer;

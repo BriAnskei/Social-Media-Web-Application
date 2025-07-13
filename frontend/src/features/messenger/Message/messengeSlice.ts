@@ -6,6 +6,7 @@ import { RootState } from "../../../store/store";
 import { MessageApi } from "../../../utils/api";
 
 const initialState: MessageNormalizeSate = {
+  // {[key: convoId]: ObjectType}
   byId: {},
   hasMore: {},
   loading: {},
@@ -95,6 +96,9 @@ const messengerSlice = createSlice({
       delete state.loading[convoId];
       delete state.error[convoId];
     },
+    resetMessageState: (state) => {
+      state = initialState;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -129,5 +133,6 @@ const messengerSlice = createSlice({
   },
 });
 
-export const { addMessage, dropMessageOnClose } = messengerSlice.actions;
+export const { addMessage, dropMessageOnClose, resetMessageState } =
+  messengerSlice.actions;
 export default messengerSlice.reducer;

@@ -5,6 +5,7 @@ import { useDispatch } from "react-redux";
 import { AppDispatch } from "../../store/store";
 import { deleteConversation } from "../../features/messenger/Conversation/conversationSlice";
 import toast from "react-hot-toast";
+import { useToastEffect } from "../../hooks/toast/useToastEffect";
 
 const PopoverDeleteConvo: React.FC<PopoverDeleteConvoType> = ({
   target,
@@ -12,26 +13,19 @@ const PopoverDeleteConvo: React.FC<PopoverDeleteConvoType> = ({
   convoId,
 }) => {
   const { chatProp } = usePopoverContext();
+  const { handleDeleteEffect } = useToastEffect();
   const dispatch = useDispatch<AppDispatch>();
 
   if (!target || !target.current) return null;
 
-  const deletConversation = async () => {
+  const deletConversation = async (e: any) => {
     try {
-      await dispatch(deleteConversation(convoId));
+      e.stopPropagation();
+      e.preventDefault();
+      await handleDeleteEffect(convoId);
     } catch (error) {
       console.error("Failed on handleDeleteConvo, ", error);
     }
-  };
-
-  const handleDeleteConvo = (e: any) => {
-    e.stopPropagation();
-    e.preventDefault();
-    toast.promise(deletConversation(), {
-      loading: "Deleting...",
-      success: <b>Conversation deleted!</b>,
-      error: <b>Could not save.</b>,
-    });
   };
 
   const handleMouseLeave = () => {
@@ -49,7 +43,7 @@ const PopoverDeleteConvo: React.FC<PopoverDeleteConvoType> = ({
                   variant="outline-secondary"
                   size="sm"
                   style={{ height: "1.7rem" }}
-                  onClick={(e) => handleDeleteConvo(e)}
+                  onClick={(e) => deletConversation(e)}
                 >
                   Delete
                 </Button>

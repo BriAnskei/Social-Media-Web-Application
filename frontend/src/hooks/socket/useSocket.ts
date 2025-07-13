@@ -30,6 +30,7 @@ import {
 } from "../../features/messenger/Conversation/conversationSlice";
 import { ContactType } from "../../types/contactType";
 import { useChatSocket } from "./useChatSocket";
+import { useWindowedConversation } from "../useConversation";
 
 export interface DataOutput {
   // for post-like notification
@@ -89,6 +90,7 @@ export const SOCKET_EVENTS = {
 
 export const useSocket = () => {
   const dispatch = useDispatch<AppDispatch>();
+  const convoIdOnChatWindows = useWindowedConversation();
   const { socket, isConnected } = useContext(SocketContext);
   const { accessToken } = useSelector((state: RootState) => state.auth);
   useChatSocket();
@@ -211,9 +213,9 @@ export const useSocket = () => {
 
       removeAllListener();
 
-      // socket.onAny((e, ...args) => {
-      //   console.log(`Received in  global handler event: ${e}`, args);
-      // });
+      socket.onAny((e, ...args) => {
+        console.log(`Received in  global handler event: ${e}`, args);
+      });
 
       // global event
       socket.on("postLiked", handleLikeEvent);
@@ -285,7 +287,6 @@ export const useSocket = () => {
     };
   }, [accessToken, socket, isConnected]);
 
-  // Utility functions to emit events
   const emitLike = useCallback(
     (data: { postId: string; postOwnerId: string; userId: string }) => {
       console.log(socket, isConnected);
@@ -349,6 +350,12 @@ export const useSocket = () => {
     [socket, isConnected]
   );
 
+  const emitCleanUp = useCallback(() => {
+    if (socket && isConnected) {
+      socket.emit("user-leaving", convoIdOnChatWindows);
+    }
+  }, [socket, isConnected, convoIdOnChatWindows]);
+
   return {
     socket,
     isConnected,
@@ -358,5 +365,6 @@ export const useSocket = () => {
     emitLike,
     emitComment,
     emitFollow,
+    emitCleanUp,
   };
 };

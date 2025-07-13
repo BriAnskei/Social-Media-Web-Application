@@ -73,6 +73,13 @@ export const ConvoService = {
       console.log("Failed to deleteConvoByContactId, ", error);
     }
   },
+  deleteConvoById: async (convoId: string) => {
+    try {
+      await Conversation.deleteOne({ _id: convoId });
+    } catch (error) {
+      throw error;
+    }
+  },
   findOneByContactIdPopulate: async (
     contactId: string
   ): Promise<IConversation | null> => {
@@ -127,22 +134,68 @@ export const ConvoService = {
     try {
       const { userId, cursor, limit } = data;
 
-      return await Conversation.find({
-        participants: userId,
-        deletedFor: { $ne: userId },
-        lastMessageAt: { $lt: new Date(cursor) },
-      })
-        .sort({ lastMessageAt: -1 })
-        .limit(limit + 1)
-        .populate("participants")
-        .populate("lastMessage")
-        .lean();
+      return await Conversation.aggregate([
+        {
+          $match: {
+            participants: new mongoose.Types.ObjectId(userId),
+            deletedFor: { $ne: new mongoose.Types.ObjectId(userId) },
+            lastMessageAt: { $lt: new Date(cursor) },
+            lastMessage: { $ne: null },
+          },
+        },
+        {
+          $lookup: {
+            from: "messages", // collection name (usually pluralized)
+            localField: "lastMessage",
+            foreignField: "_id",
+            as: "lastMessageData",
+          },
+        },
+        {
+          $match: {
+            $or: [
+              {
+                "lastMessageData.hideFrom": {
+                  $ne: new mongoose.Types.ObjectId(userId),
+                },
+              },
+              { "lastMessageData.hideFrom": { $exists: false } },
+              { "lastMessageData.hideFrom": null },
+            ],
+          },
+        },
+        {
+          $lookup: {
+            from: "users",
+            localField: "participants",
+            foreignField: "_id",
+            as: "participants",
+          },
+        },
+        {
+          $addFields: {
+            lastMessage: { $arrayElemAt: ["$lastMessageData", 0] },
+          },
+        },
+        {
+          $project: {
+            lastMessageData: 0, // Remove the temporary field
+          },
+        },
+        {
+          $sort: { lastMessageAt: -1 },
+        },
+        {
+          $limit: limit + 1,
+        },
+      ]);
     } catch (error) {
       throw new Error(
         `Failed to fetchConvosByCursor: ${(error as Error).message}`
       );
     }
   },
+
   fetchConvosNoCursor: async (data: {
     userId: string;
     cursor?: string | null;
@@ -151,22 +204,67 @@ export const ConvoService = {
     try {
       const { userId, limit } = data;
 
-      return await Conversation.find({
-        participants: new mongoose.Types.ObjectId(userId),
-        deletedFor: { $ne: new mongoose.Types.ObjectId(userId) }, // filder out convo where the user is in the deletedFor field
-        lastMessage: { $ne: null },
-      })
-        .sort({ lastMessageAt: -1 })
-        .limit(limit + 1)
-        .populate("participants")
-        .populate("lastMessage")
-        .lean();
+      return await Conversation.aggregate([
+        {
+          $match: {
+            participants: new mongoose.Types.ObjectId(userId),
+            deletedFor: { $ne: new mongoose.Types.ObjectId(userId) },
+            lastMessage: { $ne: null },
+          },
+        },
+        {
+          $lookup: {
+            from: "messages",
+            localField: "lastMessage",
+            foreignField: "_id",
+            as: "lastMessageData",
+          },
+        },
+        {
+          $match: {
+            $or: [
+              {
+                "lastMessageData.hideFrom": {
+                  $ne: new mongoose.Types.ObjectId(userId),
+                },
+              },
+              { "lastMessageData.hideFrom": { $exists: false } },
+              { "lastMessageData.hideFrom": null },
+            ],
+          },
+        },
+        {
+          $lookup: {
+            from: "users",
+            localField: "participants",
+            foreignField: "_id",
+            as: "participants",
+          },
+        },
+        {
+          $addFields: {
+            lastMessage: { $arrayElemAt: ["$lastMessageData", 0] },
+          },
+        },
+        {
+          $project: {
+            lastMessageData: 0,
+          },
+        },
+        {
+          $sort: { lastMessageAt: -1 },
+        },
+        {
+          $limit: limit + 1,
+        },
+      ]);
     } catch (error) {
       throw new Error(
         `Failed to fetchConvosNoCursor: ${(error as Error).message}`
       );
     }
   },
+
   getConvoByContactId: async (contactId: string) => {
     try {
       return await Conversation.findOne({ contactId });
@@ -182,6 +280,9 @@ export const ConvoService = {
     } catch (error) {
       throw error;
     }
+  },
+  isConvoValid: (conversation: IConversation) => {
+    return Boolean(conversation.lastMessage);
   },
   incrementMessageUnreadOnNotViewConvo: async (
     conversationId: string,
@@ -241,7 +342,6 @@ export const ConvoService = {
           userId
         );
       }
-      console.log("Refreshing conversation");
 
       await messageService.markReadMessages(convoId as string, userId);
       await ConvoService.resetUnreadCounts({
@@ -277,22 +377,13 @@ export const ConvoService = {
       const { _id: convoId } = payload.conversation;
       const msg = conversation.lastMessage as IMessage;
 
-      console.log("LastMessage: ", msg);
-
       if (!msg) {
-        console.log("No Message to Read");
+        console.info("No Message to Read");
         return;
       }
 
       const userRead = conversation.lastMessageOnRead?.find(
         (rd) => rd.user.toString() === userId
-      );
-
-      console.log(
-        "userRead: ",
-        userRead,
-        msg.recipient.toString(),
-        conversation.lastMessageOnRead
       );
 
       if (userRead && userRead.message === msg._id) {
@@ -306,7 +397,6 @@ export const ConvoService = {
             "lastMessageOnRead.$.message": msg._id,
           }
         );
-        console.log("LastMessageOnRead updated successfully", res);
       }
     } catch (error) {
       throw new Error("setLastMessageOnRead, " + (error as Error));
@@ -376,32 +466,12 @@ export const ConvoService = {
       throw error;
     }
   },
-  validateConversation: async (contactId: string, userId: string) => {
-    try {
-      const conversation = await Conversation.findOne({ contactId });
 
-      if (!conversation) {
-        throw new Error(
-          "Failed to validate user on Conversation: Conversation with this contactId does not exist"
-        );
-      }
+  validateConvoOnDrop: async (convoId: string) => {
+    const conversation = await ConvoService.getConvoById(convoId);
 
-      const isUserValid = conversation.validFor.includes(
-        new mongoose.Types.ObjectId(userId)
-      );
-
-      if (!isUserValid) {
-        await Conversation.updateOne(
-          { _id: conversation._id },
-          { $push: { validFor: userId } }
-        );
-      }
-    } catch (error) {
-      throw new Error(
-        `Failed to  validate user for this conversation: ${
-          (error as Error).message
-        }`
-      );
+    if (!ConvoService.isConvoValid(conversation!)) {
+      ConvoService.deleteConvoById(conversation!._id as string);
     }
   },
 };

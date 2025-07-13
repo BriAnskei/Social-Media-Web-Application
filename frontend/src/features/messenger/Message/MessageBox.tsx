@@ -25,11 +25,19 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faImage } from "@fortawesome/free-solid-svg-icons";
 import { useChatSocket } from "../../../hooks/socket/useChatSocket";
 import { useConversationById } from "../../../hooks/useConversation";
-import { followToggled } from "../../users/userSlice";
+import { followToggled, updateFollow } from "../../users/userSlice";
 import { useMessagesByConversation } from "../../../hooks/useMessages";
 import ChatArea from "./ChatArea";
 import { useLoadMoreMessages } from "../../../hooks/chatBox/useLoadMoreMessages";
-import { deleteConversation } from "../Conversation/conversationSlice";
+import {
+  deleteConversation,
+  dropConversation,
+} from "../Conversation/conversationSlice";
+import {
+  FollowPayloadToast,
+  useToastEffect,
+} from "../../../hooks/toast/useToastEffect";
+import { useSocket } from "../../../hooks/socket/useSocket";
 
 interface MessageBoxProp {
   ChatWindowData: ChatWindowType;
@@ -41,6 +49,8 @@ const MessageBox = ({ ChatWindowData, currentUserData }: MessageBoxProp) => {
   const dispatch = useDispatch<AppDispatch>();
   const { conversationId, minimized } = ChatWindowData;
 
+  const { handleFollowEffect, handleDeleteEffect } = useToastEffect();
+  const { emitFollow } = useSocket();
   const conversation = useConversationById(conversationId);
   const userParticipant = useUserById(ChatWindowData.participantId);
   const { messages, hasMore, loading } =
@@ -68,15 +78,16 @@ const MessageBox = ({ ChatWindowData, currentUserData }: MessageBoxProp) => {
 
     emitConvoViewStatus(false, conversation?._id!);
     dispatch(closeWindow({ conversationId }));
+    dispatch(dropConversation(conversationId));
     dispatch(dropMessageOnClose(conversationId));
   };
 
   const handleDelete = async () => {
     try {
       dispatch(closeWindow({ conversationId }));
-      await dispatch(deleteConversation(conversation._id));
+      await handleDeleteEffect(conversationId);
     } catch (error) {
-      console.log(error);
+      console.log("Failed to delete convo: ", error);
     }
   };
 
@@ -183,12 +194,28 @@ const MessageBox = ({ ChatWindowData, currentUserData }: MessageBoxProp) => {
 
   const handleFollow = async () => {
     try {
-      const followPayload: FollowPayload = {
-        userId: conversation.participant._id,
-        followerId: currentUserData._id,
+      const toastPayload: FollowPayloadToast = {
+        followPayload: {
+          userId: conversation.participant._id,
+          followerId: currentUserData._id,
+        },
+        toastPayload: {
+          isUnfollowing: false,
+          userFullName: conversation.participant.fullName,
+        },
       };
 
-      await dispatch(followToggled(followPayload));
+      await handleFollowEffect(toastPayload);
+
+      dispatch(updateFollow(toastPayload.followPayload));
+
+      const emitPayload = {
+        userId: conversation.participant._id,
+        followerId: currentUserData._id,
+        followingName: currentUserData.fullName,
+      };
+
+      emitFollow(emitPayload);
     } catch (error) {
       console.log("Failed to handleFollow, ", error);
     }
@@ -220,7 +247,7 @@ const MessageBox = ({ ChatWindowData, currentUserData }: MessageBoxProp) => {
         isConversationNotReady ? "center-spinner" : ""
       } ${minimized ? "minimized" : ""}`}
       onClick={() =>
-        !minimized ? undefined : dispatch(toggleMinimize({ contactId }))
+        !minimized ? undefined : dispatch(toggleMinimize({ conversationId }))
       }
     >
       {isConversationNotReady ? (
@@ -242,7 +269,7 @@ const MessageBox = ({ ChatWindowData, currentUserData }: MessageBoxProp) => {
             <div className="chatwindow-icons">
               <span
                 className="chatwindow-min"
-                onClick={() => dispatch(toggleMinimize({ contactId }))}
+                onClick={() => dispatch(toggleMinimize({ conversationId }))}
               >
                 -
               </span>

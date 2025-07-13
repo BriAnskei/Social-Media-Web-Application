@@ -1,6 +1,7 @@
 import { useSelector } from "react-redux";
 import { RootState } from "../store/store";
 import { selectConversationById } from "../features/messenger/Conversation/conversationSelector";
+import { selectChatWindows } from "../Components/Modal/globalSelector";
 
 export const useConversationById = (convoId: string) => {
   const converstionData = useSelector((state: RootState) =>
@@ -8,4 +9,13 @@ export const useConversationById = (convoId: string) => {
   );
 
   return converstionData;
+};
+
+// Data is from global state
+export const useWindowedConversation = () => {
+  const convoWindows = useSelector((state: RootState) =>
+    selectChatWindows(state)
+  );
+
+  return convoWindows;
 };

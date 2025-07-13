@@ -8,13 +8,17 @@ import { AppDispatch } from "../../../store/store";
 import { useSocket } from "../../../hooks/socket/useSocket";
 
 import { useCurrentUser, useUserById } from "../../../hooks/useUsers";
-import { followToggled } from "../../users/userSlice";
+import { followToggled, updateFollow } from "../../users/userSlice";
 import {
   openPostModal,
   viewProfile,
 } from "../../../Components/Modal/globalSlice";
 import { useNavigate } from "react-router";
 import { usePopoverContext } from "../../../hooks/usePopover";
+import {
+  FollowPayloadToast,
+  useToastEffect,
+} from "../../../hooks/toast/useToastEffect";
 
 interface Post {
   post: FetchPostType;
@@ -25,6 +29,7 @@ const Post = ({ post, ownerId }: Post) => {
   const { currentUser } = useCurrentUser();
   const { popover } = usePopoverContext();
   const { emitLike, emitFollow } = useSocket();
+  const { handleFollowEffect } = useToastEffect();
   const navigate = useNavigate();
 
   const postOwnerData = useUserById(ownerId);
@@ -92,28 +97,28 @@ const Post = ({ post, ownerId }: Post) => {
   const handleFollow = async () => {
     try {
       if (followingProgress) return;
-      setFollowingProgress(true);
 
       if (toggleFollow || postOwnerData.followers.includes(currentUser._id)) {
         return;
       }
+      setFollowingProgress(true);
 
       setFollowToggleClass("followed");
       setToggleFollow(true);
 
-      const data: FollowPayload = {
-        userId: post.user,
-        followerId: currentUser._id,
+      const toastPayload: FollowPayloadToast = {
+        followPayload: {
+          userId: post.user,
+          followerId: currentUser._id,
+        },
+        toastPayload: {
+          isUnfollowing: false,
+          userFullName: postOwnerData.fullName,
+        },
       };
 
-      const res = await dispatch(followToggled(data)).unwrap();
-
-      if (!res.success) {
-        setFollowToggleClass("");
-        setToggleFollow(false);
-        console.error(res.message || "Error handling follow");
-        return;
-      }
+      await handleFollowEffect(toastPayload);
+      dispatch(updateFollow(toastPayload.followPayload));
 
       const emitPayload = {
         userId: post.user,
@@ -123,7 +128,7 @@ const Post = ({ post, ownerId }: Post) => {
 
       emitFollow(emitPayload);
     } catch (error) {
-      console.error(error);
+      console.error("Failed to follow user: ", error);
     } finally {
       setFollowingProgress(false);
     }
@@ -185,7 +190,11 @@ const Post = ({ post, ownerId }: Post) => {
           <div className="post-info-act">
             {isFollowedShow && (
               <button id={followToggleClass} onClick={handleFollow}>
-                {followToggleClass === "followed" ? "✔ Followed" : "+ Follow"}
+                {followToggleClass === "followed" && !followingProgress
+                  ? "✔ Followed"
+                  : followToggleClass === "follow-button"
+                  ? "+ Follow"
+                  : "loading..."}
               </button>
             )}
             <span

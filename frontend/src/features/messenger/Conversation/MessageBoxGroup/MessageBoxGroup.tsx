@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { ConversationType } from "../../../../types/MessengerTypes";
 import { Spinner } from "react-bootstrap";
 import { MessageSpinner } from "../../../../Components/Spinner/Spinner";
@@ -28,6 +28,10 @@ const MessageBoxGroup = ({
   isFetchingMore,
   loading,
 }: MessageBoxGroupProp) => {
+  useEffect(() => {
+    console.log("Conversaiton update: ", byId, allIds);
+  }, [allIds, byId]);
+
   return (
     <div className="chat-list" ref={convoListScrollRef} onScroll={handleScroll}>
       {loading ? (
@@ -37,6 +41,7 @@ const MessageBoxGroup = ({
       ) : (
         allIds.map((id) => {
           const conversation = byId[id];
+          console.log("Conversation: ", conversation);
 
           return (
             <ConvoBox

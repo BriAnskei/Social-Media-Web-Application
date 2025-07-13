@@ -31,22 +31,24 @@ export class MessageHanlder {
   }
   private async convoRoomOnCLosed(socket: Socket, conversationId: string) {
     try {
-      const conversationRoom = this.activeConversations.get(conversationId);
+      const conversationRoom = this.getConvoRoom(conversationId);
 
       const userId: string = this.getUserIdFromSocket(socket);
 
-      if (conversationRoom) {
-        conversationRoom.delete(userId);
-        socket.leave(conversationId);
-        if (conversationRoom.size === 0) {
-          this.activeConversations.delete(conversationId);
-        }
-        const conversation = await ConvoService.getConvoById(conversationId);
-        await ConvoService.setLastMessageOnRead({
-          conversation: conversation!,
-          userId,
-        });
+      if (!conversationRoom) {
+        console.error("Conversation room not found!");
+        return;
       }
+
+      this.deleteUserInRoom(conversationRoom, userId);
+
+      this.dropSocketConvoRoom({ socket, convoId: conversationId });
+      this.validateRoomOnDrop({
+        convoId: conversationId,
+        room: conversationRoom,
+      });
+
+      await ConvoService.validateConvoOnDrop(conversationId);
 
       console.log(
         "an user has been inactive in conversation",
@@ -57,10 +59,67 @@ export class MessageHanlder {
       console.error("Failed in convoRoomOnCLosed", error);
     }
   }
+
+  public cleanUpOnLeave(payload: { socket: Socket; convoIds: string[] }) {
+    const { socket, convoIds } = payload;
+    const userId = this.getUserIdFromSocket(socket);
+
+    const dropUserInRoom = (convoId: string) => {
+      try {
+        const convoRoom = this.getConvoRoom(convoId);
+        if (!convoRoom) {
+          console.error("Convo room for dropout is not available");
+          return;
+        }
+        this.deleteUserInRoom(convoRoom, userId);
+        this.dropSocketConvoRoom({ socket, convoId });
+        this.validateRoomOnDrop({ convoId, room: convoRoom });
+      } catch (error) {
+        console.error("Failed on dropUserInRoom, ", error);
+      }
+    };
+
+    convoIds.forEach((cId) => {
+      dropUserInRoom(cId);
+    });
+
+    console.log(
+      "user on leav detected for cleanup: convoROoms update: ",
+      this.activeConversations
+    );
+  }
+
+  private validateRoomOnDrop(payload: { convoId: string; room: Set<string> }) {
+    const { convoId, room } = payload;
+    if (!this.isRoomStillActive(room)) {
+      this.deleteRoom(convoId);
+    }
+  }
+  private deleteUserInRoom(room: Set<String>, userId: string) {
+    room.delete(userId);
+  }
+  private deleteRoom(convoId: string) {
+    this.activeConversations.delete(convoId);
+  }
+  private dropSocketConvoRoom(cnfg: { socket: Socket; convoId: string }) {
+    try {
+      const { socket, convoId } = cnfg;
+
+      socket.leave(convoId);
+    } catch (error) {
+      throw error;
+    }
+  }
+  private getConvoRoom(convoId: string) {
+    return this.activeConversations.get(convoId);
+  }
   private getUserIdFromSocket(socket: Socket) {
     return socket.data.userId;
   }
 
+  private isRoomStillActive(room: Set<string>) {
+    return room.size > 0;
+  }
   // Used on creating model doc on sent message
   public isActiveRecipient(convoId: string, recipientId: string) {
     const convoRoom = this.activeConversations.get(convoId);
@@ -68,6 +127,14 @@ export class MessageHanlder {
     return convoRoom?.has(recipientId) as boolean;
   }
 
+  private registerSocketConvoRoom(cnfg: { socket: Socket; convoId: string }) {
+    try {
+      const { socket, convoId } = cnfg;
+      socket.join(convoId);
+    } catch (error) {
+      throw error;
+    }
+  }
   private registerConvoParticipant(socket: Socket, conversationId: string) {
     try {
       const userId = this.getUserIdFromSocket(socket);
@@ -80,16 +147,15 @@ export class MessageHanlder {
 
         this.activeConversations.set(conversationId, new Set());
       }
-      socket.join(conversationId);
+      this.registerSocketConvoRoom({ socket, convoId: conversationId });
       this.activeConversations.get(conversationId)?.add(userId);
 
       this.emitConversationOnView({ convoId: conversationId, userId: userId });
 
-      console.group(
-        "an user has been active in conversation. UserId: ",
-        userId,
-        " conversatonId: ",
+      console.log(
+        "a user rigestered a conversation: ",
         conversationId,
+        " conversation Map room update: ",
         this.activeConversations
       );
     } catch (error) {

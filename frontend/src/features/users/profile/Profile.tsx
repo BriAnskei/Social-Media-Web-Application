@@ -1,5 +1,5 @@
 import "./Profile.css";
-import { FetchedUserType, FollowPayload } from "../../../types/user";
+import { FetchedUserType } from "../../../types/user";
 import { useEffect, useState } from "react";
 import { useCurrentUser } from "../../../hooks/useUsers";
 import { useDispatch } from "react-redux";
@@ -8,9 +8,12 @@ import {
   openEditProfileModal,
   toggleViewFollow,
 } from "../../../Components/Modal/globalSlice";
-import { followToggled, updateFollow } from "../userSlice";
+import { updateFollow } from "../userSlice";
 import { useSocket } from "../../../hooks/socket/useSocket";
-import toast from "react-hot-toast";
+import {
+  FollowPayloadToast,
+  useToastEffect,
+} from "../../../hooks/toast/useToastEffect";
 
 interface ProfileProp {
   data: FetchedUserType;
@@ -18,6 +21,7 @@ interface ProfileProp {
 
 const Profile: React.FC<ProfileProp> = ({ data }) => {
   const dispatch = useDispatch<AppDispatch>();
+  const { handleFollowEffect } = useToastEffect();
   const { currentUser } = useCurrentUser();
   const [followStyleId, setFollowStyleId] = useState("follow-button");
   const [isUserFollowed, setIsUserFollowed] = useState(false);
@@ -46,19 +50,20 @@ const Profile: React.FC<ProfileProp> = ({ data }) => {
       if (followingProgress) return;
       setFollowingProgress(true);
 
-      const dataPayload: FollowPayload = {
-        userId: data._id,
-        followerId: currentUser._id,
+      const payload: FollowPayloadToast = {
+        followPayload: {
+          userId: data._id,
+          followerId: currentUser._id,
+        },
+        toastPayload: {
+          isUnfollowing: isUserFollowed,
+          userFullName: data.fullName,
+        },
       };
 
-      const res = await dispatch(followToggled(dataPayload)).unwrap();
+      await handleFollowEffect(payload);
 
-      dispatch(updateFollow(dataPayload));
-
-      if (!res.success) {
-        console.error(res.message || "Faild to follow use");
-        return;
-      }
+      dispatch(updateFollow(payload.followPayload));
 
       const emitPayload = {
         userId: data._id,
@@ -66,7 +71,7 @@ const Profile: React.FC<ProfileProp> = ({ data }) => {
         followingName: currentUser.fullName,
       };
 
-      emitFollow(emitPayload);
+      emitFollowEvent(emitPayload);
     } catch (error) {
       console.log("Error: Failed to follow: ", error);
     } finally {
@@ -74,36 +79,12 @@ const Profile: React.FC<ProfileProp> = ({ data }) => {
     }
   };
 
-  const followToggle = () => {
-    toast.promise(
-      handleFollow(),
-      {
-        loading: "Loading...",
-        success: (
-          <b>
-            {`You ${
-              isUserFollowed ? "Unfollowed" : "Followed"
-            } ${data.fullName.replace(/ .*/, "")}`}
-            !
-          </b>
-        ),
-        error: <b>Failed to follow this user.</b>,
-      },
-      {
-        success: {
-          style: {
-            border: "2px solidrgb(70, 74, 72)",
-            padding: "13px",
-            color: "black",
-            backgroundColor: "white",
-          },
-          iconTheme: {
-            primary: "#10b981",
-            secondary: "black",
-          },
-        },
-      }
-    );
+  const emitFollowEvent = (payload: {
+    userId: string;
+    followerId: string;
+    followingName: string;
+  }) => {
+    emitFollow(payload);
   };
 
   const viewFollowers = () => {
@@ -137,7 +118,7 @@ const Profile: React.FC<ProfileProp> = ({ data }) => {
         <button
           id={currentUser._id !== data._id ? followStyleId : "edit-button"}
           onClick={() =>
-            data._id === currentUser._id ? toggleEdit() : followToggle()
+            data._id === currentUser._id ? toggleEdit() : handleFollow()
           }
         >
           {currentUser._id !== data._id

@@ -22,7 +22,6 @@ import { notifService } from "../../services/notification.service";
 import { appEvents } from "../../events/appEvents";
 import { MessageHanlder } from "./messageHanlder";
 import { IMessage } from "../../models/messageModel";
-import { IConversation } from "../../models/conversationModel";
 import { FormattedConversation } from "../../services/conversation.service";
 
 interface ConnectedUser {
@@ -162,6 +161,11 @@ export class SocketServer {
     this.io.on("connection", (socket) => {
       this.handleConnection(socket); // register the user as connected(online) first
       this.messagetHandler.registerEvents(socket);
+
+      socket.on("user-leaving", (convoIds: string[]) => {
+        console.log("USerLEaving, convoIds:", convoIds);
+        this.messagetHandler.cleanUpOnLeave({ socket, convoIds });
+      });
 
       socket.on("disconnect", () => this.handleDisconnection(socket));
 

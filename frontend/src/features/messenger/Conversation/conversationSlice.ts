@@ -1,28 +1,15 @@
 import { NormalizeState } from "../../../types/NormalizeType";
 import { ConversationType, Message } from "../../../types/MessengerTypes";
-import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
+import {
+  createAsyncThunk,
+  createSlice,
+  current,
+  PayloadAction,
+} from "@reduxjs/toolkit";
 
 import { MessageApi } from "../../../utils/api";
 import { RootState } from "../../../store/store";
 import { normalizeResponse } from "../../../utils/normalizeResponse";
-
-interface ConversationState extends NormalizeState<ConversationType> {
-  isFetchingMore: boolean;
-}
-
-const initialState: ConversationState = {
-  byId: {},
-  allIds: [],
-  isFetchingMore: false,
-  loading: false,
-  error: null,
-};
-
-export interface latestMessagePayload {
-  conversation: ConversationType;
-  messageData: Message;
-  updatedAt: string;
-}
 
 export const deleteConversation = createAsyncThunk(
   "conversation/drop",
@@ -103,10 +90,39 @@ export const openConversation = createAsyncThunk(
   }
 );
 
+interface ConversationState extends NormalizeState<ConversationType> {
+  isFetchingMore: boolean;
+}
+
+const initialState: ConversationState = {
+  byId: {},
+  allIds: [],
+  isFetchingMore: false,
+  loading: false,
+  error: null,
+};
+
+export interface latestMessagePayload {
+  conversation: ConversationType;
+  messageData: Message;
+  updatedAt: string;
+}
+
 const conversationSlice = createSlice({
   name: "conversation",
   initialState,
   reducers: {
+    dropConversation: (state, action) => {
+      const convoId = action.payload;
+      const isConvoValid = Boolean(state.byId[convoId].lastMessage);
+      2;
+
+      // drop conversation if there is no lastMessage
+      if (!isConvoValid) {
+        state.allIds = state.allIds.filter((id) => id !== convoId);
+        delete state.byId[convoId];
+      }
+    },
     increamentUnread: (state, action) => {
       const convoId = action.payload;
 
@@ -154,13 +170,15 @@ const conversationSlice = createSlice({
       const { userId, convoId } = action.payload;
       const lastMessage = state.byId[convoId].lastMessage;
 
-      const isUserRecipient = userId === lastMessage.recipient;
-
-      if (isUserRecipient) {
+      if (lastMessage && lastMessage.recipient === userId) {
         state.byId[convoId].lastMessageOnRead = lastMessage._id;
         state.byId[convoId].lastMessage.read = true;
       }
+
       state.byId[convoId].unreadCount = 0;
+    },
+    resetConvoState: (state) => {
+      state = initialState;
     },
   },
   extraReducers: (builder) => {
@@ -230,9 +248,10 @@ const conversationSlice = createSlice({
 });
 
 export const {
+  dropConversation,
   setLatestMessage,
   increamentUnread,
-
+  resetConvoState,
   setConvoToValid,
   setConvoToInvalid,
   setReadConvoMessages,
