@@ -1,8 +1,49 @@
 .notif-container {
-  margin-bottom: 0.2rem;
+  width: 27rem;
+  height: 34rem;
+  padding: 5px;
 }
 
-.notif-container .notif-content {
+.notif-header {
+  display: flex;
+  align-items: center;
+  height: 3rem;
+  padding-left: 5px;
+  margin-bottom: 12px;
+  box-shadow: rgba(0, 0, 0, 0.1) 0px 1px 2px 0px;
+}
+
+.notif-header * {
+  margin-left: 5px;
+}
+
+.notif-list {
+  overflow: auto;
+  scrollbar-width: none;
+  height: 88%;
+}
+
+.notif-list::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+.notif-list::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 10px;
+}
+
+.notification {
+  margin-bottom: 0.4rem;
+  display: flex;
+}
+
+.notification:hover {
+  background-color: #f1f1f1;
+  transition: background-color 0.5s ease;
+}
+
+.notification .notif-content {
   display: flex;
   gap: 1rem;
 }
@@ -15,11 +56,11 @@
   cursor: pointer;
 }
 
-.notif-container .notif-content .type-logo span {
+.notification .notif-content .type-logo span {
   font-size: 3.4rem;
 }
 
-.notif-container .notif-message {
+.notification .notif-message {
   width: 16.5rem;
 }
 
@@ -29,6 +70,14 @@
   font-weight: bold;
 }
 
-.notif-container .notif-data span {
+.notif-data {
+  margin: 0;
+  padding: 0;
+  display: flex;
+}
+
+.notification .notif-data span {
+  margin-left: 20px;
+  margin-right: 0;
   font-size: 0.8rem;
 }

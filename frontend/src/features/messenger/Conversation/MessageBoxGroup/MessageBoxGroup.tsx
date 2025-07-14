@@ -28,10 +28,6 @@ const MessageBoxGroup = ({
   isFetchingMore,
   loading,
 }: MessageBoxGroupProp) => {
-  useEffect(() => {
-    console.log("Conversaiton update: ", byId, allIds);
-  }, [allIds, byId]);
-
   return (
     <div className="chat-list" ref={convoListScrollRef} onScroll={handleScroll}>
       {loading ? (
@@ -41,7 +37,6 @@ const MessageBoxGroup = ({
       ) : (
         allIds.map((id) => {
           const conversation = byId[id];
-          console.log("Conversation: ", conversation);
 
           return (
             <ConvoBox

@@ -4,10 +4,21 @@ import { AppDispatch, RootState } from "../../store/store";
 
 import { useNavigate } from "react-router";
 import { viewPost } from "../../Components/Modal/globalSlice";
+import { faXTwitter } from "@fortawesome/free-brands-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { useEffect } from "react";
+import { markAllRead } from "./notificationsSlice";
 
-const NotificationList = () => {
+interface NotificationProp {
+  isNotifViewed: boolean;
+  allUnReadNotifIds: string[];
+}
+
+const NotificationList = ({}: NotificationProp) => {
   const navigate = useNavigate();
   const dispatch = useDispatch<AppDispatch>();
+
+  const notifDropDown = document.querySelector(".notificatopm-dropdown");
 
   const { allIds, byId, loading } = useSelector(
     (state: RootState) => state.notification
@@ -45,51 +56,59 @@ const NotificationList = () => {
   };
 
   return (
-    <div className="notif-cont">
-      {loading ? (
-        <>Loading</>
-      ) : (
-        allIds.map((id, index) => {
-          const notifData = byId[id];
-          const senderId = notifData.sender; // get sender by notif
+    <div className="notif-container">
+      <div className="notif-header">
+        <FontAwesomeIcon icon={faXTwitter} />
+        <span>Notification</span>
+      </div>
+      <div className="notif-list">
+        {loading ? (
+          <>Loading</>
+        ) : (
+          allIds.map((id, index) => {
+            const notifData = byId[id];
+            const senderId = notifData.sender; // get sender by notif
 
-          const senderData = userById[senderId];
+            const senderData = userById[senderId];
 
-          return (
-            <div
-              className={`notif-container ${
-                !notifData.read ? "unread-backgroud" : ""
-              }  ${
-                notifData.type === "upload" ||
-                notifData.type === "comment" ||
-                notifData.type === "like"
-                  ? "cursor-onclick"
-                  : ""
-              }`}
-              key={index}
-              onClick={() => listOnClick(notifData.post, notifData.type)}
-            >
-              <div className="notif-content">
-                <div className="type-logo">
-                  <span className="material-symbols-outlined">
-                    {displayLogoType(notifData.type)}
-                  </span>
+            return (
+              <div
+                className={`notification ${
+                  !notifData.read ? "unread-backgroud" : ""
+                }  ${
+                  notifData.type === "upload" ||
+                  notifData.type === "comment" ||
+                  notifData.type === "like"
+                    ? "cursor-onclick"
+                    : ""
+                }`}
+                key={index}
+                onClick={() => listOnClick(notifData.post, notifData.type)}
+              >
+                <div className="notif-content">
+                  <div className="type-logo">
+                    <span className="material-symbols-outlined">
+                      {displayLogoType(notifData.type)}
+                    </span>
+                  </div>
+                  <div
+                    className={`notif-message ${
+                      !notifData.read && "unread-message"
+                    }`}
+                  >{`${
+                    senderData
+                      ? capitializeFristWord(senderData.username)
+                      : "..."
+                  } ${notifData.message}`}</div>
                 </div>
-                <div
-                  className={`notif-message ${
-                    !notifData.read && "unread-message"
-                  }`}
-                >{`${
-                  senderData ? capitializeFristWord(senderData.username) : "..."
-                } ${notifData.message}`}</div>
+                <div className="notif-data">
+                  <span>{new Date(notifData.createdAt).toLocaleString()}</span>
+                </div>
               </div>
-              <div className="notif-data">
-                <span>{new Date(notifData.createdAt).toLocaleString()}</span>
-              </div>
-            </div>
-          );
-        })
-      )}
+            );
+          })
+        )}
+      </div>
     </div>
   );
 };

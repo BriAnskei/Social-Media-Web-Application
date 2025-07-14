@@ -75,25 +75,33 @@ Link {
   position: relative;
 }
 
-.navbar-menu .notifs .count {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-
+/* your long selector shortened for clarity; add ancestor prefixes if you need them */
+.flag {
   position: absolute;
-  top: 12px;
-  right: 7.7rem;
-  width: 20px;
-  height: 20px;
-  background: red;
+  top: 3px;
+  right: 1px;
+
+  width: 9px;
+  height: 9px;
   border-radius: 50%;
-  color: white;
-  border: 2px solid white;
-  font-weight: 700;
-  font-size: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  background: red;
+
+  /* start fully hidden but still in the DOM */
+  opacity: 0;
+  pointer-events: none; /* so it never blocks clicks */
+  transition: opacity 0.9s ease;
+}
+
+/* visible state */
+.flag--visible {
+  opacity: 1; /* fades in/out over 3 s */
+}
+
+/* (optional) once hidden, remove it from the visual flow after the fade‑out finishes */
+.flag--gone {
+  opacity: 0;
+  pointer-events: none;
+  visibility: hidden; /* keeps layout intact; use display:none if you prefer */
 }
 
 .navbar-menu .chat .count {

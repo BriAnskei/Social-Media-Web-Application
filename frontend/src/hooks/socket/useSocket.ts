@@ -99,7 +99,11 @@ export const useSocket = () => {
 
   // like events function
   const handleLikeEvent = useCallback(
-    (data: LikeHandlerTypes) => dispatch(postLiked(data)),
+    (data: LikeHandlerTypes) => {
+      console.log("Liked post");
+
+      dispatch(postLiked(data));
+    },
     [dispatch]
   );
 
@@ -212,10 +216,6 @@ export const useSocket = () => {
       };
 
       removeAllListener();
-
-      socket.onAny((e, ...args) => {
-        console.log(`Received in  global handler event: ${e}`, args);
-      });
 
       // global event
       socket.on("postLiked", handleLikeEvent);
