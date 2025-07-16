@@ -33,6 +33,8 @@ const CommentList = ({ postId, viewUserProfile }: CommentListProp) => {
           comments.map((comment, index) => {
             const userData = usersData[comment.user];
 
+            if (!userData) return;
+
             return (
               <div
                 className="comment-cont"
@@ -40,14 +42,12 @@ const CommentList = ({ postId, viewUserProfile }: CommentListProp) => {
                 onClick={() => viewUserProfile(userData)}
               >
                 <img
-                  src={`http://localhost:4000/uploads/profile/${
-                    userData._id || ""
-                  }/${userData.profilePicture || ""}`}
+                  src={`http://localhost:4000/uploads/profile/${userData._id}/${userData.profilePicture}`}
                   alt=""
                 />
                 <div className="comment-content">
                   <div className="info-content">
-                    <h5>{userData.fullName || ""}</h5>
+                    <h5>{userData.fullName}</h5>
                     <span>{comment.content}</span>
                   </div>
                   <span id="comment-date">

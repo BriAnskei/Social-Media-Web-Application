@@ -64,47 +64,41 @@ Link {
   text-decoration: none;
 }
 
-.navbar-menu .notif {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-  font-family: "Poppins", sans-serif;
-  text-decoration: none;
-
-  font-size: 20px;
-  position: relative;
-}
-
-/* your long selector shortened for clarity; add ancestor prefixes if you need them */
-.flag {
-  position: absolute;
-  top: 3px;
-  right: 1px;
-
-  width: 9px;
+.icon-badge {
   height: 9px;
+  width: 9px;
   border-radius: 50%;
   background: red;
 
-  /* start fully hidden but still in the DOM */
   opacity: 0;
   pointer-events: none; /* so it never blocks clicks */
   transition: opacity 0.9s ease;
 }
 
 /* visible state */
-.flag--visible {
+.icon-badge--visible {
   opacity: 1; /* fades in/out over 3 s */
 }
 
-/* (optional) once hidden, remove it from the visual flow after the fade‑out finishes */
-.flag--gone {
+.icon-badge--gone {
   opacity: 0;
   pointer-events: none;
-  visibility: hidden; /* keeps layout intact; use display:none if you prefer */
+  visibility: hidden;
 }
 
-.navbar-menu .chat .count {
+.message-badge-position {
+  position: absolute;
+  top: 1px;
+  right: -2.5px;
+}
+
+.notif-badge-position {
+  position: absolute;
+  top: 3px;
+  right: 1px;
+}
+
+.navbar-menu .notif .navbar-menu .chat .count {
   top: -3px;
   left: 0.7rem;
   margin: 0;

@@ -1,6 +1,9 @@
 import { useSelector } from "react-redux";
 import { RootState } from "../store/store";
-import { selectConversationById } from "../features/messenger/Conversation/conversationSelector";
+import {
+  selectConversationById,
+  selectUnReadConvo,
+} from "../features/messenger/Conversation/conversationSelector";
 import { selectChatWindows } from "../Components/Modal/globalSelector";
 
 export const useConversationById = (convoId: string) => {
@@ -18,4 +21,13 @@ export const useWindowedConversation = () => {
   );
 
   return convoWindows;
+};
+
+export const useUnreadConversation = () => {
+  const unReadConvo = useSelector((state: RootState) =>
+    selectUnReadConvo(state)
+  );
+  console.log("unreadconfo", unReadConvo);
+
+  return unReadConvo.length > 0;
 };

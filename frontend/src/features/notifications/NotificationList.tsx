@@ -6,23 +6,15 @@ import { useNavigate } from "react-router";
 import { viewPost } from "../../Components/Modal/globalSlice";
 import { faXTwitter } from "@fortawesome/free-brands-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { useEffect } from "react";
-import { markAllRead } from "./notificationsSlice";
 
-interface NotificationProp {
-  isNotifViewed: boolean;
-  allUnReadNotifIds: string[];
-}
-
-const NotificationList = ({}: NotificationProp) => {
+const NotificationList = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch<AppDispatch>();
-
-  const notifDropDown = document.querySelector(".notificatopm-dropdown");
 
   const { allIds, byId, loading } = useSelector(
     (state: RootState) => state.notification
   );
+
   const userById = useSelector((state: RootState) => state.user.byId);
 
   const displayLogoType = (notificationType: string): string => {
@@ -53,6 +45,34 @@ const NotificationList = ({}: NotificationProp) => {
 
   const capitializeFristWord = (text: string) => {
     return String(text).charAt(0).toUpperCase() + String(text).slice(1);
+  };
+
+  const showDateCreationDetails = (createdAt: Date) => {
+    const created = new Date(createdAt);
+    const now = new Date();
+
+    const isSameDay =
+      now.getDate() === created.getDate() &&
+      now.getMonth() === created.getMonth() &&
+      now.getFullYear() === created.getFullYear();
+
+    if (isSameDay) {
+      return showOnlyTime(created); // implement this function to format time
+    } else {
+      return showOnlyDate(created); // implement this function to format date
+    }
+  };
+
+  const showOnlyTime = (createdAt: Date) => {
+    return new Date(createdAt).toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true, // Set to false if you want 24-hour format
+    });
+  };
+
+  const showOnlyDate = (createdAt: Date) => {
+    return new Date(createdAt).toLocaleDateString();
   };
 
   return (
@@ -102,7 +122,7 @@ const NotificationList = ({}: NotificationProp) => {
                   } ${notifData.message}`}</div>
                 </div>
                 <div className="notif-data">
-                  <span>{new Date(notifData.createdAt).toLocaleString()}</span>
+                  <span>{showDateCreationDetails(notifData.createdAt)}</span>
                 </div>
               </div>
             );

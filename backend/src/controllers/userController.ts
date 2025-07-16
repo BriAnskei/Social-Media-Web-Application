@@ -63,10 +63,10 @@ export const register = async (req: Request, res: Response): Promise<any> => {
     const userId = newUser._id.toString(); // Ensure userId is a string
 
     const uploadPath = path.join("uploads", "profile", userId);
-    await fs.promises.mkdir(uploadPath, { recursive: true }); // Creates the upload path deriectory if it doesn't Exist
+    fs.mkdirSync(uploadPath, { recursive: true }); // Creates the upload path deriectory if it doesn't Exist
 
     if (req.file) {
-      const fileName = `${generateNameSuffix}${req.file.originalname}`;
+      const fileName = `${generateNameSuffix()}${req.file.originalname}`;
 
       const filePath = path.join(uploadPath, fileName);
       await fs.promises.writeFile(filePath, req.file.buffer); // Save the file from to memory disk

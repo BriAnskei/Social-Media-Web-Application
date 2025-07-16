@@ -4,6 +4,7 @@ import { ConversationType } from "../../../types/MessengerTypes";
 
 const byId = (state: RootState) => state.conversation.byId;
 const allIds = (state: RootState) => state.conversation.allIds;
+const useId = (state: RootState) => state.user.currentUserId;
 
 export const selectConversationById = createSelector(
   [byId, (_: RootState, convoId: string): string => convoId],
@@ -25,4 +26,15 @@ export const selectConsationsByContactIds = createSelector(
       acc[id] = byId[id];
       return acc;
     }, {} as { [key: string]: ConversationType })
+);
+
+export const selectUnReadConvo = createSelector(
+  [byId, allIds, useId],
+  (byId, allIds, useId) =>
+    allIds.filter(
+      (id) =>
+        byId[id].lastMessage &&
+        !byId[id].lastMessage.read &&
+        byId[id].lastMessage.recipient === useId
+    )
 );

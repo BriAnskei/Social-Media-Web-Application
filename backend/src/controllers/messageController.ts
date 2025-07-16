@@ -24,11 +24,6 @@ export const addMessage = async (req: ReqAuth, res: Response): Promise<any> => {
     const isMsgReadByRecipient = message.read;
 
     if (isMsgReadByRecipient) {
-      console.log("Setting new messageOnRead", {
-        conversation,
-        userId: message.recipient.toString(),
-      });
-
       await UserChatRelationService.updateConvoMsgReadOnSend({
         conversation,
         userId: message.recipient.toString(),
@@ -43,7 +38,7 @@ export const addMessage = async (req: ReqAuth, res: Response): Promise<any> => {
 
     res.json({ success: true, message: "message sent", messages: message });
   } catch (error) {
-    console.log("Failed to sent message, " + error);
+    console.error("Failed to sent message, " + error);
     res.json({
       success: false,
       message: `Failed to  send message: ${(error as Error).message}`,
