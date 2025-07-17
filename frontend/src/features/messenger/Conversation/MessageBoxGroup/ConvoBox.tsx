@@ -27,6 +27,8 @@ const ConvoBox = ({
 
   const { participant, lastMessage } = conversation;
 
+  if (!participant || !lastMessage) return;
+
   const handleDeleteConvo = async (e: any, convoId: string) => {
     e.stopPropagation();
     e.preventDefault();

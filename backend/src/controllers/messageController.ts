@@ -23,12 +23,20 @@ export const addMessage = async (req: ReqAuth, res: Response): Promise<any> => {
 
     const isMsgReadByRecipient = message.read;
 
-    if (isMsgReadByRecipient) {
-      await UserChatRelationService.updateConvoMsgReadOnSend({
-        conversation,
-        userId: message.recipient.toString(),
-      });
-    } else {
+    // if (isMsgReadByRecipient) {
+    //   await UserChatRelationService.updateConvoMsgReadOnSend({
+    //     conversation,
+    //     userId: message.recipient.toString(),
+    //   });
+    // } else {
+    //   await ConvoService.incrementMessageUnreadOnNotViewConvo(
+    //     convoId,
+    //     message.recipient.toString(),
+    //     message._id as string
+    //   );
+    // }
+
+    if (!isMsgReadByRecipient) {
       await ConvoService.incrementMessageUnreadOnNotViewConvo(
         convoId,
         message.recipient.toString(),

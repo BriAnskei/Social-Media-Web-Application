@@ -2,9 +2,11 @@ import { Server, Socket } from "socket.io";
 import { IMessage } from "../../models/messageModel";
 import { SocketServer } from "./socketServer";
 import {
+  conversationFormatHelper,
   ConvoService,
   FormattedConversation,
 } from "../../services/conversation.service";
+import { IConversation } from "../../models/conversationModel";
 
 export class MessageHanlder {
   private io: Server;
@@ -176,9 +178,10 @@ export class MessageHanlder {
   }
 
   public sentMessageGlobal(data: {
-    conversation: FormattedConversation;
+    conversation: IConversation;
     messageData: IMessage;
   }) {
+    const { conversation } = data;
     const { recipient } = data.messageData;
     const recipientId = recipient._id.toString();
 
@@ -189,6 +192,7 @@ export class MessageHanlder {
 
     const isUserOnline = this.socketServer.isUserOnline(recipientId);
     const recipientSocket = this.socketServer.getConnectedUser(recipientId);
+
     const isUserViewingConvo = this.activeConversations
       .get(convoId)
       ?.has(recipientId);
@@ -208,7 +212,7 @@ export class MessageHanlder {
   private sentMessageOnRecipClosedConvo(
     recipientSocketId: string,
     payload: {
-      conversation: FormattedConversation;
+      conversation: IConversation;
       messageData: IMessage;
     }
   ): void {

@@ -7,9 +7,10 @@ import {
   PayloadAction,
 } from "@reduxjs/toolkit";
 
-import { MessageApi } from "../../../utils/api";
+import { api, MessageApi } from "../../../utils/api";
 import { RootState } from "../../../store/store";
 import { normalizeResponse } from "../../../utils/normalizeResponse";
+import { ClosedConversationMessagePayload } from "../../../hooks/socket/useChatSocket";
 
 export const deleteConversation = createAsyncThunk(
   "conversation/drop",
@@ -53,8 +54,6 @@ export const fetchAllConvoList = createAsyncThunk(
 
       const { hasMore, conversations } = res;
 
-      console.log("fetched conversation: ", conversations);
-
       return { hasMore, conversations };
     } catch (error) {
       rejectWithValue("Failed to fetch convo list: " + error || "Error");
@@ -69,7 +68,10 @@ export interface openConversationPayload {
 
 export const openConversation = createAsyncThunk(
   "conversation/open",
-  async (data: openConversationPayload, { rejectWithValue, getState }) => {
+  async (
+    data: openConversationPayload,
+    { rejectWithValue, getState, dispatch }
+  ) => {
     try {
       const { auth } = getState() as RootState;
       const token = auth.accessToken;
@@ -90,14 +92,56 @@ export const openConversation = createAsyncThunk(
   }
 );
 
+export const findOneConvoUpdate = createAsyncThunk(
+  "conversation/checkExisting",
+  async (
+    payload: ClosedConversationMessagePayload,
+    { getState, rejectWithValue, dispatch }
+  ) => {
+    try {
+      const { conversation: convoPayload, messageData } = payload;
+
+      const { conversation, auth } = getState() as RootState;
+      const { byId } = conversation;
+      const accessToken = auth.accessToken;
+
+      const isConversationExist = Boolean(byId[convoPayload._id]);
+
+      let res;
+
+      if (isConversationExist) {
+        dispatch(
+          setLatestMessage({
+            conversation: payload.conversation,
+            messageData: payload.messageData,
+            updatedAt: payload.messageData.createdAt,
+          })
+        );
+        dispatch(increamentUnread(payload.conversation._id));
+        dispatch(addUnreadConvo(payload.conversation._id));
+      } else {
+        res = await MessageApi.conversation.findOne({
+          convoId: payload.conversation._id,
+          token: accessToken!,
+        });
+      }
+      return res;
+    } catch (error) {
+      rejectWithValue("Failed to checkConversationifExist" + error);
+    }
+  }
+);
+
 interface ConversationState extends NormalizeState<ConversationType> {
   isFetchingMore: boolean;
+  unreadIds: string[];
 }
 
 const initialState: ConversationState = {
   byId: {},
   allIds: [],
   isFetchingMore: false,
+  unreadIds: [],
   loading: false,
   error: null,
 };
@@ -112,6 +156,19 @@ const conversationSlice = createSlice({
   name: "conversation",
   initialState,
   reducers: {
+    addUnreadConvo: (state, action) => {
+      const convoId = action.payload as string;
+      if (!state.unreadIds.includes(convoId)) {
+        state.unreadIds.push(convoId);
+      }
+    },
+    deleteConvoInUnRead: (state, action) => {
+      const convoId = action.payload;
+
+      state.unreadIds = state.unreadIds.filter(
+        (unreadId) => unreadId !== convoId
+      );
+    },
     dropConversation: (state, action) => {
       const convoId = action.payload;
       const isConvoValid = Boolean(state.byId[convoId].lastMessage);
@@ -135,6 +192,8 @@ const conversationSlice = createSlice({
       const dataIndex = state.allIds.findIndex((id) => id === allIds[0]);
 
       if (dataIndex === -1) {
+        console.log("Conversatrion is not im the state yet, addign");
+
         state.allIds = [allIds[0], ...state.allIds];
         state.byId = { ...state.byId, ...byId };
       } else {
@@ -189,6 +248,20 @@ const conversationSlice = createSlice({
         delete state.byId[convoId];
       })
       .addCase(deleteConversation.rejected, (state, action) => {
+        state.error = action.payload as string;
+      })
+      .addCase(findOneConvoUpdate.fulfilled, (state, action) => {
+        const newConversation = action.payload?.conversations;
+
+        if (newConversation) {
+          const { byId, allIds } = normalizeResponse(newConversation);
+          console.log("Succesfully fechecd conversation: ", byId);
+
+          state.byId = { ...byId, ...state.byId };
+          state.allIds = [allIds[0], ...state.allIds];
+        }
+      })
+      .addCase(findOneConvoUpdate.rejected, (state, action) => {
         state.error = action.payload as string;
       })
       .addCase(fetchAllConvoList.pending, (state, action) => {
@@ -249,11 +322,13 @@ const conversationSlice = createSlice({
 
 export const {
   dropConversation,
+  deleteConvoInUnRead,
   setLatestMessage,
   increamentUnread,
   resetConvoState,
   setConvoToValid,
   setConvoToInvalid,
+  addUnreadConvo,
   setReadConvoMessages,
   setLastMessageReadByParticipant,
 } = conversationSlice.actions;

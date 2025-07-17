@@ -18,19 +18,19 @@ export const messageService = {
     try {
       const message = await MessageModel.create(messageData);
 
-      const conversation =
-        await UserChatRelationService.emitMessageAndUpdateConvoMessage(
+      const updatedConversation =
+        await UserChatRelationService.updateEmitConvoAndGetFormatData(
           message,
           convoId
         );
 
-      if (!message || !conversation) {
+      if (!message || !updatedConversation) {
         throw new Error(
           "createMessageAndUpdateConvo, Error: invalid return type"
         );
       }
 
-      return { message, conversation };
+      return { message, conversation: updatedConversation };
     } catch (error) {
       throw new Error("createMessageAndUpdateConvo, " + (error as Error));
     }
@@ -60,7 +60,7 @@ export const messageService = {
     }
   },
   emitMessageOnSend: (data: {
-    conversation: FormattedConversation;
+    conversation: IConversation;
     messageData: IMessage;
   }) => {
     try {

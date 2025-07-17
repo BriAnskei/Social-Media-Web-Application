@@ -204,7 +204,7 @@ export const ConvoService = {
     try {
       const { userId, limit } = data;
 
-      return await Conversation.aggregate([
+      const conversation = await Conversation.aggregate([
         {
           $match: {
             participants: new mongoose.Types.ObjectId(userId),
@@ -258,6 +258,8 @@ export const ConvoService = {
           $limit: limit + 1,
         },
       ]);
+
+      return conversation;
     } catch (error) {
       throw new Error(
         `Failed to fetchConvosNoCursor: ${(error as Error).message}`
@@ -274,11 +276,11 @@ export const ConvoService = {
   },
   getConvoById: async (convId: string): Promise<IConversation | null> => {
     try {
-      return await Conversation.findOne({ _id: convId }).populate(
-        "lastMessage"
-      );
+      return await Conversation.findOne({ _id: convId })
+        .populate("lastMessage")
+        .populate("participants");
     } catch (error) {
-      throw error;
+      throw new Error("getConvoById, " + (error as Error));
     }
   },
   isConvoValid: (conversation: IConversation) => {
@@ -298,30 +300,35 @@ export const ConvoService = {
         );
       }
 
-      const isRecipentViewingConvo = messageHanlder.isActiveRecipient(
-        conversationId,
-        recipentId
+      await Conversation.updateOne(
+        {
+          _id: conversation._id,
+          "unreadCounts.user": recipentId,
+        },
+        {
+          $inc: { "unreadCounts.$.count": 1 }, // using  positional $ operator  in which index is to update
+          lastMessage: newMessageId,
+          lastMessageAt: new Date(),
+        }
       );
-
-      if (!isRecipentViewingConvo) {
-        await Conversation.updateOne(
-          {
-            _id: conversation._id,
-            "unreadCounts.user": recipentId,
-          },
-          {
-            $inc: { "unreadCounts.$.count": 1 }, // using  positional $ operator  in which index is to update
-            lastMessage: newMessageId,
-            lastMessageAt: new Date(),
-          }
-        );
-      }
     } catch (error) {
       throw new Error(
         `Failed to update unread counts: ${(error as Error).message}`
       );
     }
   },
+
+  removeUsersFromDeleted: async (convoId: string) => {
+    try {
+      await Conversation.updateOne(
+        { _id: convoId },
+        { $set: { deletedFor: [] } }
+      );
+    } catch (error) {
+      throw new Error("removeUsersFromDeleted, " + (error as Error));
+    }
+  },
+
   refreshConversation: async (data: {
     conversation: IConversation;
     userId: string;
@@ -402,17 +409,19 @@ export const ConvoService = {
       throw new Error("setLastMessageOnRead, " + (error as Error));
     }
   },
-  setLatestCovoMessage: async (
-    convoId: string,
-    messageData: IMessage
-  ): Promise<IConversation | null> => {
+
+  setLatestCovoMessage: async (payload: {
+    newMessage: IMessage;
+    convoId: string;
+  }): Promise<IConversation | null> => {
+    const { convoId, newMessage } = payload;
     try {
       return await Conversation.findByIdAndUpdate(
         { _id: convoId },
         {
-          lastMessage: messageData,
-          updatedAt: messageData.createdAt,
-          lastMessageAt: messageData.createdAt,
+          lastMessage: newMessage,
+          updatedAt: newMessage.createdAt,
+          lastMessageAt: newMessage.createdAt,
         },
         { new: true }
       ).populate("lastMessage");
@@ -444,7 +453,25 @@ export const ConvoService = {
       );
     }
   },
+  updateConversationOnMessageSent: async (payload: {
+    newMessage: IMessage;
+    convoId: string;
+  }) => {
+    try {
+      await ConvoService.removeUsersFromDeleted(payload.convoId);
+      let UpdatedConversation = await ConvoService.setLatestCovoMessage(
+        payload
+      );
 
+      UpdatedConversation = await ConvoService.findOneByContactIdPopulate(
+        UpdatedConversation?.contactId.toString()!
+      );
+
+      return UpdatedConversation;
+    } catch (error) {
+      throw new Error("updateConversationOnMessageSent, " + (error as Error));
+    }
+  },
   undeleteConversation: async (contactId: string, userId: string) => {
     try {
       const conversation = await Conversation.findOne({ contactId });

@@ -1,6 +1,6 @@
 import "./MessageBox.css";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useDispatch } from "react-redux";
 import { AppDispatch } from "../../../store/store";
 import {
@@ -10,7 +10,7 @@ import {
   viewProfile,
 } from "../../../Components/Modal/globalSlice";
 import Spinner from "../../../Components/Spinner/Spinner";
-import { FetchedUserType, FollowPayload } from "../../../types/user";
+import { FetchedUserType } from "../../../types/user";
 
 import {
   dropMessageOnClose,
@@ -25,12 +25,12 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faImage } from "@fortawesome/free-solid-svg-icons";
 import { useChatSocket } from "../../../hooks/socket/useChatSocket";
 import { useConversationById } from "../../../hooks/useConversation";
-import { followToggled, updateFollow } from "../../users/userSlice";
+import { updateFollow } from "../../users/userSlice";
 import { useMessagesByConversation } from "../../../hooks/useMessages";
 import ChatArea from "./ChatArea";
 import { useLoadMoreMessages } from "../../../hooks/chatBox/useLoadMoreMessages";
 import {
-  deleteConversation,
+  deleteConvoInUnRead,
   dropConversation,
 } from "../Conversation/conversationSlice";
 import {
@@ -56,8 +56,6 @@ const MessageBox = ({ ChatWindowData, currentUserData }: MessageBoxProp) => {
   const { messages, hasMore, loading } =
     useMessagesByConversation(conversationId);
 
-  const { contactId } = conversation;
-
   const [isFetchingMore, setIsFetchingMore] = useState(false);
 
   const [messageInput, setMessageInput] = useState("");
@@ -71,41 +69,6 @@ const MessageBox = ({ ChatWindowData, currentUserData }: MessageBoxProp) => {
   const lastMessageIndexRef = useRef<number>(0);
 
   const { emitConvoViewStatus } = useChatSocket();
-
-  const closeChat = () => {
-    if (ChatWindowData.minimized) return;
-    const conversationId = conversation._id;
-
-    emitConvoViewStatus(false, conversation?._id!);
-    dispatch(closeWindow({ conversationId }));
-    dispatch(dropConversation(conversationId));
-    dispatch(dropMessageOnClose(conversationId));
-  };
-
-  const handleDelete = async () => {
-    try {
-      dispatch(closeWindow({ conversationId }));
-      await handleDeleteEffect(conversationId);
-    } catch (error) {
-      console.log("Failed to delete convo: ", error);
-    }
-  };
-
-  const fetchMessages = async (
-    conversationId: string,
-    cursor: string | null
-  ) => {
-    try {
-      const scrollElement = scrollRef.current;
-      lastScrollRef.current = scrollElement?.scrollHeight;
-
-      await dispatch(
-        fetchMessagesByConvoId({ conversationId, cursor })
-      ).unwrap();
-    } catch (error) {
-      console.error("Failed to fetch 'Message' data for chat window, ", error);
-    }
-  };
 
   useEffect(() => {
     emitConvoViewStatus(true, conversation?._id!);
@@ -141,6 +104,45 @@ const MessageBox = ({ ChatWindowData, currentUserData }: MessageBoxProp) => {
     smoothScroll();
     setViewportToBottom();
   }, [messages, loading]);
+
+  useEffect(() => {
+    dispatch(deleteConvoInUnRead(ChatWindowData.conversationId));
+  }, [ChatWindowData.conversationId]);
+
+  const closeChat = () => {
+    if (ChatWindowData.minimized) return;
+    const conversationId = conversation._id;
+
+    emitConvoViewStatus(false, conversation?._id!);
+    dispatch(closeWindow({ conversationId }));
+    dispatch(dropConversation(conversationId));
+    dispatch(dropMessageOnClose(conversationId));
+  };
+
+  const handleDelete = async () => {
+    try {
+      dispatch(closeWindow({ conversationId }));
+      await handleDeleteEffect(conversationId);
+    } catch (error) {
+      console.log("Failed to delete convo: ", error);
+    }
+  };
+
+  const fetchMessages = async (
+    conversationId: string,
+    cursor: string | null
+  ) => {
+    try {
+      const scrollElement = scrollRef.current;
+      lastScrollRef.current = scrollElement?.scrollHeight;
+
+      await dispatch(
+        fetchMessagesByConvoId({ conversationId, cursor })
+      ).unwrap();
+    } catch (error) {
+      console.error("Failed to fetch 'Message' data for chat window, ", error);
+    }
+  };
 
   const handleScroll = () => {
     const element = scrollRef.current;

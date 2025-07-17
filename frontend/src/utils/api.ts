@@ -519,6 +519,30 @@ export const MessageApi = {
         };
       }
     },
+    findOne: async (payload: {
+      convoId: string;
+      token: string;
+    }): Promise<MessageApiResponse> => {
+      try {
+        const { convoId, token } = payload;
+        const res = await api.post(
+          "api/messages/conversation/findOne",
+          { convoId },
+          {
+            headers: {
+              token,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+        return res.data as MessageApiResponse;
+      } catch (error) {
+        return {
+          success: false,
+          message: error as string,
+        };
+      }
+    },
     getAll: async (data: {
       token: string;
       cursor?: string | null;

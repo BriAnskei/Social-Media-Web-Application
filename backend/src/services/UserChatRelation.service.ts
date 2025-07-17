@@ -54,43 +54,38 @@ export const UserChatRelationService = {
       console.log("failed to updateChatValidUsers, ", error);
     }
   },
-  emitMessageAndUpdateConvoMessage: async (
+
+  updateEmitConvoAndGetFormatData: async (
     messageData: IMessage,
     convoId: string
   ): Promise<IConversation | null> => {
     try {
       const { sender, recipient } = messageData;
-      const convoData = await ConvoService.setLatestCovoMessage(
+      const convoData = await ConvoService.updateConversationOnMessageSent({
+        newMessage: messageData,
         convoId,
-        messageData
-      );
+      });
 
       // Add null check before proceeding
       if (!convoData || !convoData.validFor) {
         throw new Error(
-          "emitMessageAndUpdateConvoMessage, Error:  returned null | Conversation data missing validFor property"
+          "updateConvoAndGetFormatData, Error:  returned null | Conversation data missing validFor property"
         );
       }
 
-      const formattedConvoData =
-        conversationFormatHelper.formatConversationData(
-          convoData,
-          sender.toString(),
-          convoData.validFor
-        );
+      console.log("--------------------------------------------");
+      console.log("Convo Data for emition: ", convoData);
 
       messageService.emitMessageOnSend({
-        conversation: formattedConvoData,
+        conversation: convoData,
         messageData,
       });
 
       return convoData;
     } catch (error) {
-      console.log("Error in emitMessageAndUpdateConvoMessage:", error);
+      console.log("Error in updateConvoAndGetFormatData:", error);
       throw new Error(
-        `Failed to emitMessageAndUpdateConvoMessage: ${
-          (error as Error).message
-        }`
+        `Failed to updateConvoAndGetFormatData: ${(error as Error).message}`
       );
     }
   },
@@ -106,12 +101,6 @@ export const UserChatRelationService = {
           "updateConvoMsgReadOnSend, Error: no conversation has this in payload"
         );
       }
-
-      console.log(
-        "updateConvoMsgReadOnSend".toUpperCase(),
-        "COnversation last lasg messaage: ",
-        payload.conversation.lastMessage
-      );
 
       await ConvoService.setLastMessageOnRead({ conversation, userId });
     } catch (error) {

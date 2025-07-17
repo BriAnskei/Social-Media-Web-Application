@@ -3,7 +3,7 @@ import { AppDispatch } from "../../store/store";
 import { ConversationType, Message } from "../../types/MessengerTypes";
 import { addMessage } from "../../features/messenger/Message/messengeSlice";
 import {
-  increamentUnread,
+  findOneConvoUpdate,
   setLastMessageReadByParticipant,
   setLatestMessage,
   setReadConvoMessages,
@@ -23,7 +23,7 @@ const CHAT_EVENTS = {
   conversation_on_view: "conversation_on_view",
 };
 
-interface ClosedConversationMessagePayload {
+export interface ClosedConversationMessagePayload {
   conversation: ConversationType;
   messageData: Message;
 }
@@ -53,6 +53,8 @@ export const setupChatSocket = ({
   }) => {
     const { conversation, messageData } = data;
     const { _id: currUserId } = currUser;
+
+    console.log("Message On room global send: ", data);
 
     // add message in the conversation messages
     dispatch(
@@ -85,15 +87,7 @@ export const setupChatSocket = ({
   const handleClosedConversationMessage = (
     data: ClosedConversationMessagePayload
   ) => {
-    dispatch(
-      setLatestMessage({
-        conversation: data.conversation,
-        messageData: data.messageData,
-        updatedAt: data.messageData.createdAt,
-      })
-    );
-
-    dispatch(increamentUnread(data.conversation._id));
+    dispatch(findOneConvoUpdate(data));
   };
 
   const handleConvoOnview = (payload: { convoId: string; userId: string }) => {

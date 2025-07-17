@@ -28,10 +28,6 @@ const MessageBoxGroup = ({
   isFetchingMore,
   loading,
 }: MessageBoxGroupProp) => {
-  useEffect(() => {
-    console.log("Convo list update: ", byId);
-  }, [byId]);
-
   return (
     <div className="chat-list" ref={convoListScrollRef} onScroll={handleScroll}>
       {loading ? (

@@ -23,6 +23,7 @@ import { appEvents } from "../../events/appEvents";
 import { MessageHanlder } from "./messageHanlder";
 import { IMessage } from "../../models/messageModel";
 import { FormattedConversation } from "../../services/conversation.service";
+import { IConversation } from "../../models/conversationModel";
 
 interface ConnectedUser {
   userId: string;
@@ -145,10 +146,7 @@ export class SocketServer {
 
     appEvents.on(
       "app_message_on_sent",
-      (data: {
-        conversation: FormattedConversation;
-        messageData: IMessage;
-      }) => {
+      (data: { conversation: IConversation; messageData: IMessage }) => {
         this.messagetHandler.sentMessageGlobal(data);
       }
     );

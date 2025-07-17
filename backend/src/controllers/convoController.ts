@@ -59,6 +59,29 @@ export const findOrCreateConversation = async (
   }
 };
 
+export const findOne = async (req: ReqAuth, res: Response) => {
+  try {
+    const userId = req.userId;
+    const { convoId } = req.body;
+
+    const conversation = await ConvoService.getConvoById(convoId);
+
+    const formattedData = conversationFormatHelper.formatConversationData(
+      conversation!,
+      userId!,
+      conversation?.validFor!
+    );
+
+    res.json({
+      success: true,
+      message: "conversations found",
+      conversations: formattedData,
+    });
+  } catch (error) {
+    console.log("Failed to getConversation, " + error);
+    res.json({ success: false, message: "Error" + error });
+  }
+};
 export const getConversations = async (
   req: ReqAuth,
   res: Response
@@ -113,18 +136,29 @@ export const deleteConversation = async (
 
     // check if both particapants is in deletedFor.
     const isPermanent = conversation.deletedFor.length === 2;
+
     const { success } = await messageService.deleteMessages(
       isPermanent,
       convoId,
       userId
     );
 
-    // permanent delete if deletedBoth, soft delete otherwise(save the update)
     if (isPermanent) {
       await Conversation.deleteOne({ _id: convoId });
-    } else {
-      await conversation.save();
+
+      return res.json({
+        success: true,
+        message: `deleted for this user, delete for messages is  ${success}`,
+        conversations: conversation,
+      });
     }
+
+    // permanent delete if deletedBoth, soft delete otherwise(save the update)
+    await conversation.save();
+    await ConvoService.resetUnreadCounts({
+      convoId: conversation._id!.toString(),
+      userId,
+    });
 
     res.json({
       success: true,

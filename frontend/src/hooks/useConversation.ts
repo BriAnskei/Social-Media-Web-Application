@@ -24,10 +24,5 @@ export const useWindowedConversation = () => {
 };
 
 export const useUnreadConversation = () => {
-  const unReadConvo = useSelector((state: RootState) =>
-    selectUnReadConvo(state)
-  );
-  console.log("unreadconfo", unReadConvo);
-
-  return unReadConvo.length > 0;
+  return useSelector((state: RootState) => selectUnReadConvo(state));
 };
