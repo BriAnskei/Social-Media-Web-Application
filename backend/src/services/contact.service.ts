@@ -1,8 +1,12 @@
 import { Contact, IContact } from "../models/contactModel";
 import mongoose from "mongoose";
-import { appEvents } from "../events/appEvents";
+
 import { ConvoService } from "./conversation.service";
 import { UserChatRelationService } from "./UserChatRelation.service";
+import {
+  emitCreateUpdateContact,
+  emitUpdateDropContact,
+} from "../events/emitters";
 
 export const contactService = {
   createOrUpdateContact: async (userId: string, otherUserId: string) => {
@@ -45,7 +49,7 @@ export const contactService = {
         convoId,
       };
 
-      appEvents.emit("createOrUpdate-contact", emitPayload);
+      emitCreateUpdateContact(emitPayload);
     } catch (error) {
       console.log("Failed to create/update contact, " + error);
     }
@@ -109,7 +113,7 @@ export const contactService = {
         userId,
       };
 
-      appEvents.emit("updateOrDrop-contact", emitPayload);
+      emitUpdateDropContact(emitPayload);
     } catch (error) {
       console.log("Failed to update/Drop contact, " + error);
     }

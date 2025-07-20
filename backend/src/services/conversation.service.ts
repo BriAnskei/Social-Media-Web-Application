@@ -276,9 +276,11 @@ export const ConvoService = {
   },
   getConvoById: async (convId: string): Promise<IConversation | null> => {
     try {
-      return await Conversation.findOne({ _id: convId })
+      const convo = await Conversation.findOne({ _id: convId })
         .populate("lastMessage")
         .populate("participants");
+
+      return convo;
     } catch (error) {
       throw new Error("getConvoById, " + (error as Error));
     }
@@ -456,18 +458,13 @@ export const ConvoService = {
   updateConversationOnMessageSent: async (payload: {
     newMessage: IMessage;
     convoId: string;
-  }) => {
+  }): Promise<IConversation> => {
     try {
       await ConvoService.removeUsersFromDeleted(payload.convoId);
-      let UpdatedConversation = await ConvoService.setLatestCovoMessage(
+      const updatedConversation = await ConvoService.setLatestCovoMessage(
         payload
       );
-
-      UpdatedConversation = await ConvoService.findOneByContactIdPopulate(
-        UpdatedConversation?.contactId.toString()!
-      );
-
-      return UpdatedConversation;
+      return updatedConversation!;
     } catch (error) {
       throw new Error("updateConversationOnMessageSent, " + (error as Error));
     }

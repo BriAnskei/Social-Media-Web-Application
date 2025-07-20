@@ -19,11 +19,8 @@ import {
 } from "../EventsTypes/PostEvents";
 import { FollowEvent } from "../EventsTypes/UserEvents";
 import { notifService } from "../../services/notification.service";
-import { appEvents } from "../../events/appEvents";
 import { MessageHanlder } from "./messageHanlder";
-import { IMessage } from "../../models/messageModel";
-import { FormattedConversation } from "../../services/conversation.service";
-import { IConversation } from "../../models/conversationModel";
+import { redisEvents } from "../../events/redisEvents";
 
 interface ConnectedUser {
   userId: string;
@@ -102,7 +99,7 @@ export class SocketServer {
   private async initializeServer(): Promise<void> {
     try {
       await this.setUpMiddleware();
-      this.serverEventHandlers();
+      this.setUpRedisEventListeners();
       this.setupEventHandlers();
     } catch (error) {
       console.log("Failed to initialize socket server: ", error);
@@ -133,25 +130,20 @@ export class SocketServer {
     });
   }
 
-  private serverEventHandlers(): void {
-    if (this.serverEventListeberInitialized) return;
-    // Set up app-wide event listeners that aren't tied to individual sockets
-    appEvents.on("createOrUpdate-contact", (data: any) => {
+  private setUpRedisEventListeners() {
+    // Listen for message events from worker via Redis
+    redisEvents.on("app_message_on_sent", (data) => {
+      console.log("🔥 Redis event received in socket handler:", data);
+      this.messagetHandler.sentMessageGlobal(data);
+    });
+
+    redisEvents.on("createOrUpdate-contact", (data: any) => {
       this.handleCreateOrUpdateContact(data);
     });
 
-    appEvents.on("updateOrDrop-contact", (data: any) => {
+    redisEvents.on("updateOrDrop-contact", (data: any) => {
       this.handleUpdateOrDropContact(data);
     });
-
-    appEvents.on(
-      "app_message_on_sent",
-      (data: { conversation: IConversation; messageData: IMessage }) => {
-        this.messagetHandler.sentMessageGlobal(data);
-      }
-    );
-
-    this.serverEventListeberInitialized = true;
   }
 
   private setupEventHandlers() {

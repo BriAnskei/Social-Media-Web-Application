@@ -10,6 +10,9 @@ import { createServer } from "http";
 import { SocketServer } from "./socket/handlers/socketServer";
 import messageRouter from "./routes/messageRoutes";
 
+// connect Database
+connectDb();
+
 // app config
 const app = express();
 const PORT = 4000;
@@ -21,9 +24,6 @@ app.use(
     origin: "*",
   })
 );
-
-// connect Database
-connectDb();
 
 // calling the socket connection
 const httpServer = createServer(app);

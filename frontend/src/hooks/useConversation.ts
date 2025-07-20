@@ -23,6 +23,6 @@ export const useWindowedConversation = () => {
   return convoWindows;
 };
 
-export const useUnreadConversation = () => {
+export const useUnreadConversation = (): boolean => {
   return useSelector((state: RootState) => selectUnReadConvo(state));
 };

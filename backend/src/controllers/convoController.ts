@@ -66,6 +66,8 @@ export const findOne = async (req: ReqAuth, res: Response) => {
 
     const conversation = await ConvoService.getConvoById(convoId);
 
+    console.log("Conversation for client update: ", conversation);
+
     const formattedData = conversationFormatHelper.formatConversationData(
       conversation!,
       userId!,
@@ -129,8 +131,6 @@ export const deleteConversation = async (
       return res.json({ success: false, message: "conversation not exist" });
     }
 
-    console.log("Deleting this conversation: ", conversation);
-
     // add user in deleteFor(filter field)
     conversation.deletedFor.push(new mongoose.Types.ObjectId(userId));
 
@@ -143,17 +143,17 @@ export const deleteConversation = async (
       userId
     );
 
+    // permanently delete convo if  both participant deleted it
     if (isPermanent) {
       await Conversation.deleteOne({ _id: convoId });
 
       return res.json({
         success: true,
-        message: `deleted for this user, delete for messages is  ${success}`,
+        message: `permanently deleted conversation, delete for messages is  ${success}`,
         conversations: conversation,
       });
     }
 
-    // permanent delete if deletedBoth, soft delete otherwise(save the update)
     await conversation.save();
     await ConvoService.resetUnreadCounts({
       convoId: conversation._id!.toString(),

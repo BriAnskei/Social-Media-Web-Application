@@ -181,32 +181,39 @@ export class MessageHanlder {
     conversation: IConversation;
     messageData: IMessage;
   }) {
-    const { conversation } = data;
-    const { recipient } = data.messageData;
-    const recipientId = recipient._id.toString();
+    try {
+      console.log("sending message global: ", data);
 
-    const convoId = data.conversation._id!.toString();
+      const { conversation } = data;
+      const { recipient } = data.messageData;
 
-    // First emit to the conversation room
-    this.io.to(convoId).emit("message_on_sent", data);
+      const convoId = data.conversation._id!.toString();
 
-    const isUserOnline = this.socketServer.isUserOnline(recipientId);
-    const recipientSocket = this.socketServer.getConnectedUser(recipientId);
+      // First emit to the conversation room
+      this.io.to(convoId).emit("message_on_sent", data);
 
-    const isUserViewingConvo = this.activeConversations
-      .get(convoId)
-      ?.has(recipientId);
-
-    const isRecipientOnlineButNotViewingConvo =
-      recipientSocket && isUserOnline && !isUserViewingConvo;
-
-    if (isRecipientOnlineButNotViewingConvo) {
-      console.log(
-        "Emitting message for unview but active user: ",
-        recipientSocket
+      const isUserOnline = this.socketServer.isUserOnline(recipient.toString());
+      const recipientSocket = this.socketServer.getConnectedUser(
+        recipient.toString()
       );
 
-      this.sentMessageOnRecipClosedConvo(recipientSocket.socketId, data);
+      const isUserViewingConvo = this.activeConversations
+        .get(convoId)
+        ?.has(recipient.toString());
+
+      const isRecipientOnlineButNotViewingConvo =
+        recipientSocket && isUserOnline && !isUserViewingConvo;
+
+      if (isRecipientOnlineButNotViewingConvo) {
+        console.log(
+          "Emitting message for unview but active user: ",
+          recipientSocket
+        );
+
+        this.sentMessageOnRecipClosedConvo(recipientSocket.socketId, data);
+      }
+    } catch (error) {
+      console.error("sentMessageGlobal, " + (error as Error));
     }
   }
   private sentMessageOnRecipClosedConvo(

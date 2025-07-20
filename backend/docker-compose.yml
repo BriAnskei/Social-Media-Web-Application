@@ -1,0 +1,12 @@
+services:
+  redis:
+    image: redis:7.2
+    container_name: redis-server
+    ports:
+      - "6379:6379" # Expose port for local testing
+    volumes:
+      - redis-data:/data
+    restart: unless-stopped
+
+volumes:
+  redis-data:

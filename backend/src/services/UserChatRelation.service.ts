@@ -58,30 +58,13 @@ export const UserChatRelationService = {
   updateEmitConvoAndGetFormatData: async (
     messageData: IMessage,
     convoId: string
-  ): Promise<IConversation | null> => {
+  ): Promise<void> => {
     try {
-      const { sender, recipient } = messageData;
-      const convoData = await ConvoService.updateConversationOnMessageSent({
+      await messageService.checkMessageOnReadForUnreadCounts(messageData);
+      const conversation = await ConvoService.updateConversationOnMessageSent({
         newMessage: messageData,
         convoId,
       });
-
-      // Add null check before proceeding
-      if (!convoData || !convoData.validFor) {
-        throw new Error(
-          "updateConvoAndGetFormatData, Error:  returned null | Conversation data missing validFor property"
-        );
-      }
-
-      console.log("--------------------------------------------");
-      console.log("Convo Data for emition: ", convoData);
-
-      messageService.emitMessageOnSend({
-        conversation: convoData,
-        messageData,
-      });
-
-      return convoData;
     } catch (error) {
       console.log("Error in updateConvoAndGetFormatData:", error);
       throw new Error(

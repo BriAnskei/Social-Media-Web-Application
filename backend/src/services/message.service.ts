@@ -1,5 +1,5 @@
 import { ReqAuth } from "../controllers/messageController";
-import { appEvents } from "../events/appEvents";
+
 import { IConversation } from "../models/conversationModel";
 import { IMessage, MessageModel } from "../models/messageModel";
 import { messageHanlder } from "../server";
@@ -7,32 +7,46 @@ import {
   builtMessagePayloadBasedOnRecipeintStatus,
   IMessageInput,
 } from "../utils/buildMessagePayload";
-import { FormattedConversation } from "./conversation.service";
+import { ConvoService, FormattedConversation } from "./conversation.service";
 
 import { UserChatRelationService } from "./UserChatRelation.service";
 export const messageService = {
   createMessageAndUpdateConvo: async (
     messageData: IMessageInput,
     convoId: string
-  ): Promise<{ message: IMessage; conversation: IConversation }> => {
+  ): Promise<IMessage> => {
     try {
       const message = await MessageModel.create(messageData);
 
-      const updatedConversation =
-        await UserChatRelationService.updateEmitConvoAndGetFormatData(
-          message,
-          convoId
-        );
+      await UserChatRelationService.updateEmitConvoAndGetFormatData(
+        message,
+        convoId
+      );
 
-      if (!message || !updatedConversation) {
+      if (!message) {
         throw new Error(
           "createMessageAndUpdateConvo, Error: invalid return type"
         );
       }
 
-      return { message, conversation: updatedConversation };
+      return message;
     } catch (error) {
       throw new Error("createMessageAndUpdateConvo, " + (error as Error));
+    }
+  },
+  checkMessageOnReadForUnreadCounts: async (messageData: IMessage) => {
+    try {
+      if (!messageData.read) {
+        await ConvoService.incrementMessageUnreadOnNotViewConvo(
+          messageData.conversationId.toString(),
+          messageData.recipient.toString(),
+          messageData._id as string
+        );
+      }
+    } catch (error) {
+      throw new Error(
+        "checkMessageOnReadForUnreadCounts,  " + (error as Error)
+      );
     }
   },
   deleteMessages: async (
@@ -59,17 +73,6 @@ export const messageService = {
       throw new Error(`Failed to delete messages: ${(error as Error).message}`);
     }
   },
-  emitMessageOnSend: (data: {
-    conversation: IConversation;
-    messageData: IMessage;
-  }) => {
-    try {
-      appEvents.emit("app_message_on_sent", data);
-    } catch (error) {
-      console.error("Failed to emitMessageOnSend", error);
-      throw error;
-    }
-  },
   getMessgeById: async (msgId: string): Promise<IMessage | null> => {
     try {
       return await MessageModel.findOne({ _id: msgId });
@@ -92,7 +95,9 @@ export const messageService = {
       );
     }
   },
+};
 
+export const requesHanlder = {
   createPayloadForActiveRecipient: (req: ReqAuth) => {
     try {
       const convoId = req.params.conversationId;

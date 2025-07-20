@@ -65,7 +65,9 @@ const Navbr = () => {
       <div className="navbar">
         <div className="logo">
           <span>Social App</span>
-          <SuggestionInput onSelect={handleOnSeach} />
+          <div className="suggestion-wrapper">
+            <SuggestionInput onSelect={handleOnSeach} />
+          </div>
         </div>
         <div className="navbar-act">
           <NavControl

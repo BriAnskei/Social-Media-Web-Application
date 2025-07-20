@@ -15,7 +15,7 @@ export interface Message {
 export interface ConversationType {
   _id: string;
   contactId: string;
-  participant: FetchedUserType;
+  participant: FetchedUserType; // this is the other user
   isUserValidToRply: boolean;
   lastMessage: Message;
   lastMessageAt: string;

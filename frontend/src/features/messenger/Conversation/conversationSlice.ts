@@ -1,13 +1,8 @@
 import { NormalizeState } from "../../../types/NormalizeType";
 import { ConversationType, Message } from "../../../types/MessengerTypes";
-import {
-  createAsyncThunk,
-  createSlice,
-  current,
-  PayloadAction,
-} from "@reduxjs/toolkit";
+import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
 
-import { api, MessageApi } from "../../../utils/api";
+import { MessageApi } from "../../../utils/api";
 import { RootState } from "../../../store/store";
 import { normalizeResponse } from "../../../utils/normalizeResponse";
 import { ClosedConversationMessagePayload } from "../../../hooks/socket/useChatSocket";
