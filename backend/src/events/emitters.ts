@@ -1,5 +1,9 @@
 import { IConversation } from "../models/conversationModel";
 import { IMessage } from "../models/messageModel";
+import {
+  CommentEventPayload,
+  LikeEventPayload,
+} from "../socket/EventsTypes/PostEvents";
 
 import { redisEvents } from "./redisEvents";
 
@@ -18,6 +22,20 @@ export const emitMessageOnSend = async (data: {
   } catch (error) {
     console.error("Failed to emitMessageOnSend", error);
     throw error;
+  }
+};
+
+export const emitPostLiked = async (config: LikeEventPayload) => {
+  try {
+    const success = await redisEvents.emit("post-like", config);
+
+    if (success) {
+      console.log("✅ emitPostLiked published to Redis successfully");
+    } else {
+      console.error("❌ Failed emitPostLiked");
+    }
+  } catch (error) {
+    throw new Error("emitPostLiked , " + (error as Error));
   }
 };
 
@@ -46,5 +64,19 @@ export const emitUpdateDropContact = async (data: any) => {
     }
   } catch (error) {
     throw new Error("emitUpdateDropContact , " + (error as Error));
+  }
+};
+
+export const emitPostComment = async (cnfg: CommentEventPayload) => {
+  try {
+    const success = await redisEvents.emit("post-comment", cnfg);
+
+    if (success) {
+      console.log("✅ emitPostComment published to Redis successfully");
+    } else {
+      console.error("❌ Failed emitPostComment");
+    }
+  } catch (error) {
+    throw new Error("emitPostComment , " + (error as Error));
   }
 };

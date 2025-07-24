@@ -26,6 +26,8 @@ export const fetchAllPost = createAsyncThunk(
     try {
       const response = await postApi.fetchPost();
 
+      console.log("recieves post: ", response);
+
       if (!response.success) {
         return rejectWithValue(response.message || "Fetching posts failed");
       }
@@ -66,12 +68,18 @@ export const toggleLike = createAsyncThunk(
     const userId = user.currentUserId!;
     const accessToken = auth.accessToken;
 
+    console.log("toggle like function in slice");
+
     if (!postId) throw new Error("No Post Id attached");
 
     if (!accessToken) throw new Error("Unauthorize");
 
     try {
+      console.log("proccesing", accessToken, postId);
+
       const res = await postApi.toggleLike(accessToken, postId);
+
+      console.log("API RES IN SLICE: ", res);
 
       if (!res?.success)
         rejectWithValue(
@@ -90,7 +98,10 @@ export const addComment = createAsyncThunk(
   "posts/add-comment",
   async (data: CommentEventPayload, { rejectWithValue, dispatch }) => {
     try {
+      console.log("Adding comments ", data);
+
       const res = await postApi.uploadComment(data);
+      console.log("reponse: ", res);
 
       if (res.success) {
         // the reason we get this payload is to have accurate date for the comment
@@ -273,9 +284,9 @@ const postsSlice = createSlice({
         state.error = null;
       })
       .addCase(fetchAllPost.fulfilled, (state, action) => {
-        state.loading = false;
-
         const { allIds, byId } = normalizeResponse(action.payload);
+
+        console.log("byid", byId);
 
         // Reset all data in the state
         state.byId = {};
@@ -283,6 +294,7 @@ const postsSlice = createSlice({
 
         state.allIds = allIds;
         state.byId = { ...state.byId, ...byId };
+        state.loading = false;
       })
       .addCase(fetchAllPost.rejected, (state, action) => {
         state.loading = false;

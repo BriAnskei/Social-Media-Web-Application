@@ -23,13 +23,17 @@ interface PostModal extends Omit<ModalTypes, "onClose"> {
 }
 
 const ViewPostModal: React.FC<PostModal> = ({ showModal, onClose, postId }) => {
+  const postData = usePostById(postId);
+  const postOwnerData = postData.user as FetchedUserType;
+
+  if (!postData || !postOwnerData) {
+    return <div>Failed</div>;
+  }
+
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
   const { emitComment, emitLike, emitFollow } = useSocket();
   const { currentUser } = useCurrentUser(); // ccurrent user data
-
-  const postData = usePostById(postId);
-  const postOwnerData = useUserById(postData.user);
 
   const [isOwnerFollowed, setIsOwnerFollowed] = useState(false);
   const [followToggleClass, setFollowToggleClass] = useState("follow-button");
@@ -76,7 +80,7 @@ const ViewPostModal: React.FC<PostModal> = ({ showModal, onClose, postId }) => {
       setFollowToggleClass("followed");
 
       const data: FollowPayload = {
-        userId: postData.user,
+        userId: postOwnerData._id,
         followerId: currentUser._id,
       };
       const res = await dispatch(followToggled(data)).unwrap();
@@ -99,7 +103,7 @@ const ViewPostModal: React.FC<PostModal> = ({ showModal, onClose, postId }) => {
       if (res) {
         const data = {
           postId: postId,
-          postOwnerId: postData.user,
+          postOwnerId: postOwnerData._id,
           userId: currentUser._id!,
         };
 
@@ -137,17 +141,8 @@ const ViewPostModal: React.FC<PostModal> = ({ showModal, onClose, postId }) => {
         },
       };
 
-      const res = await dispatch(addComment(data)).unwrap();
+      await dispatch(addComment(data)).unwrap();
 
-      if (res.success) {
-        const eventCommentData: CommentEventPayload = {
-          postId: postData._id,
-          postOwnerId: postOwnerData!._id,
-          data: res.commentData!,
-        };
-
-        emitComment(eventCommentData);
-      }
       setCommentInput("");
     } catch (error) {
       console.log(error);
@@ -158,8 +153,8 @@ const ViewPostModal: React.FC<PostModal> = ({ showModal, onClose, postId }) => {
     dispatch(viewProfile(user));
     onClose();
 
-    const nav = user._id !== currentUser._id ? "/view/profile" : "/profile";
-    navigate(nav);
+    const route = user._id !== currentUser._id ? "/view/profile" : "/profile";
+    navigate(route);
   };
 
   return (
@@ -209,7 +204,7 @@ const ViewPostModal: React.FC<PostModal> = ({ showModal, onClose, postId }) => {
                       <div className="post-modal-act">
                         {followToggleClass !== "" &&
                           !isOwnerFollowed &&
-                          postData.user !== currentUser._id && (
+                          postOwnerData._id !== currentUser._id && (
                             <button
                               id={followToggleClass}
                               onClick={handleFollow}
@@ -227,9 +222,11 @@ const ViewPostModal: React.FC<PostModal> = ({ showModal, onClose, postId }) => {
                         </span>
                       </div>
                     </div>
-                    <div className="post-modal-text-content">
-                      {postData?.content}
-                    </div>
+                    {postData.content && (
+                      <div className="post-modal-text-content">
+                        {postData.content}
+                      </div>
+                    )}
                     {postData.image && (
                       <div className="post-modal-image-container">
                         <img

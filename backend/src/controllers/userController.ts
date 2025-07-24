@@ -13,7 +13,7 @@ import {
   ChatRelationPayload,
   UserChatRelationService,
 } from "../services/UserChatRelation.service";
-import { createToken } from "../services/user.service";
+import { userService } from "../services/user.service";
 
 interface ExtendReq extends Request {
   userId?: string; //explicitly extend the Request type from Express to include the userId property.
@@ -77,7 +77,7 @@ export const register = async (req: Request, res: Response): Promise<any> => {
     await newUser.save();
 
     // Generate token
-    const token = createToken(userId);
+    const token = userService.createToken(userId);
     // Return response
     res.json({ success: true, token });
   } catch (error) {
@@ -135,7 +135,7 @@ export const login = async (req: Request, res: Response): Promise<any> => {
     if (!isPasswordValid)
       return res.json({ success: false, message: "Invalid credentials" });
 
-    const token = createToken(user._id.toString());
+    const token = userService.createToken(user._id.toString());
     res.json({ success: true, token });
   } catch (error) {
     console.log(error);
@@ -382,36 +382,5 @@ export const getFollow = async (req: Request, res: Response): Promise<any> => {
   } catch (error) {
     console.error("Failed to fetch  user followers " + error);
     return res.json({ success: false, message: "Error" });
-  }
-};
-
-// Server socket export
-export const getUsersFolowers = async (userId: string) => {
-  try {
-    const userData = await UserModel.findById(userId);
-    if (!userData) {
-      throw new Error("Cannot find user");
-    }
-
-    const allFollowers = userData.followers;
-
-    return allFollowers;
-  } catch (error) {
-    console.log(error);
-  }
-};
-
-export const getUserById = async (userId: string) => {
-  try {
-    if (!userId) {
-      throw new Error("No Id recieved to retrive user data");
-    }
-    const userData = UserModel.findById(userId);
-
-    if (!userData) throw new Error("Cannot find user");
-
-    return userData;
-  } catch (error) {
-    console.log(error);
   }
 };

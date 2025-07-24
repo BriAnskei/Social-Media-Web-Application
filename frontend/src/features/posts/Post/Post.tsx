@@ -3,7 +3,7 @@ import { useDispatch } from "react-redux";
 import { toggleLike } from "../postSlice";
 import { useEffect, useRef, useState } from "react";
 import { FetchPostType } from "../../../types/PostType";
-import { FollowPayload } from "../../../types/user";
+import { FetchedUserType, FollowPayload } from "../../../types/user";
 import { AppDispatch } from "../../../store/store";
 import { useSocket } from "../../../hooks/socket/useSocket";
 
@@ -31,8 +31,9 @@ const Post = ({ post, ownerId }: Post) => {
   const { emitLike, emitFollow } = useSocket();
   const { handleFollowEffect } = useToastEffect();
   const navigate = useNavigate();
+  let debounceTimer: NodeJS.Timeout;
 
-  const postOwnerData = useUserById(ownerId);
+  const postOwnerData = post.user as FetchedUserType;
 
   const dispatch = useDispatch<AppDispatch>();
 
@@ -108,7 +109,7 @@ const Post = ({ post, ownerId }: Post) => {
 
       const toastPayload: FollowPayloadToast = {
         followPayload: {
-          userId: post.user,
+          userId: postOwnerData._id,
           followerId: currentUser._id,
         },
         toastPayload: {
@@ -139,35 +140,27 @@ const Post = ({ post, ownerId }: Post) => {
   };
 
   const handleLike = async () => {
-    try {
-      if (likeProgress) return;
+    if (likeProgress) return;
+
+    clearTimeout(debounceTimer);
+
+    debounceTimer = setTimeout(async () => {
       setLikeProgress(true);
-      const res = await dispatch(toggleLike(post._id)).unwrap();
-
-      if (!res.success) {
-        console.error("Failed to like the post: ", res.message);
-        return;
+      try {
+        const res = await dispatch(toggleLike(post._id)).unwrap();
+        if (res.success) setLiked(!liked);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLikeProgress(false);
       }
-
-      // emit after succesfully saved itto DB
-      const data = {
-        postId: post._id,
-        postOwnerId: postOwnerData._id,
-        userId: currentUser._id!,
-      };
-      setLiked(!liked);
-      emitLike(data);
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setLikeProgress(false);
-    }
+    }, 200);
   };
 
   const isFollowedShow =
     !isOwnerFollowed &&
     followToggleClass !== "" &&
-    post.user !== currentUser._id;
+    postOwnerData._id !== currentUser._id;
 
   return (
     <>
@@ -203,10 +196,11 @@ const Post = ({ post, ownerId }: Post) => {
               }`}
               ref={target}
               onClick={() => {
-                post.user !== currentUser._id
+                postOwnerData._id !== currentUser._id
                   ? undefined
                   : popover.popOverToggle(post._id, target);
               }}
+              style={{ cursor: "pointer" }}
             >
               more_horiz
             </span>

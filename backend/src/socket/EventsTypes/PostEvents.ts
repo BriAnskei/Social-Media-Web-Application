@@ -1,10 +1,16 @@
+import { INotification } from "../../models/notificationModel";
 import { IPost } from "../../models/postModel";
 
 export interface LikeEventPayload {
   postId: string;
   postOwnerId: string;
   userId: string;
-  username: string;
+  notifData:
+    | {
+        isExist: boolean;
+        data: INotification;
+      }
+    | undefined;
 }
 
 export interface CommentEventPayload {

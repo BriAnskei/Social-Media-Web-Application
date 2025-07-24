@@ -1,16 +1,18 @@
 import { ApiResponse } from "./ApiResponseType";
+import { FetchedUserType } from "./user";
 
 export interface FetchPostType {
   _id: string;
-  user: string;
+  user: string | FetchedUserType;
   content: string;
   image?: string | File;
   likes: string[];
   comments: {
-    user: string;
+    user: string | FetchedUserType;
     content: string;
     createdAt: string;
   }[];
+  hasMorComments: boolean;
   createdAt: string;
 }
 

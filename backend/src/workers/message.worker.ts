@@ -8,7 +8,7 @@ import Redis from "ioredis";
 import { IMessageInput } from "../utils/buildMessagePayload";
 import { connectDb } from "../config/db";
 import { emitMessageOnSend } from "../events/emitters";
-import { redisOptions } from "../queues/messageQueues";
+import { redisOptions } from "../queues/redisOption";
 
 connectDb();
 
@@ -46,7 +46,7 @@ async function handleSendMessageJob(payload: {
   } catch (error) {
     // Abort the transaction — none of the operations will be saved
     await session.abortTransaction();
-    throw error; // Re-throw to let BullMQ handle retry logic
+    console.error("Failed handleSendMessageJob ", error);
   } finally {
     // End the session
     await session.endSession();
@@ -69,6 +69,20 @@ async function processJob(job: Job) {
 // Create worker instance
 const messageWorker = new Worker(QUEUE_NAME, processJob, {
   connection: redisOptions,
+  concurrency: 10, // Process 10 jobs simultaneously
+  limiter: {
+    max: 100, // Max 100 jobs per duration
+    duration: 60000, // Per minute
+  },
+});
+
+// Add to your worker
+messageWorker.on("completed", (job) => {
+  console.log(`Job ${job.id} completed`);
+});
+
+messageWorker.on("progress", (job, progress) => {
+  console.log(`Job ${job.id} is ${progress}% complete`);
 });
 
 // Error handling

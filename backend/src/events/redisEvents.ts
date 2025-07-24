@@ -1,6 +1,6 @@
 // events/redisEvents.ts
 import Redis from "ioredis";
-import { redisOptions } from "../queues/messageQueues";
+import { redisOptions } from "../queues/redisOption";
 
 // Create separate Redis connections for pub/sub
 const publisher = new Redis(redisOptions);

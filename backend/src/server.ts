@@ -10,6 +10,15 @@ import { createServer } from "http";
 import { SocketServer } from "./socket/handlers/socketServer";
 import messageRouter from "./routes/messageRoutes";
 
+// ✅ Bull Board Imports
+import { createBullBoard } from "@bull-board/api";
+import { BullMQAdapter } from "@bull-board/api/bullMQAdapter";
+import { ExpressAdapter } from "@bull-board/express";
+import { messageQueue } from "./queues/messageQueues";
+import { likeQueue } from "./queues/post/likeQueue";
+import { commentQueue } from "./queues/post/commentQueue";
+import { uploadQueue } from "./queues/post/uploadQueue";
+
 // connect Database
 connectDb();
 
@@ -24,6 +33,21 @@ app.use(
     origin: "*",
   })
 );
+
+const serverAdapter = new ExpressAdapter();
+serverAdapter.setBasePath("/admin/queues");
+
+createBullBoard({
+  queues: [
+    new BullMQAdapter(messageQueue),
+    new BullMQAdapter(likeQueue),
+    new BullMQAdapter(commentQueue),
+    new BullMQAdapter(uploadQueue),
+  ],
+  serverAdapter,
+});
+
+app.use("/admin/queues", serverAdapter.getRouter());
 
 // calling the socket connection
 const httpServer = createServer(app);

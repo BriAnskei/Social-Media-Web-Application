@@ -306,3 +306,18 @@
   height: 30px;
   margin-left: 30px;
 }
+
+.comment-fetcher {
+  cursor: pointer;
+  display: flex;
+  justify-content: end;
+  margin-top: -8px;
+  margin-right: 12px;
+  padding: 0;
+}
+
+.comment-fetcher span {
+  font-weight: 700;
+  font-size: 0.8rem;
+  text-decoration: underline;
+}

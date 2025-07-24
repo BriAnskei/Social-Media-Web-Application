@@ -76,6 +76,9 @@ export const postApi = {
           },
         }
       );
+
+      console.log("Repsonse data: ", response.data);
+
       return response.data;
     } catch (error) {
       return {
@@ -89,17 +92,11 @@ export const postApi = {
     data: CommentEventPayload
   ): Promise<ApiResponse & CommentApiResponse> => {
     try {
-      const res = await api.post(
-        "/api/posts/add-comment",
-        {
-          data,
+      const res = await api.post("/api/posts/add-comment", data, {
+        headers: {
+          "Content-Type": "application/json",
         },
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      });
       return res.data;
     } catch (error) {
       console.error(error);

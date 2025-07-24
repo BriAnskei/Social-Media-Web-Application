@@ -9,52 +9,19 @@ import { messageQueue } from "../queues/messageQueues";
 export interface ReqAuth extends Request {
   userId?: string;
 }
-// query for effecientcy emplementation
-// https://chatgpt.com/c/6879e120-e538-8012-8695-7f173ab839db
-// A full working example with BullMQ + Redis in a Node.js chat app
-
-// we can also use bull dashboard to see the process if the bull
-
-// FOR  QUEUES EMPLEMENTATOPM
-// Optionally, you can split into multiple queues:
-
-// saveMessageQueue
-
-// updateConversationQueue
-
-// notifyUserQueue
-
-// How to combine sockets with message queues
-
-// How to test transactions and queues in dev
-
-// export const addMessage = async (req: ReqAuth, res: Response): Promise<any> => {
-//   try {
-//     const { messagePayload, convoId } =
-//       requesHanlder.createPayloadForActiveRecipient(req);
-
-//     const newMessage = await messageService.createMessageAndUpdateConvo(
-//       messagePayload,
-//       convoId
-//     );
-
-//     res.json({ success: true, message: "message sent", messages: newMessage });
-//   } catch (error) {
-//     console.error("Failed to sent message, " + error);
-//     res.json({
-//       success: false,
-//       message: `Failed to  send message: ${(error as Error).message}`,
-//     });
-//   }
-// };
 
 export const addMessage = async (req: ReqAuth, res: Response) => {
   const payload = requesHanlder.createPayloadForActiveRecipient(req);
-  console.log(
-    "adding message, adding this payload for 'sendMessag' job",
-    payload
-  );
-  await messageQueue.add("sendMessage", payload);
+
+  await messageQueue.add("sendMessage", payload, {
+    attempts: 3,
+    backoff: {
+      type: "exponential",
+      delay: 2000,
+    },
+    removeOnComplete: 100, // Keep only last 100 completed jobs
+    removeOnFail: 50,
+  });
   res.status(202).json({ status: "Message queued" });
 };
 

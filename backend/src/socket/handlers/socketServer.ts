@@ -1,15 +1,11 @@
-import { Server } from "socket.io"; // Socket.io server class, which manages WebSocket connections.
+import { Server, Socket } from "socket.io"; // Socket.io server class, which manages WebSocket connections.
 import { Server as HttpServer } from "http"; // http server module from node.js
 import { verifyToken } from "../../middleware/auth";
 
 import { NotifData, saveCommentNotif } from "../../controllers/notifController";
-import {
-  getUserById,
-  getUsersFolowers,
-} from "../../controllers/userController";
+
 import mongoose from "mongoose";
 import notificationModel from "../../models/notificationModel";
-import { getAllCommenter } from "../../controllers/postController";
 
 import {
   CommentEventPayload,
@@ -21,6 +17,8 @@ import { FollowEvent } from "../EventsTypes/UserEvents";
 import { notifService } from "../../services/notification.service";
 import { MessageHanlder } from "./messageHanlder";
 import { redisEvents } from "../../events/redisEvents";
+import { userService } from "../../services/user.service";
+import { postService } from "../../services/post.service";
 
 interface ConnectedUser {
   userId: string;
@@ -91,6 +89,7 @@ export class SocketServer {
       pingTimeout: 60000, // Close connection if client doesn't respond to ping within 60s
       pingInterval: 25000, // Send ping every 25s
     });
+
     this.messagetHandler = new MessageHanlder(this.io, this);
 
     this.initializeServer();
@@ -144,6 +143,15 @@ export class SocketServer {
     redisEvents.on("updateOrDrop-contact", (data: any) => {
       this.handleUpdateOrDropContact(data);
     });
+
+    // post evemts
+    redisEvents.on("post-like", (data: any) => {
+      this.handleLikePost(data);
+    });
+
+    redisEvents.on("post-comment", (data: any) => {
+      this.handleCommentEvent(data);
+    });
   }
 
   private setupEventHandlers() {
@@ -162,17 +170,6 @@ export class SocketServer {
       socket.on(SOCKET_EVENTS.posts.POST_CREATED, (data: any) => {
         this.handlePostUploadEvent(socket, data);
       });
-
-      socket.on(SOCKET_EVENTS.posts.LIKE_POST, (data: LikeEventPayload) =>
-        this.handleLikePost(socket, data)
-      );
-
-      socket.on(
-        SOCKET_EVENTS.posts.COMMENT_POST,
-        (data: CommentEventPayload) => {
-          this.handleCommentEvent(socket, data);
-        }
-      );
 
       // user event
       socket.on(SOCKET_EVENTS.user.USER_FOLLOW, (data: FollowEvent) => {
@@ -245,73 +242,95 @@ export class SocketServer {
 
   // Post Events
   private async handleLikePost(
-    socket: any,
-    data: LikeEventPayload
+    data: LikeEventPayload,
+    socket?: any
   ): Promise<void> {
-    const { userId, postOwnerId, postId } = data;
+    const { userId, postOwnerId, postId, notifData } = data;
     try {
-      // boadcast to all users (that is in the room in cluding the owner) except the sender
-      socket.broadcast.emit(SOCKET_EVENTS.posts.POST_LIKED, {
-        // this will only increase the # of likes in the ui of other online users using reducer function in slice
-        userId,
-        postOwnerId,
-        postId,
-      });
+      this.emitLikeEventGlobally(userId, postOwnerId, postId);
 
-      // send and persist notification of the liker(userId) if its not the post owner
-      if (userId !== postOwnerId) {
-        const data: NotifData = {
-          receiver: postOwnerId,
-          sender: userId,
-          post: postId,
-          message: "liked your post",
-          type: "like",
-        };
+      const ownerSocket = this.getConnectedUser(postOwnerId);
 
-        const notifdata = await notifService.AddOrDropLikeNotif(data); // persist notification of the owner
+      if (!ownerSocket) {
+        console.error(
+          "Failed to emit handleLikePost, ownerSocket is not found"
+        );
+        return;
+      }
 
-        // Notify owner if online
-        const ownerSocket = this.connectedUSers.get(postOwnerId);
-        if (ownerSocket) {
-          this.io
-            .to(ownerSocket.socketId)
-            .emit(SOCKET_EVENTS.posts.LIKE_NOTIFY, notifdata);
-        }
+      // only sent an emit  to the owwner if the notif data is initialize
+      // this means that the liker is not the owner
+      if (notifData) {
+        this.io
+          .to(ownerSocket.socketId)
+          .emit(SOCKET_EVENTS.posts.LIKE_NOTIFY, notifData);
       }
     } catch (error) {
       console.error("Error handling post like:", error);
-      socket.emit("error", "Failed to process like action");
     }
   }
-  private async handleCommentEvent(
-    socket: any,
-    data: CommentEventPayload
-  ): Promise<void> {
+
+  private emitLikeEventGlobally(
+    userId: string,
+    postOwnerId: string,
+    postId: string
+  ) {
+    const senderSocket = this.getConnectedUser(userId);
+
+    if (!senderSocket) {
+      console.log(
+        "Failed to boadcast handleLikePost, Error: Cant get the userSocker"
+      );
+      return;
+    }
+
+    const socket = this.getUserSocketInstance(senderSocket.socketId);
+
+    // boadcast to all users (that is in the room in cluding the owner) except the sender
+    socket?.broadcast.emit(SOCKET_EVENTS.posts.POST_LIKED, {
+      // this will only increase the # of likes in the ui of other online users using reducer function in slice
+      userId,
+      postOwnerId,
+      postId,
+    });
+  }
+
+  private getUserSocketInstance(socketId: string) {
+    return this.io.sockets.sockets.get(socketId);
+  }
+  private async handleCommentEvent(data: CommentEventPayload): Promise<void> {
     try {
-      if (!data) {
-        socket.emit(
-          "error",
-          "Failed to process comment action, no data inputted"
+      const senderSocket = this.getConnectedUser(data.data.user);
+
+      if (!senderSocket) {
+        console.log("Failed to emit comment, sender socket is not found");
+        return;
+      }
+
+      const userSocket = this.getUserSocketInstance(senderSocket.socketId);
+
+      if (!userSocket) {
+        console.log(
+          "Failed to emit comment, sender socket intance is not found"
         );
         return;
       }
 
       // broadcast commend data to all users in the room(except to sender), this will add the comment data in there ui
-      socket.broadcast.emit(SOCKET_EVENTS.posts.POST_COMMENTED, data);
+      userSocket.broadcast.emit(SOCKET_EVENTS.posts.POST_COMMENTED, data);
 
       // get all user ids in the comment list of the post
-      const allIds = await getAllCommenter(data.postId);
+      const allIds = await postService.getAllUsersIdsInPostComment(data.postId);
 
       if (allIds) {
         this.onCommentEventGlobal(data, allIds);
       }
 
-      // only persist notify(if online)if the user(commenter) is not the postOwner
+      // this will create a notifiction for the owner(only do this if the commnter is not the owner)
       if (data.postOwnerId === data.data.user) return;
-      await this.notifyOwnerOnComment(socket, data);
+      await this.addEmitNotificationForPostOwner(userSocket, data);
     } catch (error) {
       console.error("Error handling post comment:", error);
-      socket.emit("error", "Failed to process comment action");
     }
   }
 
@@ -324,7 +343,7 @@ export class SocketServer {
     allIds: mongoose.Types.ObjectId[]
   ) {
     let commentSetData = new Set<string>();
-    const postOwnerData = await getUserById(data.postOwnerId);
+    const postOwnerData = await userService.getUserById(data.postOwnerId);
 
     if (!postOwnerData) throw new Error("No User data");
 
@@ -334,7 +353,7 @@ export class SocketServer {
 
     for (let commenterId of allIds) {
       let id = commenterId.toString();
-      // filter out the post owner and the commender id in the array
+      // filter out the post owner and the commender id in the arraynotifData
       // we will only gloably notify, users except postOwner(the owner it self commented) and other users(user who commented and commented again)
       if (id !== data.postOwnerId && id !== data.data.user) {
         commentSetData.add(id);
@@ -388,7 +407,7 @@ export class SocketServer {
       }
     }
   }
-  private async notifyOwnerOnComment(
+  private async addEmitNotificationForPostOwner(
     socket: any,
     data: CommentEventPayload
   ): Promise<void> {
@@ -429,7 +448,7 @@ export class SocketServer {
     try {
       const { userId, postId } = data;
 
-      const usersFollowers = await getUsersFolowers(userId);
+      const usersFollowers = await userService.getUsersFolowers(userId);
 
       if (!usersFollowers || usersFollowers.length === 0) return;
 

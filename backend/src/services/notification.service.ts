@@ -1,44 +1,34 @@
 import mongoose from "mongoose";
 import { NotifData } from "../controllers/notifController";
-import notificationModel from "../models/notificationModel";
+import notificationModel, { INotification } from "../models/notificationModel";
 
 export const notifService = {
-  AddOrDropLikeNotif: async (data: NotifData): Promise<any> => {
+  createOrDropNotif: async (
+    payload: NotifData,
+    session: mongoose.mongo.ClientSession
+  ) => {
+    const { sender, post, type } = payload;
+
     try {
-      const isNotifExist = await notificationModel.findOne({
-        $and: [
-          { sender: { $eq: data.sender } },
-          { post: { $eq: data.post } },
-          { type: { $eq: "like" } },
-        ], // only trace  the like type notif
-      });
+      const isNotifExist = await notificationModel
+        .findOne({
+          $and: [
+            { sender: { $eq: sender } },
+            { post: { $eq: post } },
+            { type: { $eq: type } },
+          ],
+        })
+        .session(session);
 
       if (isNotifExist) {
-        await notificationModel.deleteOne({
-          $and: [
-            { _id: isNotifExist._id },
-            { sender: { $eq: isNotifExist.sender } },
-            { post: { $eq: isNotifExist.post } },
-            { type: { $eq: isNotifExist.type } },
-          ],
-        });
-
-        return { isExist: Boolean(isNotifExist), data: isNotifExist };
+        return await deleteExistingNotif(isNotifExist, session);
       }
-
-      const notifdata = await notificationModel.create({
-        receiver: mongoose.Types.ObjectId.createFromHexString(data.receiver),
-        sender: mongoose.Types.ObjectId.createFromHexString(data.sender),
-        post: mongoose.Types.ObjectId.createFromHexString(data.post! || "null"),
-        message: data.message,
-        type: data.type,
-      });
-      return { isExist: false, data: notifdata };
+      return await createNewNotif(payload, session);
     } catch (error) {
-      console.log("Failed to save notification: ", error);
-      return { isExist: false, data: null };
+      throw new Error("createOrDropNotif, " + (error as Error));
     }
   },
+
   AddOrDropFollowNotif: async (data: NotifData): Promise<any> => {
     try {
       const isNotifExist = await notificationModel.findOne({
@@ -100,3 +90,53 @@ export const notifService = {
     }
   },
 };
+async function createNewNotif(
+  data: NotifData,
+  session: mongoose.mongo.ClientSession
+) {
+  try {
+    const [Notification] = await notificationModel.create(
+      [
+        {
+          receiver: mongoose.Types.ObjectId.createFromHexString(data.receiver),
+          sender: mongoose.Types.ObjectId.createFromHexString(data.sender),
+          post: data.post
+            ? mongoose.Types.ObjectId.createFromHexString(data.post)
+            : undefined,
+
+          message: data.message,
+          type: data.type,
+        },
+      ],
+      { session }
+    );
+    return { isExist: false, data: Notification };
+  } catch (error) {
+    throw new Error("createNewNotif, " + (error as Error));
+  }
+}
+
+async function deleteExistingNotif(
+  isNotifExist: mongoose.Document<unknown, {}, INotification> &
+    INotification &
+    Required<{ _id: mongoose.Types.ObjectId }> & { __v: number },
+  session: mongoose.mongo.ClientSession
+) {
+  try {
+    await notificationModel.deleteOne(
+      {
+        $and: [
+          { _id: isNotifExist._id },
+          { sender: { $eq: isNotifExist.sender } },
+          { post: { $eq: isNotifExist.post } },
+          { type: { $eq: isNotifExist.type } },
+        ],
+      },
+      { session }
+    );
+
+    return { isExist: Boolean(isNotifExist), data: isNotifExist };
+  } catch (error) {
+    throw new Error("deleteExistingNotif, " + (error as Error));
+  }
+}
