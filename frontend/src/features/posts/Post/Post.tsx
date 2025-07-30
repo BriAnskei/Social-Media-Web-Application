@@ -3,12 +3,12 @@ import { useDispatch } from "react-redux";
 import { toggleLike } from "../postSlice";
 import { useEffect, useRef, useState } from "react";
 import { FetchPostType } from "../../../types/PostType";
-import { FetchedUserType, FollowPayload } from "../../../types/user";
+import { FetchedUserType } from "../../../types/user";
 import { AppDispatch } from "../../../store/store";
 import { useSocket } from "../../../hooks/socket/useSocket";
 
-import { useCurrentUser, useUserById } from "../../../hooks/useUsers";
-import { followToggled, updateFollow } from "../../users/userSlice";
+import { useCurrentUser } from "../../../hooks/useUsers";
+import { updateFollow } from "../../users/userSlice";
 import {
   openPostModal,
   viewProfile,
@@ -31,7 +31,6 @@ const Post = ({ post, ownerId }: Post) => {
   const { emitLike, emitFollow } = useSocket();
   const { handleFollowEffect } = useToastEffect();
   const navigate = useNavigate();
-  let debounceTimer: NodeJS.Timeout;
 
   const postOwnerData = post.user as FetchedUserType;
 
@@ -140,21 +139,19 @@ const Post = ({ post, ownerId }: Post) => {
   };
 
   const handleLike = async () => {
-    if (likeProgress) return;
+    try {
+      if (likeProgress) return;
 
-    clearTimeout(debounceTimer);
-
-    debounceTimer = setTimeout(async () => {
       setLikeProgress(true);
-      try {
-        const res = await dispatch(toggleLike(post._id)).unwrap();
-        if (res.success) setLiked(!liked);
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLikeProgress(false);
-      }
-    }, 200);
+      setLiked(!liked);
+
+      const res = await dispatch(toggleLike(post._id)).unwrap();
+      if (!res.success) setLiked(!liked); // revert change if not sucess
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLikeProgress(false);
+    }
   };
 
   const isFollowedShow =
@@ -223,9 +220,9 @@ const Post = ({ post, ownerId }: Post) => {
               `${post.likes.length} Like${post.likes.length > 1 ? "s" : ""}`}
           </span>
           <span>
-            {post.comments.length > 0 &&
-              `${post.comments.length} Comment${
-                post.comments.length > 1 ? "s" : ""
+            {post.totalComments > 0 &&
+              `${post.totalComments} Comment${
+                post.totalComments > 1 ? "s" : ""
               }`}
           </span>
         </div>

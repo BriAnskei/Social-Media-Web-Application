@@ -1,7 +1,12 @@
 import axios from "axios";
 import { LoginTypes, RegisterTypes } from "../types/AuthTypes";
 import { FollowPayload } from "../types/user";
-import { CommentApiResponse, CommentEventPayload } from "../types/PostType";
+import {
+  CommentApiResponse,
+  CommentEventPayload,
+  CommentType,
+  FetchCommentApiResponse,
+} from "../types/PostType";
 import { ApiResponse, MessageApiResponse } from "../types/ApiResponseType";
 import { openConversationPayload } from "../features/messenger/Conversation/conversationSlice";
 import { ConversationType, Message } from "../types/MessengerTypes";
@@ -37,12 +42,38 @@ export const postApi = {
   fetchPost: async (): Promise<ApiResponse> => {
     try {
       const response = await api.get(`/api/posts/postlist`);
+      console.log("reposneAPi: ", response.data);
 
       return response.data;
     } catch (error) {
       return {
         success: false,
         message: "Network Error Occured",
+      };
+    }
+  },
+  fetchMoreComments: async (payload: {
+    token: string;
+    postId: string;
+    cursor: string;
+  }): Promise<ApiResponse & FetchCommentApiResponse> => {
+    try {
+      const { token, postId, cursor } = payload;
+      const response = await api.get(`/api/posts/comment-cursor/${postId}`, {
+        params: { cursor },
+        headers: {
+          token,
+          "Content-Type": "application/json",
+        },
+      });
+
+      return response.data;
+    } catch (error) {
+      console.log("fetchMoreComments", error);
+
+      return {
+        success: false,
+        message: "Failed on fetchMoreComments, " + (error as Error),
       };
     }
   },

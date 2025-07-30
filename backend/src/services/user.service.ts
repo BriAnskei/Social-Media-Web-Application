@@ -1,5 +1,5 @@
 import jwt from "jsonwebtoken";
-import UserModel from "../models/userModel";
+import UserModel, { IUser } from "../models/userModel";
 
 export const userService = {
   createToken: (userId: string) => {
@@ -30,18 +30,19 @@ export const userService = {
       console.log("getUsersFolowers ,", error);
     }
   },
-  getUserById: async (userId: string) => {
+  getUserById: async (userId: string): Promise<IUser> => {
     try {
       if (!userId) {
         throw new Error("No Id recieved to retrive user data");
       }
-      const userData = UserModel.findById(userId);
+      const userData = (await UserModel.findById(userId)) as IUser | undefined;
 
       if (!userData) throw new Error("Cannot find user");
 
       return userData;
     } catch (error) {
       console.log("getUserById, ", error);
+      throw new Error("getUserById , " + (error as Error));
     }
   },
 };

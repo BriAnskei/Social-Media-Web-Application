@@ -1,11 +1,14 @@
+import { ObjectId } from "mongoose";
 import { IConversation } from "../models/conversationModel";
 import { IMessage } from "../models/messageModel";
+import { UserData } from "../services/comment.service";
 import {
   CommentEventPayload,
   LikeEventPayload,
 } from "../socket/EventsTypes/PostEvents";
 
 import { redisEvents } from "./redisEvents";
+import { INotification } from "../models/notificationModel";
 
 export const emitMessageOnSend = async (data: {
   conversation: IConversation;
@@ -67,16 +70,21 @@ export const emitUpdateDropContact = async (data: any) => {
   }
 };
 
-export const emitPostComment = async (cnfg: CommentEventPayload) => {
+export const emitComment = async (payload: INotification) => {
   try {
-    const success = await redisEvents.emit("post-comment", cnfg);
-
-    if (success) {
-      console.log("✅ emitPostComment published to Redis successfully");
-    } else {
-      console.error("❌ Failed emitPostComment");
-    }
+    const success = await redisEvents.emit("newNotification", payload);
+    throwErrOnFailed({ function: "emitComment", isSucces: success });
   } catch (error) {
-    throw new Error("emitPostComment , " + (error as Error));
+    logEmitterErr("emitComment", error as Error);
   }
 };
+
+function throwErrOnFailed(res: { function: string; isSucces: boolean }): void {
+  if (!res.isSucces) {
+    throw new Error(`${res.function}, 'Failed to emit on channed`);
+  }
+}
+
+function logEmitterErr(functions: string, err: Error): void {
+  console.error(`${functions}, ${err}`);
+}

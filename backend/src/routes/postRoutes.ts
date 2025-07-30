@@ -3,6 +3,7 @@ import {
   addComment,
   createPost,
   deletePost,
+  fetchPostComments,
   findPostById,
   likeToggled,
   postsLists,
@@ -29,12 +30,12 @@ postRouter.post(
 postRouter.post("/like-toggle", authMiddleware, likeToggled);
 postRouter.post("/add-comment", addComment);
 postRouter.post("/getpost", findPostById);
-postRouter.post(
+postRouter.get(
   "/delete",
   authMiddleware,
   upload.post.delete.single(),
   deletePost
 );
-// search
+postRouter.get("/comment-cursor/:postId", authMiddleware, fetchPostComments);
 
 export default postRouter;

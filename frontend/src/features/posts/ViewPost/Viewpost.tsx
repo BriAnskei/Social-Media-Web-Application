@@ -17,6 +17,8 @@ import { useNavigate } from "react-router";
 import { FetchedUserType } from "../../../types/user";
 import { viewProfile } from "../../../Components/Modal/globalSlice";
 import { usePopoverContext } from "../../../hooks/usePopover";
+import { getMessageImageUrl, userProfile } from "../../../utils/ImageUrlHelper";
+import ViewPostCommentList from "./ViewPostCommentList";
 
 interface Post {
   postId: string;
@@ -31,33 +33,18 @@ const ViewPost = ({ postId }: Post) => {
   const { emitLike, emitComment } = useSocket();
   const { popover } = usePopoverContext();
 
-  const postData = usePostById(postId);
-  const postOwnerData = useUserById(postData.user);
+  const postPayload = usePostById(postId);
+  const { postData, fetchCommentLoading } = postPayload;
+
+  const postOwnerData = postData.user as FetchedUserType;
 
   const [isSuccess, setIsSucess] = useState(false); // Fetcher response, loading flag
 
   const [isLiked, setIsLiked] = useState(false);
   const [commentInput, setCommentInput] = useState("");
 
-  // scroll top ref
-  const commentContRef = useRef<HTMLDivElement>(null);
   // popover ref
   const target = useRef(null);
-
-  useEffect(() => {
-    // ScrollHeight: The total height of the scrollable content inside the container, including any overflow that is not visible in the viewport.
-    // ScrollTop: The current vertical scroll position of the container (how far it is scrolled down from the top).
-    if (commentContRef.current) {
-      commentContRef.current!.scrollTop = commentContRef.current!.scrollHeight;
-    }
-  }, [postData, postData.comments]);
-
-  const commentUserIds: string[] = useMemo(
-    () =>
-      postData.comments ? postData.comments.map((comment) => comment.user) : [],
-    [postData.comments]
-  );
-  const commentUsersData = useUsersById(commentUserIds);
 
   useEffect(() => {
     const getPostData = async (postId: string) => {
@@ -103,25 +90,17 @@ const ViewPost = ({ postId }: Post) => {
     if (!commentInput.trim()) return;
 
     try {
-      let data: CommentEventPayload = {
+      const data: CommentEventPayload = {
         postId: postData._id,
         data: {
           user: currentUser._id,
           content: commentInput,
+          createdAt: new Date().toISOString(),
         },
       };
 
-      const res = await dispatch(addComment(data)).unwrap();
+      await dispatch(addComment(data)).unwrap();
 
-      if (res.success) {
-        const eventCommentData: CommentEventPayload = {
-          postId: postData._id,
-          postOwnerId: postOwnerData!._id,
-          data: res.commentData!,
-        };
-
-        emitComment(eventCommentData);
-      }
       setCommentInput("");
     } catch (error) {
       console.log(error);
@@ -164,7 +143,10 @@ const ViewPost = ({ postId }: Post) => {
             <div className="post-info">
               <div className="profile-name">
                 <img
-                  src={`http://localhost:4000/uploads/profile/${postOwnerData._id}/${postOwnerData.profilePicture}`}
+                  src={userProfile(
+                    postOwnerData.profilePicture!,
+                    postOwnerData._id
+                  )}
                   alt=""
                 />
                 <div className="name-date">
@@ -206,9 +188,9 @@ const ViewPost = ({ postId }: Post) => {
                   }`}
               </span>
               <span>
-                {postData.comments.length > 0 &&
-                  `${postData.comments.length} Comment${
-                    postData.comments.length > 1 ? "s" : ""
+                {postData.totalComments > 0 &&
+                  `${postData.totalComments} Comment${
+                    postData.totalComments > 1 ? "s" : ""
                   }`}
               </span>
             </div>
@@ -236,40 +218,11 @@ const ViewPost = ({ postId }: Post) => {
                 <span>Comment</span>
               </div>
             </div>
-            <div
-              className="comment-list-container comment-list-viewpost"
-              ref={commentContRef}
-            >
-              {!postData.comments || postData.comments.length == 0 ? (
-                <>Write a comment</>
-              ) : (
-                postData.comments.map((comment, index) => {
-                  const commentUserData = commentUsersData[comment.user];
-
-                  return (
-                    <div
-                      className="comment-cont"
-                      key={index}
-                      onClick={() => viewUserProfile(commentUserData)}
-                    >
-                      <img
-                        src={`http://localhost:4000/uploads/profile/${commentUserData._id}/${commentUserData.profilePicture}`}
-                        alt=""
-                      />
-                      <div className="comment-content">
-                        <div className="info-content">
-                          <h5>{commentUserData.fullName}</h5>
-                          <span>{comment.content}</span>
-                        </div>
-                        <span id="comment-date">
-                          {new Date(comment.createdAt).toLocaleString()}
-                        </span>
-                      </div>
-                    </div>
-                  );
-                })
-              )}{" "}
-            </div>
+            <ViewPostCommentList
+              dispatch={dispatch}
+              postData={postData}
+              viewUserProfile={viewUserProfile}
+            />
             <div className="comment-con-inputs">
               <div className="post-modal-profile">
                 <img

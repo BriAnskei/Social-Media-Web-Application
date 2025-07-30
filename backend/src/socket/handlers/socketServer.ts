@@ -5,7 +5,9 @@ import { verifyToken } from "../../middleware/auth";
 import { NotifData, saveCommentNotif } from "../../controllers/notifController";
 
 import mongoose from "mongoose";
-import notificationModel from "../../models/notificationModel";
+import notificationModel, {
+  INotification,
+} from "../../models/notificationModel";
 
 import {
   CommentEventPayload,
@@ -19,6 +21,12 @@ import { MessageHanlder } from "./messageHanlder";
 import { redisEvents } from "../../events/redisEvents";
 import { userService } from "../../services/user.service";
 import { postService } from "../../services/post.service";
+import { IUser } from "../../models/userModel";
+import {
+  CommentRequestPayload,
+  commentService,
+} from "../../services/comment.service";
+import e from "express";
 
 interface ConnectedUser {
   userId: string;
@@ -149,8 +157,8 @@ export class SocketServer {
       this.handleLikePost(data);
     });
 
-    redisEvents.on("post-comment", (data: any) => {
-      this.handleCommentEvent(data);
+    redisEvents.on("newNotification", (data: any) => {
+      this.handleCommentNotification(data);
     });
   }
 
@@ -160,8 +168,13 @@ export class SocketServer {
       this.handleConnection(socket); // register the user as connected(online) first
       this.messagetHandler.registerEvents(socket);
 
+      // Handle Error
+      socket.on("error", (error) => {
+        console.error("Socket Server Error", error);
+        socket.emit("error", "An error occured");
+      });
+
       socket.on("user-leaving", (convoIds: string[]) => {
-        console.log("USerLEaving, convoIds:", convoIds);
         this.messagetHandler.cleanUpOnLeave({ socket, convoIds });
       });
 
@@ -194,16 +207,30 @@ export class SocketServer {
         this.handlePostDeleteEvent(socket, data);
       });
 
-      // Handle Error
-      socket.on("error", (error) => {
-        console.error("Socket Server Error", error);
-        socket.emit("error", "An error occured");
-      });
+      // comment on post
+      socket.on(
+        SOCKET_EVENTS.posts.COMMENT_POST,
+        (data: CommentRequestPayload) => {
+          this.handleNewCommentEvent(data);
+        }
+      );
     });
   }
 
-  public getConnectedUser(userId: string): ConnectedUser | undefined {
-    return this.connectedUSers.get(userId);
+  public getConnectedUser(userId: string): ConnectedUser {
+    const socketData = this.connectedUSers.get(userId);
+
+    if (!socketData)
+      throw new Error("getConnectedUser, Error: Cannot find socket data");
+    return socketData;
+  }
+
+  private async handleNewCommentEvent(payLoad: CommentRequestPayload) {
+    try {
+      await commentService.addComment(payLoad);
+    } catch (error) {
+      console.log("Failed on handleNewCommentEvent", error);
+    }
   }
 
   private handleConnection(socket: any): void {
@@ -251,13 +278,6 @@ export class SocketServer {
 
       const ownerSocket = this.getConnectedUser(postOwnerId);
 
-      if (!ownerSocket) {
-        console.error(
-          "Failed to emit handleLikePost, ownerSocket is not found"
-        );
-        return;
-      }
-
       // only sent an emit  to the owwner if the notif data is initialize
       // this means that the liker is not the owner
       if (notifData) {
@@ -275,172 +295,47 @@ export class SocketServer {
     postOwnerId: string,
     postId: string
   ) {
-    const senderSocket = this.getConnectedUser(userId);
-
-    if (!senderSocket) {
-      console.log(
-        "Failed to boadcast handleLikePost, Error: Cant get the userSocker"
-      );
-      return;
-    }
-
-    const socket = this.getUserSocketInstance(senderSocket.socketId);
-
-    // boadcast to all users (that is in the room in cluding the owner) except the sender
-    socket?.broadcast.emit(SOCKET_EVENTS.posts.POST_LIKED, {
-      // this will only increase the # of likes in the ui of other online users using reducer function in slice
-      userId,
-      postOwnerId,
-      postId,
-    });
-  }
-
-  private getUserSocketInstance(socketId: string) {
-    return this.io.sockets.sockets.get(socketId);
-  }
-  private async handleCommentEvent(data: CommentEventPayload): Promise<void> {
     try {
-      const senderSocket = this.getConnectedUser(data.data.user);
+      const senderSocket = this.getConnectedUser(userId);
 
-      if (!senderSocket) {
-        console.log("Failed to emit comment, sender socket is not found");
-        return;
-      }
+      const socket = this.getUserSocketInstance(senderSocket.socketId);
 
-      const userSocket = this.getUserSocketInstance(senderSocket.socketId);
-
-      if (!userSocket) {
-        console.log(
-          "Failed to emit comment, sender socket intance is not found"
-        );
-        return;
-      }
-
-      // broadcast commend data to all users in the room(except to sender), this will add the comment data in there ui
-      userSocket.broadcast.emit(SOCKET_EVENTS.posts.POST_COMMENTED, data);
-
-      // get all user ids in the comment list of the post
-      const allIds = await postService.getAllUsersIdsInPostComment(data.postId);
-
-      if (allIds) {
-        this.onCommentEventGlobal(data, allIds);
-      }
-
-      // this will create a notifiction for the owner(only do this if the commnter is not the owner)
-      if (data.postOwnerId === data.data.user) return;
-      await this.addEmitNotificationForPostOwner(userSocket, data);
+      // boadcast to all users (that is in the room in cluding the owner) except the sender
+      socket.broadcast.emit(SOCKET_EVENTS.posts.POST_LIKED, {
+        // this will only increase the # of likes in the ui of other online users using reducer function in slice
+        userId,
+        postOwnerId,
+        postId,
+      });
     } catch (error) {
-      console.error("Error handling post comment:", error);
+      console.error("emitLikeEventGlobally, ", error);
+    }
+  }
+
+  private getUserSocketInstance(socketId: string): Socket<any> {
+    try {
+      const socketIntance = this.io.sockets.sockets.get(socketId);
+
+      if (!socketIntance)
+        throw new Error(
+          "getUserSocketInstance, Error: Cannot find socket instance"
+        );
+
+      return socketIntance;
+    } catch (error) {
+      throw new Error("getUserSocketInstance " + (error as Error));
+    }
+  }
+  private async handleCommentNotification(
+    config: INotification
+  ): Promise<void> {
+    if (this.isUserOnline(config.receiver.toString())) {
+      this.io.to(config.receiver.toString()).emit("newCommentNotify", config);
     }
   }
 
   public isUserOnline(userId: string): boolean {
     return this.connectedUSers.has(userId);
-  }
-
-  private async onCommentEventGlobal(
-    data: CommentEventPayload,
-    allIds: mongoose.Types.ObjectId[]
-  ) {
-    let commentSetData = new Set<string>();
-    const postOwnerData = await userService.getUserById(data.postOwnerId);
-
-    if (!postOwnerData) throw new Error("No User data");
-
-    const capitializeFristWord = (text: string) => {
-      return String(text).charAt(0).toUpperCase() + String(text).slice(1);
-    };
-
-    for (let commenterId of allIds) {
-      let id = commenterId.toString();
-      // filter out the post owner and the commender id in the arraynotifData
-      // we will only gloably notify, users except postOwner(the owner it self commented) and other users(user who commented and commented again)
-      if (id !== data.postOwnerId && id !== data.data.user) {
-        commentSetData.add(id);
-      }
-    }
-
-    const NotifyId = Array.from(commentSetData);
-
-    const batchSize = 1000;
-    const totalCommenters = NotifyId.length;
-
-    for (let i = 0; i < totalCommenters; i += batchSize) {
-      const commenterBatch = NotifyId.slice(i, i + batchSize);
-
-      // creating bulk data
-      const bulkedData = commenterBatch.map((commenterId) => ({
-        receiver: commenterId,
-        sender: data.data.user,
-        post: data.postId,
-        message:
-          data.postOwnerId === data.data.user
-            ? "commented on his post"
-            : `commented on  ${capitializeFristWord(
-                postOwnerData.username
-              )} post`,
-        type: "comment",
-        createdAt: data.data.createdAt,
-      }));
-
-      const response = await notifService.batchSaveComments(bulkedData);
-      const { success, bulkResData } = response;
-
-      if (!success) {
-        console.error("Failed to save bulk notif");
-      }
-
-      for (let i = 0; i < commenterBatch.length; i++) {
-        const commenterId = commenterBatch[i];
-        const userSocket = this.connectedUSers.get(commenterId);
-
-        const notifEmitData = {
-          isExist: false,
-          data: bulkResData[i],
-        };
-
-        if (userSocket) {
-          this.io
-            .to(userSocket.socketId)
-            .emit(SOCKET_EVENTS.posts.COMMENT_NOTIF, notifEmitData);
-        }
-      }
-    }
-  }
-  private async addEmitNotificationForPostOwner(
-    socket: any,
-    data: CommentEventPayload
-  ): Promise<void> {
-    try {
-      let commentEventData: NotifData = {
-        receiver: data.postOwnerId,
-        sender: data.data.user,
-        post: data.postId,
-        message: "commented on your post",
-        type: "comment",
-        createdAt: data.data.createdAt,
-      };
-
-      commentEventData = await saveCommentNotif(commentEventData);
-
-      const notifEmitData = {
-        isExist: false,
-        data: commentEventData,
-      };
-      // trace the bug, when the owner liked its own post
-      // notify owner if online
-      const ownerSocket = this.connectedUSers.get(
-        commentEventData.receiver.toString() // convert object data to string
-      );
-      if (ownerSocket) {
-        this.io
-          .to(ownerSocket.socketId)
-          .emit(SOCKET_EVENTS.posts.COMMENT_NOTIF, notifEmitData);
-      }
-    } catch (error) {
-      console.error("Error handling owwwner notification on comment:", error);
-      socket.emit("error", "Failed to process comment owwwner notify");
-    }
   }
 
   // Notify followers, whne uploading a post
@@ -537,7 +432,6 @@ export class SocketServer {
     postId: string
   ): Promise<void> {
     try {
-      console.log("Emiting post delete: ", postId);
       // Delete like, comment notification for this
       socket.broadcast.emit(SOCKET_EVENTS.posts.POST_DELETE, postId);
     } catch (error) {
@@ -584,4 +478,40 @@ export class SocketServer {
     );
     this.io.emit("onlineUsers", onlineUsers);
   }
+}
+function createBulkedNotifPayload(
+  commenterBatch: string[],
+  data: CommentEventPayload,
+  capitializeFristWord: (text: string) => string,
+  postOwnerData: IUser
+) {
+  return commenterBatch.map((commenterId) => ({
+    receiver: commenterId,
+    sender: data.data.user._id.toString(),
+    post: data.postId,
+    message:
+      data.postOwnerId === data.data.user._id.toString()
+        ? "commented on his post"
+        : `commented on  ${capitializeFristWord(postOwnerData.username)} post`,
+    type: "comment",
+    createdAt: data.data.createdAt,
+  }));
+}
+
+function getUniqueUserIdsExceptCommenterAndPostOwner(
+  allIds: any,
+  data: CommentEventPayload
+) {
+  const commentSetData = new Set<string>();
+  for (let commenterId of allIds) {
+    let id = commenterId.toString();
+    // filter out the post owner and the commender id in the arraynotifData
+    // we will only gloably notify users, except postOwner(the owner it self commented) and other users(user who commented and commented again)
+    if (id !== data.postOwnerId && id !== data.data.user._id.toString()) {
+      commentSetData.add(id);
+    }
+  }
+
+  const NotifyId = Array.from(commentSetData);
+  return NotifyId;
 }

@@ -31,6 +31,8 @@ import {
 import { ContactType } from "../../types/contactType";
 import { useChatSocket } from "./useChatSocket";
 import { useWindowedConversation } from "../useConversation";
+import { IComment } from "../../features/comment/commentSlice";
+import { FetchedUserType } from "../../types/user";
 
 export interface DataOutput {
   // for post-like notification
@@ -67,7 +69,7 @@ export const SOCKET_EVENTS = {
     COMMENT_POST: "commentPost",
     // server
     POST_COMMENTED: "postCommented",
-    COMMENT_NOTIF: "commentNotify",
+    COMMENT_NOTIF: "newCommentNotify",
 
     // post upload
     UPLOAD_POST: "upload-post",
@@ -137,8 +139,8 @@ export const useSocket = () => {
   }, []);
 
   const commentNotifEvent = useCallback(
-    (data: DataOutput) => {
-      dispatch(addOrDropNotification(data));
+    (config: any) => {
+      dispatch(addOrDropNotification({ isExist: false, data: config }));
     },
     [dispatch]
   );
@@ -299,7 +301,16 @@ export const useSocket = () => {
   );
 
   const emitComment = useCallback(
-    (data: CommentEventPayload) => {
+    (data: {
+      user: FetchedUserType;
+      post: {
+        postId: string;
+        postOwnerId: string;
+        postOwnerName: string;
+      };
+      content: string;
+      createdAt: Date;
+    }) => {
       if (socket && isConnected) {
         socket.emit("commentPost", data);
       }

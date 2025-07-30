@@ -1,5 +1,21 @@
+import { Types } from "mongoose";
 import { INotification } from "../../models/notificationModel";
 import { IPost } from "../../models/postModel";
+import { IUser } from "../../models/userModel";
+
+// interface payload
+export interface IUserPayload {
+  _id: string;
+  username: string;
+  fullName: string;
+  email: string;
+  password: string;
+  profilePicture?: string;
+  bio?: string;
+  followers: Types.ObjectId[];
+  following: Types.ObjectId[];
+  createdAt: Date;
+}
 
 export interface LikeEventPayload {
   postId: string;
@@ -15,9 +31,9 @@ export interface LikeEventPayload {
 
 export interface CommentEventPayload {
   postId: string;
-  postOwnerId: string;
+  postOwnerId: string; // needed this field for the socket-to valide commenter
   data: {
-    user: string;
+    user: IUserPayload;
     content: string;
     createdAt: Date;
   };

@@ -4,6 +4,7 @@ import { FetchPostType } from "../../types/PostType";
 
 const byId = (state: RootState) => state.posts.byId;
 const allIds = (state: RootState) => state.posts.allIds;
+const loadingComments = (state: RootState) => state.posts.loadingComments;
 const currentUserId = (state: RootState) => state.user.currentUserId;
 const postLoading = (state: RootState) => state.posts.loading;
 const userLoading = (state: RootState) => state.user.loading;
@@ -27,8 +28,13 @@ export const selectCurrentUserPost = createSelector(
 
 // Optional: Add a selector to get a single user post by ID
 export const selectPostById = createSelector(
-  [byId, (_, postId: string) => postId],
-  (postById, postId) => postById[postId] || ({} as FetchPostType)
+  [byId, loadingComments, (_, postId: string) => postId],
+  (postById, loadingComments, postId) => {
+    return {
+      postData: postById[postId] || ({} as FetchPostType),
+      fetchCommentLoading: loadingComments[postId],
+    };
+  }
 );
 
 export const selectPostsByUserId = createSelector(

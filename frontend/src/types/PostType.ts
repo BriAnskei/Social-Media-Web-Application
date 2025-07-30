@@ -1,27 +1,34 @@
 import { ApiResponse } from "./ApiResponseType";
 import { FetchedUserType } from "./user";
 
+export interface CommentType {
+  user: FetchedUserType;
+  content: string;
+  createdAt: Date;
+}
+
 export interface FetchPostType {
   _id: string;
   user: string | FetchedUserType;
   content: string;
   image?: string | File;
   likes: string[];
-  comments: {
-    user: string | FetchedUserType;
-    content: string;
-    createdAt: string;
-  }[];
-  hasMorComments: boolean;
+  comments: CommentType[];
+  hasMoreComments: boolean;
+  totalComments: number;
   createdAt: string;
 }
 
-export interface CommentApiResponse extends ApiResponse {
-  commentData?: {
-    user: string;
-    content: string;
-    createdAt: string;
+export interface FetchCommentApiResponse {
+  commentRes?: {
+    commentToReturn: CommentType[];
+    hasMore: boolean;
+    nextCursor: string;
   };
+}
+
+export interface CommentApiResponse extends ApiResponse {
+  commentData?: CommentType;
 }
 
 // Uploading posts
@@ -40,12 +47,7 @@ export interface LikeHandlerTypes {
 // Client side
 export interface CommentEventPayload {
   postId: string;
-  postOwnerId?: string;
-  data: {
-    user: string;
-    content: string;
-    createdAt?: string;
-  };
+  data: CommentType;
 }
 // Server Side
 export interface CommentEventRes {

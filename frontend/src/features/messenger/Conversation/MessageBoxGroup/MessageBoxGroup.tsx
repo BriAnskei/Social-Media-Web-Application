@@ -40,6 +40,7 @@ const MessageBoxGroup = ({
 
           return (
             <ConvoBox
+              key={id}
               currUserId={currUserId}
               conversation={conversation}
               openConvoOnMessageBox={openConvoOnMessageBox}

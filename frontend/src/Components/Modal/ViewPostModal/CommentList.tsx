@@ -1,34 +1,67 @@
 import "./ViewPostModal.css";
-import { useEffect, useMemo, useRef } from "react";
-import { useUsersById } from "../../../hooks/useUsers";
+import { useEffect, useRef, useState } from "react";
 import { FetchedUserType } from "../../../types/user";
 import { usePostById } from "../../../hooks/usePost";
+
+import { AppDispatch } from "../../../store/store";
+import { userProfile } from "../../../utils/ImageUrlHelper";
 import CommentsFetcher from "./Commentsfetcher";
 
 interface CommentListProp {
   postId: string;
-
   viewUserProfile: (user: FetchedUserType) => void;
+  dispatch: AppDispatch;
 }
 
-const CommentList = ({ postId, viewUserProfile }: CommentListProp) => {
-  const { comments } = usePostById(postId);
-  // const userIds = useMemo(
-  //   () => (comments ? comments.map((comment) => comment.user) : []),
-  //   [postId, comments]
-  // );
+const CommentList = ({
+  postId,
+  viewUserProfile,
+  dispatch,
+}: CommentListProp) => {
+  const { postData, fetchCommentLoading } = usePostById(postId);
 
-  // const usersData = useUsersById(userIds);
+  const { comments, hasMoreComments } = postData;
+
+  const [hasMore, setHasMore] = useState(false);
+  const [cursor, setCursor] = useState("");
+
+  // scroll handler ref
+  const scrollRef = useRef<any>(null);
+  const lastScrollRef = useRef<number>(0);
+
+  // on comment smooth scroll effect
   const buttonRef = useRef<any>(null);
 
   useEffect(() => {
+    // set the last scroll height in the first render
+    const scrollElement = scrollRef.current;
+    lastScrollRef.current = scrollElement?.scrollHeigt;
+
+    setCursor(postData?.comments[0]?.createdAt);
+    setHasMore(hasMoreComments);
+  }, [postId]);
+
+  useEffect(() => {
     buttonRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [comments]);
+  }, [comments.length]);
 
   return (
     <>
-      <div className="comment-list-container">
-        <CommentsFetcher hasMore={true} postId={postId} />
+      <div className="comment-list-container" ref={scrollRef}>
+        <CommentsFetcher
+          scrollRef={scrollRef}
+          lastScrollRef={lastScrollRef}
+          dispatch={dispatch}
+          hasMore={hasMore}
+          postId={postId}
+          cursor={cursor}
+          setHasMore={setHasMore}
+          setCursor={setCursor}
+        />
+
+        {/* comment fetch-loading */}
+        {fetchCommentLoading && <div>Laoding</div>}
+
         {!comments || comments.length === 0 ? (
           <>Write a Comment</>
         ) : (
@@ -41,7 +74,7 @@ const CommentList = ({ postId, viewUserProfile }: CommentListProp) => {
               <div className="comment-cont" key={index}>
                 <img
                   onClick={() => viewUserProfile(userData)}
-                  src={`http://localhost:4000/uploads/profile/${userData._id}/${userData.profilePicture}`}
+                  src={userProfile(userData.profilePicture!, userData._id)}
                   alt=""
                 />
                 <div className="comment-content">

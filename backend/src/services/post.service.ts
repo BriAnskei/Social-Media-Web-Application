@@ -3,6 +3,17 @@ import { ExtentRequest } from "../controllers/postController";
 import postModel, { IPost } from "../models/postModel";
 
 export const postService = {
+  fetchAllPost: async () => {
+    try {
+      return await postModel
+        .find()
+        .populate("user", "fullName username profilePicture")
+        .populate("comments")
+        .lean();
+    } catch (error) {
+      throw error;
+    }
+  },
   toggleLikeRetrivePostData: async (
     payload: { userId: string; postId: string },
     session: ClientSession
@@ -57,7 +68,7 @@ export const postService = {
   },
   commentOnPost: async (payload: {
     postId: string;
-    comment: string;
+    comment: { user: string; content: string; createdAt: Date };
   }): Promise<IPost> => {
     try {
       const { postId, comment } = payload;
@@ -91,3 +102,7 @@ export const postRequestHanlder = {
     }
   },
 };
+
+export function postServiceLogError(functionName: string, error: Error) {
+  console.error(`${functionName}, ${error}}`);
+}

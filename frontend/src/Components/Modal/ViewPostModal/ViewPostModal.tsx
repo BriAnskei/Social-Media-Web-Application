@@ -2,10 +2,10 @@ import React, { useEffect, useState } from "react";
 import "./ViewPostModal.css";
 import { ModalTypes } from "../../../types/modalTypes";
 import { CommentEventPayload } from "../../../types/PostType";
-import { useCurrentUser, useUserById } from "../../../hooks/useUsers";
+import { useCurrentUser } from "../../../hooks/useUsers";
 import { useDispatch } from "react-redux";
 import { AppDispatch } from "../../../store/store";
-import { addComment, toggleLike } from "../../../features/posts/postSlice";
+import { toggleLike } from "../../../features/posts/postSlice";
 
 import AutoResizeTextarea from "../../../utils/AutoResizeTextaria";
 import { usePostById } from "../../../hooks/usePost";
@@ -16,6 +16,7 @@ import Spinner from "../../Spinner/Spinner";
 import { viewProfile } from "../globalSlice";
 import { useNavigate } from "react-router";
 import CommentList from "./CommentList";
+import { addComment, IComment } from "../../../features/comment/commentSlice";
 
 interface PostModal extends Omit<ModalTypes, "onClose"> {
   onClose: () => void;
@@ -23,16 +24,12 @@ interface PostModal extends Omit<ModalTypes, "onClose"> {
 }
 
 const ViewPostModal: React.FC<PostModal> = ({ showModal, onClose, postId }) => {
-  const postData = usePostById(postId);
+  const { postData } = usePostById(postId);
   const postOwnerData = postData.user as FetchedUserType;
-
-  if (!postData || !postOwnerData) {
-    return <div>Failed</div>;
-  }
 
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
-  const { emitComment, emitLike, emitFollow } = useSocket();
+  const { emitLike, emitFollow, emitComment } = useSocket();
   const { currentUser } = useCurrentUser(); // ccurrent user data
 
   const [isOwnerFollowed, setIsOwnerFollowed] = useState(false);
@@ -42,21 +39,24 @@ const ViewPostModal: React.FC<PostModal> = ({ showModal, onClose, postId }) => {
   const [commentInput, setCommentInput] = useState("");
 
   useEffect(() => {
-    if (!postData.likes || !currentUser._id || !postOwnerData) return;
+    if (!postData?.likes || !currentUser._id || !postOwnerData) return;
 
     if (postData && currentUser._id) {
-      const isPostLiked = postData.likes.includes(currentUser._id);
+      const isPostLiked = postData?.likes.includes(currentUser._id);
       setIsLiked(isPostLiked);
     }
   }, [postId, currentUser]);
 
   useEffect(() => {
-    if (!postOwnerData.followers || !currentUser) return;
+    if (!postOwnerData?.followers || !currentUser) return;
     // check if thw owner is followed
-    if (postOwnerData.followers.includes(currentUser._id)) {
+    if (postOwnerData?.followers.includes(currentUser._id)) {
       setButtonDisplay();
     }
   }, [postOwnerData, currentUser, postId]);
+
+  // early return to prevent undifined properties during app renders. unless the modal is viewed
+  if (!postData || !postOwnerData) return;
 
   const setButtonDisplay = () => {
     // if classID is setted to followed, the follow is being toggled in modal, otherwise in posts
@@ -132,21 +132,27 @@ const ViewPostModal: React.FC<PostModal> = ({ showModal, onClose, postId }) => {
     // Check if comment is empty
     if (!commentInput.trim()) return;
 
-    try {
-      let data: CommentEventPayload = {
+    const emitionPayload = {
+      user: currentUser,
+      post: {
         postId: postData._id,
-        data: {
-          user: currentUser._id,
-          content: commentInput,
-        },
-      };
+        postOwnerId: postOwnerData._id,
+        postOwnerName: postOwnerData.fullName,
+      },
+      content: commentInput,
+      createdAt: new Date(),
+    };
 
-      await dispatch(addComment(data)).unwrap();
+    emitComment(emitionPayload);
 
-      setCommentInput("");
-    } catch (error) {
-      console.log(error);
-    }
+    const commentPayload: IComment = {
+      postId: postId,
+      user: currentUser,
+      content: commentInput,
+      createdAt: new Date(),
+    };
+
+    dispatch(addComment(commentPayload));
   };
 
   const viewUserProfile = (user: FetchedUserType) => {
@@ -245,9 +251,9 @@ const ViewPostModal: React.FC<PostModal> = ({ showModal, onClose, postId }) => {
                         )}
                       </span>
                       <span>
-                        {postData.comments && postData.comments.length > 0 && (
-                          <>{`${postData.comments.length} Comment${
-                            postData.comments.length > 1 ? "s" : ""
+                        {postData.comments && postData.totalComments && (
+                          <>{`${postData.totalComments} Comment${
+                            postData.totalComments > 1 ? "s" : ""
                           }`}</>
                         )}
                       </span>
@@ -281,6 +287,7 @@ const ViewPostModal: React.FC<PostModal> = ({ showModal, onClose, postId }) => {
                     <>
                       {/* comment list */}
                       <CommentList
+                        dispatch={dispatch}
                         postId={postId}
                         viewUserProfile={viewUserProfile}
                       />

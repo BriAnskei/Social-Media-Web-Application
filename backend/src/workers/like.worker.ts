@@ -58,5 +58,12 @@ new Worker(
       await session.endSession();
     }
   },
-  { connection: redisOptions }
+  {
+    connection: redisOptions,
+    concurrency: 10,
+    limiter: {
+      max: 100,
+      duration: 60000,
+    },
+  }
 );

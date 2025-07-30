@@ -1,8 +1,26 @@
-import mongoose from "mongoose";
+import mongoose, { Types } from "mongoose";
 import { NotifData } from "../controllers/notifController";
 import notificationModel, { INotification } from "../models/notificationModel";
+import { UserData } from "./comment.service";
+
+interface CommentPayload {
+  receiver: string;
+  sender: string;
+  post: string;
+  message: string;
+  type: string;
+  read: boolean;
+  createdAt: Date;
+}
 
 export const notifService = {
+  addCommentNotif: async (payload: CommentPayload): Promise<INotification> => {
+    try {
+      return await notificationModel.create(payload);
+    } catch (error) {
+      throw error;
+    }
+  },
   createOrDropNotif: async (
     payload: NotifData,
     session: mongoose.mongo.ClientSession
@@ -74,7 +92,19 @@ export const notifService = {
       type: string;
       createdAt: Date;
     }[]
-  ) => {
+  ): Promise<{
+    success: boolean;
+    bulkResData: {
+      _id: Types.ObjectId;
+      receiver: string;
+      sender: string;
+      post: string;
+      message: string;
+      type: string;
+      read: boolean;
+      createdAt: Date;
+    }[];
+  }> => {
     try {
       const res = await notificationModel.insertMany(data);
       return {
@@ -82,14 +112,13 @@ export const notifService = {
         bulkResData: res,
       };
     } catch (error) {
-      console.log("Error savinf bulk notif: ", error);
-      return {
-        success: false,
-        bulkResData: [],
-      };
+      throw new Error("batchSaveComments, " + (error as Error));
     }
   },
 };
+
+// module functions
+
 async function createNewNotif(
   data: NotifData,
   session: mongoose.mongo.ClientSession

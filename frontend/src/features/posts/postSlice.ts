@@ -10,7 +10,9 @@ import { NormalizeState } from "../../types/NormalizeType";
 import { RootState } from "../../store/store";
 import { normalizeResponse } from "../../utils/normalizeResponse";
 
-interface Poststate extends NormalizeState<FetchPostType> {}
+interface Poststate extends NormalizeState<FetchPostType> {
+  loadingComments: { [key: string]: boolean }; // For fetching more post - postId: string
+}
 
 // Create the initial state using the adapter
 const initialState: Poststate = {
@@ -18,6 +20,7 @@ const initialState: Poststate = {
   allIds: [],
   loading: false,
   error: null,
+  loadingComments: {},
 };
 
 export const fetchAllPost = createAsyncThunk(
@@ -25,8 +28,6 @@ export const fetchAllPost = createAsyncThunk(
   async (_: void, { rejectWithValue }) => {
     try {
       const response = await postApi.fetchPost();
-
-      console.log("recieves post: ", response);
 
       if (!response.success) {
         return rejectWithValue(response.message || "Fetching posts failed");
@@ -68,52 +69,22 @@ export const toggleLike = createAsyncThunk(
     const userId = user.currentUserId!;
     const accessToken = auth.accessToken;
 
-    console.log("toggle like function in slice");
-
     if (!postId) throw new Error("No Post Id attached");
 
     if (!accessToken) throw new Error("Unauthorize");
+    dispatch(postLiked({ postId, userId }));
 
     try {
-      console.log("proccesing", accessToken, postId);
-
       const res = await postApi.toggleLike(accessToken, postId);
-
-      console.log("API RES IN SLICE: ", res);
 
       if (!res?.success)
         rejectWithValue(
           res?.message || "Faild to persist like data into POST object"
         );
 
-      dispatch(postLiked({ postId, userId }));
       return res;
     } catch (error) {
       return rejectWithValue("Error Uploading post");
-    }
-  }
-);
-
-export const addComment = createAsyncThunk(
-  "posts/add-comment",
-  async (data: CommentEventPayload, { rejectWithValue, dispatch }) => {
-    try {
-      console.log("Adding comments ", data);
-
-      const res = await postApi.uploadComment(data);
-      console.log("reponse: ", res);
-
-      if (res.success) {
-        // the reason we get this payload is to have accurate date for the comment
-        const resData: CommentEventPayload = {
-          postId: data.postId,
-          data: res.commentData!,
-        };
-        dispatch(commentOnPost(resData));
-      }
-      return res;
-    } catch (error) {
-      return rejectWithValue("Error adding comment: " + error);
     }
   }
 );
@@ -198,12 +169,6 @@ const postsSlice = createSlice({
   name: "posts",
   initialState,
   reducers: {
-    toggle: (
-      _,
-      action: PayloadAction<{ postId: string; userId: string }>
-    ): void => {
-      console.log(action.payload);
-    },
     resetData: (state) => {
       state.allIds = [];
       state.byId = {};
@@ -242,6 +207,7 @@ const postsSlice = createSlice({
     ): void => {
       if (state.byId[action.payload.postId]) {
         const { data, postId } = action.payload;
+
         const commentData = {
           user: data.user,
           content: data.content,
@@ -286,7 +252,7 @@ const postsSlice = createSlice({
       .addCase(fetchAllPost.fulfilled, (state, action) => {
         const { allIds, byId } = normalizeResponse(action.payload);
 
-        console.log("byid", byId);
+        console.log("All post fetch: ", byId);
 
         // Reset all data in the state
         state.byId = {};
@@ -306,13 +272,13 @@ const postsSlice = createSlice({
         state.loading = true;
       })
       .addCase(createPost.fulfilled, (state, action) => {
-        state.loading = false;
         const { byId, allIds } = normalizeResponse(action.payload.posts);
 
         if (!state.allIds.includes(allIds[0])) {
           state.allIds = [allIds[0], ...state.allIds]; // Put the latest post in the first index, to sort it
         }
         state.byId = { ...state.byId, ...byId };
+        state.loading = false;
       })
       .addCase(createPost.rejected, (state, action) => {
         state.loading = false;
@@ -325,14 +291,6 @@ const postsSlice = createSlice({
         state.error = action.payload as string;
       })
 
-      // add-comment
-      .addCase(addComment.fulfilled, (state) => {
-        state.error = null;
-      })
-      .addCase(addComment.rejected, (state, action) => {
-        state.error = action.payload as string;
-      })
-
       // get post by id
       .addCase(fetchPost.pending, (state) => {
         state.loading = true;
@@ -340,11 +298,12 @@ const postsSlice = createSlice({
       })
       .addCase(fetchPost.fulfilled, (state, action) => {
         const { byId, allIds } = normalizeResponse(action.payload.posts);
-        state.loading = false;
+
         if (!state.allIds.includes(allIds[0]) && !state.byId[allIds[0]]) {
           state.allIds.unshift(allIds[0]);
           state.byId = { ...state.byId, ...byId };
         }
+        state.loading = false;
       })
       .addCase(fetchPost.rejected, (state, action) => {
         state.loading = false;
@@ -372,7 +331,6 @@ const postsSlice = createSlice({
 });
 
 export const {
-  toggle,
   postLiked,
   commentOnPost,
   addPost,

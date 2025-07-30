@@ -1,7 +1,6 @@
-import "./ViewPostModal.css";
-
+import "./Viewpost.css";
 import { AppDispatch } from "../../../store/store";
-import { fetchComments } from "../../../features/posts/postSlice";
+import { fetchComments } from "../postSlice";
 
 interface CommentsFetcherProp {
   hasMore: boolean;
@@ -14,7 +13,7 @@ interface CommentsFetcherProp {
   lastScrollRef: React.MutableRefObject<number>;
 }
 
-const CommentsFetcher = ({
+const ViewPostCommentFetcher = ({
   hasMore,
   postId,
   cursor,
@@ -26,6 +25,8 @@ const CommentsFetcher = ({
 }: CommentsFetcherProp) => {
   const fetchMore = async () => {
     try {
+      console.log("FETCHING MORE COMMENTS IN VIEWEPOSER");
+
       if (!scrollRef.current) {
         console.error("Scroll element is not initialize");
         return;
@@ -36,6 +37,13 @@ const CommentsFetcher = ({
 
       const res = await dispatch(fetchComments({ postId, cursor })).unwrap();
       const { hasMore, nextCursor } = res!;
+
+      console.log(
+        "Fectch more comment res",
+        hasMore,
+        " next cursor: ",
+        nextCursor
+      );
 
       setCursor(nextCursor);
       setHasMore(hasMore);
@@ -57,7 +65,7 @@ const CommentsFetcher = ({
   return (
     <>
       {hasMore && (
-        <div className="comment-fetcher" onClick={fetchMore}>
+        <div className="viewPost-comment-fetcher" onClick={fetchMore}>
           <span> View more....</span>
         </div>
       )}
@@ -65,4 +73,4 @@ const CommentsFetcher = ({
   );
 };
 
-export default CommentsFetcher;
+export default ViewPostCommentFetcher;
