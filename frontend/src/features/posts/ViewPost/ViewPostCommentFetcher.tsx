@@ -1,6 +1,5 @@
 import "./Viewpost.css";
 import { AppDispatch } from "../../../store/store";
-import { fetchComments } from "../postSlice";
 
 interface CommentsFetcherProp {
   hasMore: boolean;
@@ -34,19 +33,6 @@ const ViewPostCommentFetcher = ({
 
       const scrollElement = scrollRef.current;
       lastScrollRef.current = scrollElement?.scrollHeight;
-
-      const res = await dispatch(fetchComments({ postId, cursor })).unwrap();
-      const { hasMore, nextCursor } = res!;
-
-      console.log(
-        "Fectch more comment res",
-        hasMore,
-        " next cursor: ",
-        nextCursor
-      );
-
-      setCursor(nextCursor);
-      setHasMore(hasMore);
 
       // adjust scrollPosition
       setNewSrollHeight(scrollElement);

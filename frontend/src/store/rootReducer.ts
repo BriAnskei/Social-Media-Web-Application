@@ -7,11 +7,13 @@ import conversationReducer from "../features/messenger/Conversation/conversation
 import notificationReducer from "../features/notifications/notificationsSlice";
 import postReducer from "../features/posts/postSlice";
 import globalReducer from "../Components/Modal/globalSlice";
+import commentReducer from "../features/comment/commentSlice";
 
 const rootReducer = combineReducers({
   user: userReducer,
   auth: authReducer,
   posts: postReducer,
+  comments: commentReducer,
   contact: contactReducer,
   message: messageReducer,
   conversation: conversationReducer,

@@ -12,14 +12,16 @@ import { emitComment } from "../events/emitters";
 
 connectDb();
 
+console.log("✅ notification worker started");
+
 interface PostCommentPayload {
   postId: string;
   postOwnerId: string;
-  postOwnerFullName: string;
+  postOwnerName: string;
 }
 
 interface JobPayload {
-  sender: UserData;
+  user: UserData;
   post: PostCommentPayload;
   createdAt: Date;
 }
@@ -30,9 +32,11 @@ new Worker(
     try {
       const payload = job.data as JobPayload;
 
+      console.log("notf worker payload recievd: ", payload);
+
       const userIds = await commentService.getUsersUniqueIds({
         postId: payload.post.postId,
-        userId: payload.sender.id,
+        userId: payload.user._id,
       });
 
       await processNotification(userIds, payload);
@@ -51,7 +55,7 @@ async function processNotification(
     for (const id of userIds) {
       const notifDoc = await notifService.addCommentNotif({
         ...generateNotificationPayload(id, payload),
-        sender: payload.sender.id,
+        sender: payload.user._id,
       });
 
       await emitComment(notifDoc);
@@ -64,17 +68,22 @@ async function processNotification(
 function generateNotificationPayload(id: Types.ObjectId, payload: JobPayload) {
   return {
     receiver: id.toString(),
-    sender: payload.sender,
+    sender: payload.user,
     post: payload.post.postId,
-    message: `${
-      payload.post.postOwnerId === id.toString()
-        ? "Commented in his post"
-        : `${payload.sender.fullName.split("")[0]} commented on ${
-            payload.post.postOwnerFullName.split("")[0]
-          }'s post`
-    }`,
+    message: generateMessage(payload, id),
     type: "comment",
     read: false,
     createdAt: payload.createdAt,
   };
+}
+function generateMessage(payload: JobPayload, id: Types.ObjectId) {
+  return `${
+    payload.post.postOwnerId === payload.user._id
+      ? "Commented on his post"
+      : payload.post.postOwnerId === id.toString()
+      ? "commented on your post"
+      : `${payload.user.fullName.split("")[0]} commented on ${
+          payload.post.postOwnerName.split("")[0]
+        }'s post`
+  }`;
 }

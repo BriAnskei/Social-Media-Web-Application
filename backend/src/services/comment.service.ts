@@ -3,9 +3,10 @@ import CommentModel, { IComment } from "../models/commentModel";
 import { errorLog } from "./errHandler";
 import { notificationQueue } from "../queues/notification/notificationQueue";
 import { commentQueue } from "../queues/post/commentQueue";
+import { getErrDelayjson } from "../queues/getErrDelayjson";
 
 export interface UserData {
-  id: string;
+  _id: string;
   profilePicture?: string;
   fullName: string;
 }
@@ -32,11 +33,7 @@ export const commentService = {
         getErrDelayjson()
       );
 
-      await notificationQueue.add(
-        "notifyComment",
-        generatePostCommentPayload(payload),
-        getErrDelayjson()
-      );
+      await notificationQueue.add("notifyComment", payload, getErrDelayjson());
     } catch (error) {
       errorLog("commentService", error as Error);
       throw error;
@@ -49,6 +46,8 @@ export const commentService = {
     createdAt: Date;
   }) => {
     try {
+      console.log("Creted comment payload: ", payload);
+
       await CommentModel.create(payload);
     } catch (error) {
       throw error;
@@ -72,18 +71,31 @@ export const commentService = {
   getComments: async (payload: {
     postId: string;
     cursor?: string;
-  }): Promise<IComment[]> => {
+    limit?: number;
+  }): Promise<{ comments: IComment[]; hasMore: boolean }> => {
     try {
       let comments = {} as IComment[];
-      const { cursor, postId } = payload;
-      if (cursor) {
-        comments = await CommentModel.find({
-          postId,
-          createdAt: { $lt: new Date(cursor) },
-        }).populate("user", "fullName username profilePicture ");
+      const { cursor, postId, limit = 10 } = payload;
+
+      comments = await CommentModel.find({
+        postId,
+        ...(cursor && { createdAt: { $lt: new Date(cursor) } }),
+      })
+        .populate("user", "fullName username profilePicture ")
+        .sort({ createdAt: -1 })
+        .limit(limit + 1)
+        .lean();
+
+      const hasMore = comments.length > limit;
+      if (hasMore) {
+        comments.pop();
       }
 
-      return comments;
+      comments = comments.sort(
+        (a, b) => a.createdAt.getTime() - b.createdAt.getTime()
+      );
+
+      return { comments, hasMore };
     } catch (error) {
       throw error;
     }
@@ -98,11 +110,11 @@ interface CommentPayload {
   createdAt: Date;
 }
 
-export const generateCommentPayload = async (
+export const generateCommentPayload = (
   payload: CommentRequestPayload
-): Promise<CommentPayload> => {
+): CommentPayload => {
   return {
-    user: payload.user.id,
+    user: payload.user._id,
     postId: payload.post.postId,
     content: payload.content,
     createdAt: payload.createdAt,

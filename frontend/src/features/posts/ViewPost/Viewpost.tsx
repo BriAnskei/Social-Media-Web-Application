@@ -1,23 +1,18 @@
 import "./Viewpost.css";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "../../../store/store";
-import { addComment, fetchPost, toggleLike } from "../postSlice";
+import { fetchPost, toggleLike } from "../postSlice";
 import { usePostById } from "../../../hooks/usePost";
 import Spinner from "../../../Components/Spinner/Spinner";
-import {
-  useCurrentUser,
-  useUserById,
-  useUsersById,
-} from "../../../hooks/useUsers";
+import { useCurrentUser } from "../../../hooks/useUsers";
 import { useSocket } from "../../../hooks/socket/useSocket";
 import AutoResizeTextarea from "../../../utils/AutoResizeTextaria";
-import { CommentEventPayload } from "../../../types/PostType";
 import { useNavigate } from "react-router";
 import { FetchedUserType } from "../../../types/user";
 import { viewProfile } from "../../../Components/Modal/globalSlice";
 import { usePopoverContext } from "../../../hooks/usePopover";
-import { getMessageImageUrl, userProfile } from "../../../utils/ImageUrlHelper";
+import { userProfile } from "../../../utils/ImageUrlHelper";
 import ViewPostCommentList from "./ViewPostCommentList";
 
 interface Post {
@@ -90,17 +85,6 @@ const ViewPost = ({ postId }: Post) => {
     if (!commentInput.trim()) return;
 
     try {
-      const data: CommentEventPayload = {
-        postId: postData._id,
-        data: {
-          user: currentUser._id,
-          content: commentInput,
-          createdAt: new Date().toISOString(),
-        },
-      };
-
-      await dispatch(addComment(data)).unwrap();
-
       setCommentInput("");
     } catch (error) {
       console.log(error);

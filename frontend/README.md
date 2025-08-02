@@ -798,3 +798,227 @@ If these props are reused or deeply nested, consider storing them in a React Con
 ---
 
 _Last updated: July 2025_
+
+# Frontend Development Notes
+
+## React Component Best Practices
+
+### React Component Naming Convention
+
+#### ✅ Critical Rule: Always Use PascalCase
+
+React components must start with an uppercase letter (PascalCase) in both definition and usage. If a component name starts with a lowercase letter, JSX will treat it as a native HTML element, not a custom React component.
+
+#### Common Error
+
+```tsx
+// ❌ Wrong - causes JSX error
+export const myComponent = () => <div>Hello</div>;
+
+<myComponent />; // Error: Property 'componentName' does not exist on type 'JSX.IntrinsicElements'
+```
+
+#### Correct Implementation
+
+```tsx
+// ✅ Correct - proper PascalCase
+export const MyComponent = () => <div>Hello</div>;
+
+<MyComponent />; // Works as expected
+```
+
+#### Best Practice Guidelines
+
+- **Always use PascalCase** for:
+  - Exported component names
+  - JSX usage of components
+- This makes it clear to React that the tag is a custom component, not a native HTML tag
+
+---
+
+## Clean Architecture in React
+
+### Moving Complex Logic Out of Components
+
+To keep React components clean and maintainable, follow the **Single Responsibility Principle** and extract complex logic.
+
+#### When to Extract Logic
+
+| Logic Type                                 | Solution                 | Reason                        |
+| ------------------------------------------ | ------------------------ | ----------------------------- |
+| Uses React features (state, refs, effects) | Create a custom hook     | Maintains React context       |
+| Pure JavaScript (no React dependencies)    | Move to utility function | Better separation of concerns |
+
+### Example: Extracting Load More Messages Logic
+
+#### Before: Complex Logic in Component
+
+```tsx
+// ❌ Too much logic in component
+const ChatBox = () => {
+  const loadMoreMessages = useCallback(async () => {
+    if (!hasMore || !scrollRef.current || !conversationId) return;
+
+    setIsFetchingMore(true);
+    const scrollElement = scrollRef.current;
+    lastScrollRef.current = scrollElement.scrollHeight;
+
+    const cursor = messages[0]?.createdAt;
+    if (!cursor) return;
+
+    await fetchMessages(conversationId, cursor);
+
+    setTimeout(() => {
+      const newHeight = scrollElement.scrollHeight;
+      scrollElement.scrollTop = newHeight - lastScrollRef.current;
+      setIsFetchingMore(false);
+    }, 0);
+  }, [hasMore, messages, conversationId]);
+
+  // ... rest of component
+};
+```
+
+#### After: Custom Hook Solution
+
+```tsx
+// ✅ Clean custom hook
+// hooks/useLoadMoreMessages.ts
+import { useCallback } from "react";
+
+interface LoadMoreConfig {
+  hasMore: boolean;
+  messages: Message[];
+  conversationId: string;
+  scrollRef: React.RefObject<HTMLElement>;
+  lastScrollRef: React.MutableRefObject<number>;
+  fetchMessages: (id: string, cursor: string) => Promise<void>;
+  setIsFetchingMore: (fetching: boolean) => void;
+}
+
+export const useLoadMoreMessages = (config: LoadMoreConfig) => {
+  const {
+    hasMore,
+    messages,
+    conversationId,
+    scrollRef,
+    lastScrollRef,
+    fetchMessages,
+    setIsFetchingMore,
+  } = config;
+
+  const loadMoreMessages = useCallback(async () => {
+    if (!hasMore || !scrollRef.current || !conversationId) return;
+
+    setIsFetchingMore(true);
+    const scrollElement = scrollRef.current;
+    lastScrollRef.current = scrollElement.scrollHeight;
+
+    const cursor = messages[0]?.createdAt;
+    if (!cursor) return;
+
+    await fetchMessages(conversationId, cursor);
+
+    setTimeout(() => {
+      const newHeight = scrollElement.scrollHeight;
+      scrollElement.scrollTop = newHeight - lastScrollRef.current;
+      setIsFetchingMore(false);
+    }, 0);
+  }, [
+    hasMore,
+    messages,
+    conversationId,
+    scrollRef,
+    lastScrollRef,
+    fetchMessages,
+    setIsFetchingMore,
+  ]);
+
+  return loadMoreMessages;
+};
+```
+
+#### Clean Component Usage
+
+```tsx
+// ✅ Clean component
+import { useLoadMoreMessages } from "../hooks/useLoadMoreMessages";
+
+const ChatBox = () => {
+  const loadMoreMessages = useLoadMoreMessages({
+    hasMore,
+    messages,
+    conversationId,
+    scrollRef,
+    lastScrollRef,
+    fetchMessages,
+    setIsFetchingMore,
+  });
+
+  // ... rest of component logic
+};
+```
+
+### Clean Code Principle: Reducing Function Arguments
+
+#### ❌ Problem: Too Many Arguments
+
+Functions with more than 2-3 arguments violate clean code principles:
+
+- Harder to read and understand
+- More error-prone
+- Difficult to test and maintain
+
+#### ✅ Solution: Configuration Objects
+
+Instead of multiple individual arguments, group related parameters into a configuration object.
+
+**Benefits:**
+
+- Function only takes 1 argument
+- Cleaner and easier to extend
+- Reduces confusion and coupling
+- Encourages logical grouping of related data
+
+### Recommended Folder Structure
+
+```
+src/
+├── components/
+│   └── ChatBox/
+│       ├── ChatBox.tsx
+│       └── hooks/
+│           └── useLoadMoreMessages.ts
+├── utils/
+│   └── scrollHelpers.ts
+├── services/
+│   └── api.ts
+```
+
+### Benefits of This Architecture
+
+1. **Code Readability** - Cleaner, more focused components
+2. **Reusability** - Logic can be shared across components
+3. **Testability** - Easier to unit test extracted logic
+4. **Maintenance** - Changes are isolated to specific areas
+
+---
+
+## API Integration with Axios
+
+### HTTP Request Data Locations
+
+| Purpose             | Frontend (Axios)                                                            | Data Location      |
+| ------------------- | --------------------------------------------------------------------------- | ------------------ |
+| Get resource by ID  | `axios.get("/posts/123")`                                                   | URL path parameter |
+| Search with keyword | `axios.get("/search", { params: { q: "react" } })`                          | Query parameter    |
+| Create new post     | `axios.post("/posts", { title: "My post", content: "Hello" })`              | Request body       |
+| Authentication      | `axios.get("/protected", { headers: { Authorization: "Bearer <token>" } })` | Request headers    |
+
+### Best Practices for API Calls
+
+1. **Use appropriate HTTP methods** for different operations
+2. **Structure data correctly** based on the operation type
+3. **Handle authentication** through headers, not request body
+4. **Use query parameters** for filtering and search operations
+5. **Use request body** for creating and updating resources

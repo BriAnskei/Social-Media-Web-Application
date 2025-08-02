@@ -1,7 +1,7 @@
 import { ContactType } from "./contactType";
 import { ConversationType, Message } from "./MessengerTypes";
 import { NotificationType } from "./NotificationTypes";
-import { FetchPostType } from "./PostType";
+import { CommentType, FetchPostType } from "./PostType";
 import { FetchedUserType } from "./user";
 
 export interface MessageApiResponse {
@@ -18,5 +18,6 @@ export interface ApiResponse {
   message?: string;
   user?: FetchedUserType[] | FetchedUserType;
   posts?: FetchPostType[] | FetchPostType;
+  comments?: CommentType[] | CommentType;
   notifications?: NotificationType[] | NotificationType;
 }

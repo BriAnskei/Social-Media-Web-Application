@@ -1,29 +1,29 @@
 import "./ViewPostModal.css";
 
 import { AppDispatch } from "../../../store/store";
-import { fetchComments } from "../../../features/posts/postSlice";
+import { CommentType } from "../../../types/PostType";
+import { useEffect, useRef, useState } from "react";
+import { fetchComments } from "../../../features/comment/commentSlice";
 
 interface CommentsFetcherProp {
   hasMore: boolean;
   postId: string;
-  cursor: string;
-  setHasMore: (n: boolean) => void;
-  setCursor: (n: string) => void;
   dispatch: AppDispatch;
   scrollRef: React.RefObject<HTMLElement>;
-  lastScrollRef: React.MutableRefObject<number>;
+  loading: boolean;
+  comments: CommentType[];
 }
 
 const CommentsFetcher = ({
   hasMore,
-  postId,
-  cursor,
-  setHasMore,
-  setCursor,
   dispatch,
   scrollRef,
-  lastScrollRef,
+  postId,
+  loading,
+
+  comments,
 }: CommentsFetcherProp) => {
+  const lastScrollRef = useRef<number>(0);
   const fetchMore = async () => {
     try {
       if (!scrollRef.current) {
@@ -34,19 +34,19 @@ const CommentsFetcher = ({
       const scrollElement = scrollRef.current;
       lastScrollRef.current = scrollElement?.scrollHeight;
 
-      const res = await dispatch(fetchComments({ postId, cursor })).unwrap();
-      const { hasMore, nextCursor } = res!;
+      await dispatch(
+        fetchComments({
+          postId,
+          cursor: comments[0].createdAt,
+        })
+      );
 
-      setCursor(nextCursor);
-      setHasMore(hasMore);
-
-      // adjust scrollPosition
-      setNewSrollHeight(scrollElement);
+      adjustScrollView(scrollElement);
     } catch (error) {
       console.log("fetchMore-comment, ", error);
     }
 
-    function setNewSrollHeight(scrollElement: HTMLElement) {
+    function adjustScrollView(scrollElement: HTMLElement) {
       setTimeout(() => {
         const newHeight = scrollElement.scrollHeight;
         scrollElement.scrollTop = newHeight - lastScrollRef.current;
@@ -56,7 +56,7 @@ const CommentsFetcher = ({
 
   return (
     <>
-      {hasMore && (
+      {hasMore && !loading && (
         <div className="comment-fetcher" onClick={fetchMore}>
           <span> View more....</span>
         </div>

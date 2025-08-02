@@ -9,6 +9,7 @@ import { uploadQueue } from "../queues/post/uploadQueue";
 
 import { ObjectId } from "mongodb";
 import { errorLog } from "../services/errHandler";
+import { getErrDelayjson } from "../queues/getErrDelayjson";
 
 export interface ExtentRequest extends Request {
   userId?: string;
@@ -79,8 +80,12 @@ export const updatePost = async (req: Request, res: Response): Promise<any> => {
 
 export const postsLists = async (_: Request, res: Response): Promise<void> => {
   try {
-    const posts = postService.fetchAllPost();
-    res.json({ success: true, message: "message fetche", posts });
+    let posts = await postService.fetchAllPost();
+    res.json({
+      success: true,
+      message: "post fetched",
+      posts: posts,
+    });
   } catch (error) {
     errorLog("postsLists", error as Error);
     res.json({ success: false, message: "Error" });

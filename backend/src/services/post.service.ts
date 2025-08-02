@@ -5,11 +5,13 @@ import postModel, { IPost } from "../models/postModel";
 export const postService = {
   fetchAllPost: async () => {
     try {
-      return await postModel
+      const posts = await postModel
         .find()
-        .populate("user", "fullName username profilePicture")
-        .populate("comments")
+        .populate("user", "fullName username profilePicture followers")
+        .populate("totalComments")
         .lean();
+
+      return posts;
     } catch (error) {
       throw error;
     }
@@ -102,7 +104,3 @@ export const postRequestHanlder = {
     }
   },
 };
-
-export function postServiceLogError(functionName: string, error: Error) {
-  console.error(`${functionName}, ${error}}`);
-}

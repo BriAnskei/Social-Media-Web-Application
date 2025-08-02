@@ -1,18 +1,12 @@
 import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
 
 import { postApi } from "../../utils/api";
-import {
-  CommentEventPayload,
-  FetchPostType,
-  LikeHandlerTypes,
-} from "../../types/PostType";
+import { FetchPostType, LikeHandlerTypes } from "../../types/PostType";
 import { NormalizeState } from "../../types/NormalizeType";
 import { RootState } from "../../store/store";
 import { normalizeResponse } from "../../utils/normalizeResponse";
 
-interface Poststate extends NormalizeState<FetchPostType> {
-  loadingComments: { [key: string]: boolean }; // For fetching more post - postId: string
-}
+interface Poststate extends NormalizeState<FetchPostType> {}
 
 // Create the initial state using the adapter
 const initialState: Poststate = {
@@ -20,7 +14,6 @@ const initialState: Poststate = {
   allIds: [],
   loading: false,
   error: null,
-  loadingComments: {},
 };
 
 export const fetchAllPost = createAsyncThunk(
@@ -33,7 +26,7 @@ export const fetchAllPost = createAsyncThunk(
         return rejectWithValue(response.message || "Fetching posts failed");
       }
 
-      return response.posts;
+      return response;
     } catch (error: any) {
       return rejectWithValue("Fetching posts failed");
     }
@@ -201,24 +194,7 @@ const postsSlice = createSlice({
       }
       state.byId = { ...state.byId, ...byId };
     },
-    commentOnPost: (
-      state,
-      action: PayloadAction<CommentEventPayload>
-    ): void => {
-      if (state.byId[action.payload.postId]) {
-        const { data, postId } = action.payload;
 
-        const commentData = {
-          user: data.user,
-          content: data.content,
-          createdAt: data.createdAt!,
-        };
-
-        if (state.byId[postId]) {
-          state.byId[postId].comments.push(commentData);
-        }
-      }
-    },
     update: (state, action: PayloadAction<FetchPostType>) => {
       const postData = action.payload;
 
@@ -241,6 +217,10 @@ const postsSlice = createSlice({
         console.error("failed to delete", error);
       }
     },
+    increamentComment: (state, action) => {
+      const postId: string = action.payload;
+      state.byId[postId].totalComments += 1;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -250,9 +230,7 @@ const postsSlice = createSlice({
         state.error = null;
       })
       .addCase(fetchAllPost.fulfilled, (state, action) => {
-        const { allIds, byId } = normalizeResponse(action.payload);
-
-        console.log("All post fetch: ", byId);
+        const { allIds, byId } = normalizeResponse(action.payload.posts);
 
         // Reset all data in the state
         state.byId = {};
@@ -272,7 +250,9 @@ const postsSlice = createSlice({
         state.loading = true;
       })
       .addCase(createPost.fulfilled, (state, action) => {
-        const { byId, allIds } = normalizeResponse(action.payload.posts);
+        const { byId, allIds } = normalizeResponse(
+          action.payload.posts as FetchPostType[]
+        );
 
         if (!state.allIds.includes(allIds[0])) {
           state.allIds = [allIds[0], ...state.allIds]; // Put the latest post in the first index, to sort it
@@ -297,9 +277,13 @@ const postsSlice = createSlice({
         state.error = null;
       })
       .addCase(fetchPost.fulfilled, (state, action) => {
+        console.log("PAYLOAD RESPONSE: ", action.payload);
+
         const { byId, allIds } = normalizeResponse(action.payload.posts);
 
         if (!state.allIds.includes(allIds[0]) && !state.byId[allIds[0]]) {
+          console.log("ID IS NOT IN THA POSTSS");
+
           state.allIds.unshift(allIds[0]);
           state.byId = { ...state.byId, ...byId };
         }
@@ -332,7 +316,7 @@ const postsSlice = createSlice({
 
 export const {
   postLiked,
-  commentOnPost,
+  increamentComment,
   addPost,
   resetData,
   update,

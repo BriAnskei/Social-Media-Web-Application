@@ -18,6 +18,7 @@ import { messageQueue } from "./queues/messageQueues";
 import { likeQueue } from "./queues/post/likeQueue";
 import { commentQueue } from "./queues/post/commentQueue";
 import { uploadQueue } from "./queues/post/uploadQueue";
+import commentRouter from "./routes/commentRoutes";
 
 // connect Database
 connectDb();
@@ -70,6 +71,7 @@ app.use(
 app.use("/api/notify", notifRouter);
 app.use("/api/users", userRouter);
 app.use("/api/posts", postRouter);
+app.use("/api/comment", commentRouter);
 app.use("/api/token", authRoutes);
 app.use("/api/messages", messageRouter);
 

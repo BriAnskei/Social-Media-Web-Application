@@ -22,10 +22,9 @@ import {
 
 interface Post {
   post: FetchPostType;
-  ownerId: string;
 }
 
-const Post = ({ post, ownerId }: Post) => {
+const Post = ({ post }: Post) => {
   const { currentUser } = useCurrentUser();
   const { popover } = usePopoverContext();
   const { emitLike, emitFollow } = useSocket();
@@ -51,7 +50,7 @@ const Post = ({ post, ownerId }: Post) => {
 
   // Validate if current post is liked
   useEffect(() => {
-    const isLiked = post.likes.includes(currentUser._id!);
+    const isLiked = post.likes?.includes(currentUser._id!);
     setLiked(isLiked);
   }, [post, currentUser._id]);
 
@@ -59,7 +58,7 @@ const Post = ({ post, ownerId }: Post) => {
     if (post.user !== currentUser._id) {
       validateFollow();
     }
-  }, [postOwnerData.followers, currentUser.following]);
+  }, [postOwnerData?.followers, currentUser?.following]);
 
   const viewPostOwnerProf = () => {
     if (!(Object.keys(postOwnerData).length > 0))
@@ -74,10 +73,10 @@ const Post = ({ post, ownerId }: Post) => {
   };
 
   const validateFollow = () => {
-    if (!postOwnerData.followers || !currentUser._id) return;
+    if (!postOwnerData?.followers || !currentUser?._id) return;
 
     // check if the current user follows the post owner, this will prevent to show the follow button
-    if (postOwnerData.followers.includes(currentUser._id)) {
+    if (postOwnerData.followers?.includes(currentUser._id)) {
       // check if this component triggered the follow. if so, wait for 3 sec before removing the follow button
       if (!toggleFollow) {
         setFollowToggleClass("");
@@ -157,7 +156,7 @@ const Post = ({ post, ownerId }: Post) => {
   const isFollowedShow =
     !isOwnerFollowed &&
     followToggleClass !== "" &&
-    postOwnerData._id !== currentUser._id;
+    postOwnerData?._id !== currentUser._id;
 
   return (
     <>
@@ -165,13 +164,13 @@ const Post = ({ post, ownerId }: Post) => {
         <div className="post-info">
           <div className="profile-name">
             <img
-              src={`http://localhost:4000/uploads/profile/${postOwnerData._id}/${postOwnerData.profilePicture}`}
+              src={`http://localhost:4000/uploads/profile/${postOwnerData?._id}/${postOwnerData?.profilePicture}`}
               style={{ cursor: "pointer" }}
               onClick={viewPostOwnerProf}
             />
             <div className="name-date">
               <h3 style={{ cursor: "pointer" }} onClick={viewPostOwnerProf}>
-                {postOwnerData.fullName}
+                {postOwnerData?.fullName}
               </h3>
               <span>{new Date(post.createdAt).toLocaleString()}</span>
             </div>
@@ -216,7 +215,7 @@ const Post = ({ post, ownerId }: Post) => {
         <div className="post-counter">
           {/* // Only Display if there is atleast 1 like/comment */}
           <span>
-            {post.likes.length > 0 &&
+            {post.likes?.length > 0 &&
               `${post.likes.length} Like${post.likes.length > 1 ? "s" : ""}`}
           </span>
           <span>

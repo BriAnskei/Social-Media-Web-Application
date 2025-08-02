@@ -6,6 +6,7 @@ import { AppDispatch, RootState } from "../../../store/store";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchAllPost } from "../postSlice";
 import Spinner from "../../../Components/Spinner/Spinner";
+import { FetchedUserType } from "../../../types/user";
 
 const PostList = () => {
   const dispatch: AppDispatch = useDispatch();
@@ -40,7 +41,7 @@ const PostList = () => {
 
             return (
               <div key={postId}>
-                <Post post={post} ownerId={post.user} />
+                <Post post={post} />
               </div>
             );
           })

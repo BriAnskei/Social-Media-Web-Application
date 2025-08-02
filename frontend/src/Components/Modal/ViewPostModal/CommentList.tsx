@@ -1,72 +1,96 @@
 import "./ViewPostModal.css";
 import { useEffect, useRef, useState } from "react";
 import { FetchedUserType } from "../../../types/user";
-import { usePostById } from "../../../hooks/usePost";
 
 import { AppDispatch } from "../../../store/store";
 import { userProfile } from "../../../utils/ImageUrlHelper";
-import CommentsFetcher from "./Commentsfetcher";
+
+import { useComment } from "../../../hooks/useComment";
+import { fetchComments } from "../../../features/comment/commentSlice";
+import CommentsFetcher from "./CommentsFetcher";
 
 interface CommentListProp {
   postId: string;
   viewUserProfile: (user: FetchedUserType) => void;
   dispatch: AppDispatch;
+  modalOnShow: boolean;
 }
 
 const CommentList = ({
   postId,
   viewUserProfile,
   dispatch,
+  modalOnShow,
 }: CommentListProp) => {
-  const { postData, fetchCommentLoading } = usePostById(postId);
-
-  const { comments, hasMoreComments } = postData;
-
-  const [hasMore, setHasMore] = useState(false);
-  const [cursor, setCursor] = useState("");
+  const { comments, hasMore, loading, err } = useComment(postId);
 
   // scroll handler ref
   const scrollRef = useRef<any>(null);
-  const lastScrollRef = useRef<number>(0);
-
   // on comment smooth scroll effect
   const buttonRef = useRef<any>(null);
 
-  useEffect(() => {
-    // set the last scroll height in the first render
-    const scrollElement = scrollRef.current;
-    lastScrollRef.current = scrollElement?.scrollHeigt;
-
-    setCursor(postData?.comments[0]?.createdAt);
-    setHasMore(hasMoreComments);
-  }, [postId]);
+  const prevCommentLenght = useRef<number>(0);
 
   useEffect(() => {
-    buttonRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [comments.length]);
+    const fetchInitialComments = async () => {
+      try {
+        if (modalOnShow) {
+          await dispatch(fetchComments({ postId }));
+        }
+      } catch (error) {
+        console.log(err, error);
+      } finally {
+      }
+    };
+
+    fetchInitialComments();
+  }, [postId, modalOnShow]);
+
+  useEffect(() => {
+    if (!comments && loading) return;
+
+    const prevLength = prevCommentLenght.current;
+    const currLenght = comments?.length;
+
+    if (currLenght === prevLength + 1 || comments?.length === 10) {
+      buttonRef.current.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+    }
+    prevCommentLenght.current = currLenght;
+  }, [comments, loading]);
+
+  function onScroll() {
+    console.log("scrollHeight: ", scrollRef.current.scrollTop);
+  }
 
   return (
     <>
-      <div className="comment-list-container" ref={scrollRef}>
-        <CommentsFetcher
-          scrollRef={scrollRef}
-          lastScrollRef={lastScrollRef}
-          dispatch={dispatch}
-          hasMore={hasMore}
-          postId={postId}
-          cursor={cursor}
-          setHasMore={setHasMore}
-          setCursor={setCursor}
-        />
+      <div
+        className="comment-list-container"
+        ref={scrollRef}
+        onScroll={onScroll}
+      >
+        <div>
+          <CommentsFetcher
+            scrollRef={scrollRef}
+            loading={loading}
+            dispatch={dispatch}
+            hasMore={hasMore}
+            postId={postId}
+            comments={comments}
+          />
 
-        {/* comment fetch-loading */}
-        {fetchCommentLoading && <div>Laoding</div>}
+          {/* comment fetch-loading */}
+          {loading && <div>Laoding</div>}
+        </div>
 
         {!comments || comments.length === 0 ? (
           <>Write a Comment</>
         ) : (
           comments.map((comment, index) => {
-            const userData = comment.user as FetchedUserType;
+            const userData = comment.user;
 
             if (!userData) return;
 
@@ -87,9 +111,7 @@ const CommentList = ({
                     </h5>
                     <span>{comment.content}</span>
                   </div>
-                  <span id="comment-date">
-                    {new Date(comment.createdAt).toLocaleString()}
-                  </span>
+                  <span id="comment-date">{comment.createdAt}</span>
                 </div>
               </div>
             );

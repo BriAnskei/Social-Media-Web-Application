@@ -211,7 +211,7 @@ export class SocketServer {
       socket.on(
         SOCKET_EVENTS.posts.COMMENT_POST,
         (data: CommentRequestPayload) => {
-          this.handleNewCommentEvent(data);
+          this.handleNewCommentEvent(socket, data);
         }
       );
     });
@@ -225,8 +225,19 @@ export class SocketServer {
     return socketData;
   }
 
-  private async handleNewCommentEvent(payLoad: CommentRequestPayload) {
+  private async handleNewCommentEvent(
+    socket: Socket,
+    payLoad: CommentRequestPayload
+  ) {
     try {
+      const boadcastPayload = {
+        user: payLoad.user,
+        postId: payLoad.post.postId,
+        content: payLoad.content,
+        createAt: payLoad.createdAt,
+      };
+      socket.broadcast.emit("postComment", boadcastPayload);
+
       await commentService.addComment(payLoad);
     } catch (error) {
       console.log("Failed on handleNewCommentEvent", error);

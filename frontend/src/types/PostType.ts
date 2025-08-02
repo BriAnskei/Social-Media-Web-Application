@@ -3,8 +3,9 @@ import { FetchedUserType } from "./user";
 
 export interface CommentType {
   user: FetchedUserType;
+  postId: string;
   content: string;
-  createdAt: Date;
+  createdAt: string;
 }
 
 export interface FetchPostType {
@@ -13,18 +14,8 @@ export interface FetchPostType {
   content: string;
   image?: string | File;
   likes: string[];
-  comments: CommentType[];
-  hasMoreComments: boolean;
   totalComments: number;
   createdAt: string;
-}
-
-export interface FetchCommentApiResponse {
-  commentRes?: {
-    commentToReturn: CommentType[];
-    hasMore: boolean;
-    nextCursor: string;
-  };
 }
 
 export interface CommentApiResponse extends ApiResponse {

@@ -1,11 +1,14 @@
 import React, { useEffect, useState } from "react";
 import "./ViewPostModal.css";
 import { ModalTypes } from "../../../types/modalTypes";
-import { CommentEventPayload } from "../../../types/PostType";
+
 import { useCurrentUser } from "../../../hooks/useUsers";
 import { useDispatch } from "react-redux";
 import { AppDispatch } from "../../../store/store";
-import { toggleLike } from "../../../features/posts/postSlice";
+import {
+  increamentComment,
+  toggleLike,
+} from "../../../features/posts/postSlice";
 
 import AutoResizeTextarea from "../../../utils/AutoResizeTextaria";
 import { usePostById } from "../../../hooks/usePost";
@@ -16,7 +19,11 @@ import Spinner from "../../Spinner/Spinner";
 import { viewProfile } from "../globalSlice";
 import { useNavigate } from "react-router";
 import CommentList from "./CommentList";
-import { addComment, IComment } from "../../../features/comment/commentSlice";
+import {
+  addComment,
+  resetCommets,
+} from "../../../features/comment/commentSlice";
+import { CommentType } from "../../../types/PostType";
 
 interface PostModal extends Omit<ModalTypes, "onClose"> {
   onClose: () => void;
@@ -72,6 +79,7 @@ const ViewPostModal: React.FC<PostModal> = ({ showModal, onClose, postId }) => {
 
   const ToggleClose = () => {
     setCommentInput("");
+    dispatch(resetCommets(postId));
     onClose();
   };
 
@@ -144,15 +152,16 @@ const ViewPostModal: React.FC<PostModal> = ({ showModal, onClose, postId }) => {
     };
 
     emitComment(emitionPayload);
-
-    const commentPayload: IComment = {
+    const commentPayload = {
       postId: postId,
       user: currentUser,
       content: commentInput,
-      createdAt: new Date(),
+      createdAt: new Date().toISOString(),
     };
 
     dispatch(addComment(commentPayload));
+    dispatch(increamentComment(postId));
+    setCommentInput("");
   };
 
   const viewUserProfile = (user: FetchedUserType) => {
@@ -250,13 +259,14 @@ const ViewPostModal: React.FC<PostModal> = ({ showModal, onClose, postId }) => {
                           }`}</>
                         )}
                       </span>
-                      <span>
-                        {postData.comments && postData.totalComments && (
-                          <>{`${postData.totalComments} Comment${
+
+                      {postData.totalComments && (
+                        <span>
+                          {`${postData.totalComments} Comment${
                             postData.totalComments > 1 ? "s" : ""
-                          }`}</>
-                        )}
-                      </span>
+                          }`}
+                        </span>
+                      )}
                     </div>
                     <div className="post-modal-action-cont">
                       <div
@@ -284,14 +294,15 @@ const ViewPostModal: React.FC<PostModal> = ({ showModal, onClose, postId }) => {
                         <span>Comment</span>
                       </div>
                     </div>
-                    <>
-                      {/* comment list */}
-                      <CommentList
-                        dispatch={dispatch}
-                        postId={postId}
-                        viewUserProfile={viewUserProfile}
-                      />
-                    </>
+
+                    {/* comment list */}
+                    <CommentList
+                      modalOnShow={showModal}
+                      dispatch={dispatch}
+                      postId={postId}
+                      viewUserProfile={viewUserProfile}
+                    />
+
                     <div className="comment-con-inputs">
                       <div className="post-modal-profile">
                         <img

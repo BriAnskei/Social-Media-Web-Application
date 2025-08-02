@@ -8,12 +8,7 @@ import {
   FetchPostType,
   LikeHandlerTypes,
 } from "../../types/PostType";
-import {
-  commentOnPost,
-  dropPost,
-  postLiked,
-  update,
-} from "../../features/posts/postSlice";
+import { dropPost, postLiked, update } from "../../features/posts/postSlice";
 import {
   addOrDropNotification,
   deleteList,
@@ -31,8 +26,8 @@ import {
 import { ContactType } from "../../types/contactType";
 import { useChatSocket } from "./useChatSocket";
 import { useWindowedConversation } from "../useConversation";
-import { IComment } from "../../features/comment/commentSlice";
 import { FetchedUserType } from "../../types/user";
+import { addComment } from "../../features/comment/commentSlice";
 
 export interface DataOutput {
   // for post-like notification
@@ -68,7 +63,7 @@ export const SOCKET_EVENTS = {
     // comment events
     COMMENT_POST: "commentPost",
     // server
-    POST_COMMENTED: "postCommented",
+    ADD_COMMENT: "postComment",
     COMMENT_NOTIF: "newCommentNotify",
 
     // post upload
@@ -110,12 +105,6 @@ export const useSocket = () => {
   );
 
   // comment events function
-  const handleCommentEvent = useCallback(
-    (data: CommentEventPayload) => {
-      dispatch(commentOnPost(data));
-    },
-    [dispatch]
-  );
 
   // updated post event
   const handlePostUpdateEvent = useCallback(
@@ -182,6 +171,13 @@ export const useSocket = () => {
     [dispatch]
   );
 
+  const handleAddCommentEvent = useCallback(
+    (data: any) => {
+      dispatch(addComment(data));
+    },
+    [dispatch]
+  );
+
   useEffect(() => {
     if (!accessToken) {
       dispatch(getToken());
@@ -215,13 +211,14 @@ export const useSocket = () => {
         // contact, conversation events
         socket.off(SOCKET_EVENTS.coversation.CREATE_OR_UPDATE_CONTACT);
         socket.off(SOCKET_EVENTS.coversation.UPDATE_OR_DROP_CONTACT);
+        socket.off(SOCKET_EVENTS.posts.ADD_COMMENT);
       };
 
       removeAllListener();
 
       // global event
       socket.on("postLiked", handleLikeEvent);
-      socket.on("postCommented", handleCommentEvent);
+
       socket.on(SOCKET_EVENTS.posts.POST_UPDATE, handlePostUpdateEvent);
 
       // owner event
@@ -246,6 +243,12 @@ export const useSocket = () => {
         SOCKET_EVENTS.coversation.UPDATE_OR_DROP_CONTACT,
         handleUpdateOrDropContact
       );
+
+      socket.on(SOCKET_EVENTS.posts.ADD_COMMENT, handleAddCommentEvent);
+
+      socket.onAny((eventName, ...args) => {
+        console.log("SOcket event recivedd:L ", eventName, args);
+      });
 
       socket.on("error", (error: Error) => {
         console.error("Socket error:", error);
@@ -278,6 +281,7 @@ export const useSocket = () => {
           SOCKET_EVENTS.coversation.CREATE_OR_UPDATE_CONTACT,
           handleCreateOrUpdateContact
         );
+        socket.off(SOCKET_EVENTS.posts.ADD_COMMENT);
 
         socket.off(
           SOCKET_EVENTS.coversation.UPDATE_OR_DROP_CONTACT,

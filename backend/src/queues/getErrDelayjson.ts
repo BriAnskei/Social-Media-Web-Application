@@ -1,4 +1,4 @@
-function getErrDelayjson() {
+export function getErrDelayjson() {
   return {
     attempts: 3,
     backoff: {

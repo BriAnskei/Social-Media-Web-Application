@@ -1,11 +1,5 @@
 import mongoose, { Schema, Document, Model, Types, model } from "mongoose";
 
-export interface IComment {
-  user: mongoose.Types.ObjectId;
-  content: string;
-  createdAt: Date;
-}
-
 export interface IPost extends Document {
   user: mongoose.Types.ObjectId;
   content: string;
@@ -23,7 +17,7 @@ const postSchema = new Schema<IPost>({
 });
 
 // well emplement a  Virtual Field, to count the total comments
-postSchema.virtual("comments", {
+postSchema.virtual("totalComments", {
   ref: "Comment",
   localField: "_id",
   foreignField: "postId",

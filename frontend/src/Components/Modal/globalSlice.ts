@@ -122,6 +122,7 @@ const globalSlice = createSlice({
       state.postModal.postId = action.payload;
     },
     closePostModal: (state) => {
+      state.postModal.postId = "";
       state.postModal.showPostModal = false;
     },
     viewPost: (state, action: PayloadAction<string>) => {
