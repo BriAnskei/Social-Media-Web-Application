@@ -144,12 +144,14 @@ const Post = ({ post }: Post) => {
       setLikeProgress(true);
       setLiked(!liked);
 
-      const res = await dispatch(toggleLike(post._id)).unwrap();
-      if (!res.success) setLiked(!liked); // revert change if not sucess
+      await dispatch(toggleLike(post._id)).unwrap();
+
+      // delayed timout to ensure no conflic in node app
+      setTimeout(() => {
+        setLikeProgress(false);
+      }, 200);
     } catch (err) {
       console.error(err);
-    } finally {
-      setLikeProgress(false);
     }
   };
 

@@ -1,7 +1,8 @@
 import mongoose, { Schema, Document, Model, Types, model } from "mongoose";
+import { IUser } from "./userModel";
 
 export interface IPost extends Document {
-  user: mongoose.Types.ObjectId;
+  user: mongoose.Types.ObjectId | IUser;
   content: string;
   image?: string;
   likes: mongoose.Types.ObjectId[];

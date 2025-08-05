@@ -8,6 +8,7 @@ import { userProfile } from "../../../utils/ImageUrlHelper";
 import { useComment } from "../../../hooks/useComment";
 import { fetchComments } from "../../../features/comment/commentSlice";
 import CommentsFetcher from "./CommentsFetcher";
+import { MessageSpinner } from "../../Spinner/Spinner";
 
 interface CommentListProp {
   postId: string;
@@ -46,32 +47,11 @@ const CommentList = ({
     fetchInitialComments();
   }, [postId, modalOnShow]);
 
-  useEffect(() => {
-    if (!comments && loading) return;
-
-    const prevLength = prevCommentLenght.current;
-    const currLenght = comments?.length;
-
-    if (currLenght === prevLength + 1 || comments?.length === 10) {
-      buttonRef.current.scrollIntoView({
-        behavior: "smooth",
-        block: "center",
-      });
-    }
-    prevCommentLenght.current = currLenght;
-  }, [comments, loading]);
-
-  function onScroll() {
-    console.log("scrollHeight: ", scrollRef.current.scrollTop);
-  }
+  scrollHanlder();
 
   return (
     <>
-      <div
-        className="comment-list-container"
-        ref={scrollRef}
-        onScroll={onScroll}
-      >
+      <div className="comment-list-container" ref={scrollRef}>
         <div>
           <CommentsFetcher
             scrollRef={scrollRef}
@@ -83,7 +63,11 @@ const CommentList = ({
           />
 
           {/* comment fetch-loading */}
-          {loading && <div>Laoding</div>}
+          {loading && (
+            <div className="comment-loading-flag">
+              <MessageSpinner />
+            </div>
+          )}
         </div>
 
         {!comments || comments.length === 0 ? (
@@ -121,6 +105,38 @@ const CommentList = ({
       </div>
     </>
   );
+
+  function scrollHanlder() {
+    useEffect(() => {
+      if (!comments && loading) return;
+
+      const prevLength = prevCommentLenght.current;
+      const currLenght = comments?.length;
+
+      smopthScroll();
+      instantScroll();
+
+      function smopthScroll() {
+        if (currLenght === prevLength + 1) {
+          buttonRef.current.scrollIntoView({
+            behavior: "smooth",
+            block: "center",
+          });
+        }
+      }
+
+      function instantScroll() {
+        if (comments && comments.length === 10) {
+          buttonRef.current.scrollIntoView({
+            behavior: "instant",
+            block: "end",
+          });
+        }
+      }
+
+      prevCommentLenght.current = currLenght;
+    }, [comments, loading]);
+  }
 };
 
 export default CommentList;

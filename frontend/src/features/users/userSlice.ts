@@ -193,8 +193,6 @@ const userSlice = createSlice({
         state.error = null;
       })
       .addCase(fetchCurrentUser.fulfilled, (state, action) => {
-        state.loading = false;
-
         // Get data
         const normalizedData = normalizeResponse(action.payload);
 
@@ -204,6 +202,9 @@ const userSlice = createSlice({
         }
 
         state.currentUserId = normalizedData.allIds[0];
+        console.log("Expected current user Id: ", state.currentUserId);
+
+        state.loading = false;
       })
       .addCase(fetchCurrentUser.rejected, (state, action) => {
         state.loading = false;

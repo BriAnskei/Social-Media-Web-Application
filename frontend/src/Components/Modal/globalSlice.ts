@@ -1,4 +1,4 @@
-import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { createSlice, current, PayloadAction } from "@reduxjs/toolkit";
 import { FetchedUserType } from "../../types/user";
 
 // post states
@@ -181,13 +181,12 @@ const globalSlice = createSlice({
       }
     },
     closeWindow: (state, action) => {
-      const { conversationId } = action.payload;
-
-      console.log("SLICE CONVOiD id: ", conversationId);
-
+      const convoId = action.payload;
+      console.log("CLosing window: ", convoId, current(state).chatWindows);
       state.chatWindows = state.chatWindows.filter(
-        (chatWindow) => chatWindow.conversationId !== conversationId
+        (chatWindow) => chatWindow.conversationId !== convoId
       );
+      console.log("update", current(state).chatWindows);
     },
     toggleMinimize: (state, action) => {
       const { conversationId } = action.payload;

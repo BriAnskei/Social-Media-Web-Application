@@ -1,8 +1,24 @@
+import "../models/userModel";
 import mongoose, { ClientSession } from "mongoose";
 import { ExtentRequest } from "../controllers/postController";
 import postModel, { IPost } from "../models/postModel";
+import { errorLog } from "./errHandler";
 
 export const postService = {
+  createPost: async (payload: {
+    user: mongoose.mongo.BSON.ObjectId;
+    content: any;
+    image?: string;
+  }): Promise<IPost> => {
+    try {
+      return (await postModel.create(payload)).populate(
+        "user",
+        "username fullName profilePicture"
+      );
+    } catch (error) {
+      throw errorLog("postService", error as Error);
+    }
+  },
   fetchAllPost: async () => {
     try {
       const posts = await postModel

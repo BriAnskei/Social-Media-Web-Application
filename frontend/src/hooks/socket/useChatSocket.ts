@@ -3,7 +3,7 @@ import { AppDispatch } from "../../store/store";
 import { ConversationType, Message } from "../../types/MessengerTypes";
 import { addMessage } from "../../features/messenger/Message/messengeSlice";
 import {
-  findOneConvoUpdate,
+  findOneConvoUpdateOnCloseMessage,
   setLastMessageReadByParticipant,
   setLatestMessage,
   setReadConvoMessages,
@@ -54,8 +54,6 @@ export const setupChatSocket = ({
     const { conversation, messageData } = data;
     const { _id: currUserId } = currUser;
 
-    console.log("Message On room global send: ", data);
-
     // add message in the conversation messages
     dispatch(
       addMessage({
@@ -87,7 +85,7 @@ export const setupChatSocket = ({
   const handleClosedConversationMessage = (
     data: ClosedConversationMessagePayload
   ) => {
-    dispatch(findOneConvoUpdate(data));
+    dispatch(findOneConvoUpdateOnCloseMessage(data));
   };
 
   const handleConvoOnview = (payload: { convoId: string; userId: string }) => {

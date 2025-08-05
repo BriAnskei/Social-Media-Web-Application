@@ -36,12 +36,13 @@ const ViewPostModal: React.FC<PostModal> = ({ showModal, onClose, postId }) => {
 
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
-  const { emitLike, emitFollow, emitComment } = useSocket();
+  const { emitFollow, emitComment } = useSocket();
   const { currentUser } = useCurrentUser(); // ccurrent user data
 
   const [isOwnerFollowed, setIsOwnerFollowed] = useState(false);
   const [followToggleClass, setFollowToggleClass] = useState("follow-button");
 
+  const [likeOnProgress, setLikeOnProgress] = useState<boolean>(false);
   const [isLiked, setIsLiked] = useState<boolean>(false);
   const [commentInput, setCommentInput] = useState("");
 
@@ -106,18 +107,14 @@ const ViewPostModal: React.FC<PostModal> = ({ showModal, onClose, postId }) => {
 
   const handleLike = async () => {
     try {
-      const res = await dispatch(toggleLike(postId)).unwrap();
-      // emit after succesfully saved itto DB
-      if (res) {
-        const data = {
-          postId: postId,
-          postOwnerId: postOwnerData._id,
-          userId: currentUser._id!,
-        };
+      if (likeOnProgress) return;
+      setLikeOnProgress(true);
+      setIsLiked(!isLiked);
+      await dispatch(toggleLike(postId));
 
-        emitLike(data);
-        setIsLiked(!isLiked);
-      }
+      setTimeout(() => {
+        setLikeOnProgress(false);
+      }, 200);
     } catch (error) {
       console.error(error);
     }

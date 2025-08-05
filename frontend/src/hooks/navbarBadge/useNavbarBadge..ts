@@ -22,7 +22,6 @@ export const useNavbarBadge = (
     } else {
       // Hide badge: fade out first, then stop rendering
       setIsVisible(false);
-      setShouldRender(true);
 
       const fadeOutTimer = setTimeout(() => {
         setShouldRender(false);

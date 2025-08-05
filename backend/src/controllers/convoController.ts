@@ -8,6 +8,8 @@ import {
   ConvoService,
 } from "../services/conversation.service";
 import { contactService } from "../services/contact.service";
+import { emitDeleteConvo } from "../events/emitters";
+import { IMessage } from "../models/messageModel";
 
 export interface ReqAuth extends Request {
   userId?: string;
@@ -21,7 +23,12 @@ export const findOrCreateConversation = async (
     const payload = ConvoService.buildViewPayload(req);
     const { userId, contactId } = payload;
 
-    let conversation = await ConvoService.findOneByContactIdPopulate(contactId);
+    console.log("RECIEVD PAYLOAD: ", payload);
+
+    let conversation = await ConvoService.findOneByContactIdPopulate({
+      contactId,
+      userId,
+    });
     const validUser = await contactService.validUsers(contactId);
 
     if (!validUser || !userId) {
@@ -66,18 +73,22 @@ export const findOne = async (req: ReqAuth, res: Response) => {
 
     const conversation = await ConvoService.getConvoById(convoId);
 
-    console.log("Conversation for client update: ", conversation);
-
     const formattedData = conversationFormatHelper.formatConversationData(
       conversation!,
       userId!,
       conversation?.validFor!
     );
 
+    const lastMessage = formattedData.lastMessage as IMessage;
+    const isUserLastMessageRecipien =
+      lastMessage.recipient.toString() === userId!.toString();
+
     res.json({
       success: true,
       message: "conversations found",
       conversations: formattedData,
+      ...(isUserLastMessageRecipien &&
+        !lastMessage.read && { unreadIds: [formattedData._id] }),
     });
   } catch (error) {
     console.log("Failed to getConversation, " + error);
@@ -102,11 +113,26 @@ export const getConversations = async (
         userConvoPayload.userId
       );
 
+    const unreadIds: string[] = [];
+    const userId: string = userConvoPayload.userId;
+
+    for (let convo of formattedConvoDatas) {
+      const lastMessage = convo.lastMessage as IMessage;
+
+      const isLastMessageUnread = !lastMessage.read;
+      const isRecipientCurrUser =
+        lastMessage.recipient.toString() === userId.toString();
+      if (isLastMessageUnread && isRecipientCurrUser) {
+        unreadIds.push(convo._id as string);
+      }
+    }
+
     res.json({
       success: true,
       message: "conversations fetched",
       conversations: formattedConvoDatas,
       hasMore,
+      unreadIds,
     });
   } catch (error) {
     console.log(error);
@@ -124,6 +150,8 @@ export const deleteConversation = async (
 
     if (!userId || !convoId)
       throw new Error("no user id or conversation id recieved");
+
+    emitDeleteConvo({ userId, convoId });
 
     const conversation = await Conversation.findById(convoId);
 

@@ -1,15 +1,21 @@
 import { NormalizeState } from "../../../types/NormalizeType";
 import { ConversationType, Message } from "../../../types/MessengerTypes";
-import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
+import {
+  createAsyncThunk,
+  createSlice,
+  current,
+  PayloadAction,
+} from "@reduxjs/toolkit";
 
 import { MessageApi } from "../../../utils/api";
 import { RootState } from "../../../store/store";
 import { normalizeResponse } from "../../../utils/normalizeResponse";
 import { ClosedConversationMessagePayload } from "../../../hooks/socket/useChatSocket";
+import { closeWindow } from "../../../Components/Modal/globalSlice";
 
 export const deleteConversation = createAsyncThunk(
   "conversation/drop",
-  async (conversationId: string, { getState, rejectWithValue }) => {
+  async (conversationId: string, { getState, rejectWithValue, dispatch }) => {
     try {
       const state = getState() as RootState;
       const token = state.auth.accessToken;
@@ -18,7 +24,10 @@ export const deleteConversation = createAsyncThunk(
           "Failed to delete conversation: Token is required to process this request"
         );
       }
+      dispatch(closeWindow(conversationId));
 
+      // remove it the last message is unread
+      dispatch(deleteConvoInUnRead(conversationId));
       const res = await MessageApi.conversation.drop(token, conversationId);
 
       return res;
@@ -37,6 +46,7 @@ export const fetchAllConvoList = createAsyncThunk(
   async (data: FetchConvosProps, { rejectWithValue, getState }) => {
     try {
       const state = getState() as RootState;
+
       const { accessToken } = state.auth;
       if (!accessToken) {
         return rejectWithValue("No access token to process this request");
@@ -47,9 +57,11 @@ export const fetchAllConvoList = createAsyncThunk(
         cursor: data.cursor,
       });
 
-      const { hasMore, conversations } = res;
+      console.log("COnversation response: ", res);
 
-      return { hasMore, conversations };
+      const { hasMore, conversations, unreadIds } = res;
+
+      return { hasMore, conversations, unreadIds };
     } catch (error) {
       rejectWithValue("Failed to fetch convo list: " + error || "Error");
     }
@@ -63,11 +75,10 @@ export interface openConversationPayload {
 
 export const openConversation = createAsyncThunk(
   "conversation/open",
-  async (
-    data: openConversationPayload,
-    { rejectWithValue, getState, dispatch }
-  ) => {
+  async (data: openConversationPayload, { rejectWithValue, getState }) => {
     try {
+      console.log("OPEN CONVERSATION Payload; ", data);
+
       const { auth } = getState() as RootState;
       const token = auth.accessToken;
 
@@ -87,14 +98,14 @@ export const openConversation = createAsyncThunk(
   }
 );
 
-export const findOneConvoUpdate = createAsyncThunk(
+export const findOneConvoUpdateOnCloseMessage = createAsyncThunk(
   "conversation/checkExisting",
   async (
     payload: ClosedConversationMessagePayload,
     { getState, rejectWithValue, dispatch }
   ) => {
     try {
-      const { conversation: convoPayload, messageData } = payload;
+      const { conversation: convoPayload } = payload;
 
       const { conversation, auth } = getState() as RootState;
       const { byId } = conversation;
@@ -120,9 +131,11 @@ export const findOneConvoUpdate = createAsyncThunk(
           token: accessToken!,
         });
       }
+
       return res;
     } catch (error) {
       rejectWithValue("Failed to checkConversationifExist" + error);
+    } finally {
     }
   }
 );
@@ -156,18 +169,18 @@ const conversationSlice = createSlice({
       if (!state.unreadIds.includes(convoId)) {
         state.unreadIds.push(convoId);
       }
+      console.log("ADDING UNREAD CONVO: ", current(state).unreadIds);
     },
     deleteConvoInUnRead: (state, action) => {
       const convoId = action.payload;
 
       state.unreadIds = state.unreadIds.filter(
-        (unreadId) => unreadId !== convoId
+        (id) => id.toString() !== convoId.toString()
       );
     },
     dropConversation: (state, action) => {
       const convoId = action.payload;
       const isConvoValid = Boolean(state.byId[convoId].lastMessage);
-      2;
 
       // drop conversation if there is no lastMessage
       if (!isConvoValid) {
@@ -245,18 +258,24 @@ const conversationSlice = createSlice({
       .addCase(deleteConversation.rejected, (state, action) => {
         state.error = action.payload as string;
       })
-      .addCase(findOneConvoUpdate.fulfilled, (state, action) => {
+      .addCase(findOneConvoUpdateOnCloseMessage.fulfilled, (state, action) => {
         const newConversation = action.payload?.conversations;
+        const hasUnread = action.payload?.unreadIds;
 
         if (newConversation) {
           const { byId, allIds } = normalizeResponse(newConversation);
-          console.log("Succesfully fechecd conversation: ", byId);
 
           state.byId = { ...byId, ...state.byId };
           state.allIds = [allIds[0], ...state.allIds];
+
+          if (hasUnread) {
+            state.unreadIds = [...state.unreadIds, ...hasUnread];
+          }
         }
+
+        console.log("FIndone convvo: ", hasUnread, current(state).unreadIds);
       })
-      .addCase(findOneConvoUpdate.rejected, (state, action) => {
+      .addCase(findOneConvoUpdateOnCloseMessage.rejected, (state, action) => {
         state.error = action.payload as string;
       })
       .addCase(fetchAllConvoList.pending, (state, action) => {
@@ -271,13 +290,14 @@ const conversationSlice = createSlice({
         state.error = null;
       })
       .addCase(fetchAllConvoList.fulfilled, (state, action) => {
-        const cursor = action.meta.arg.cursor;
+        const { cursor } = action.meta.arg;
         const { byId, allIds } = normalizeResponse(
           action.payload?.conversations
         );
 
         state.byId = { ...state.byId, ...byId };
         state.allIds = [...state.allIds, ...allIds];
+        state.unreadIds = action.payload?.unreadIds || [];
 
         if (cursor) {
           state.isFetchingMore = false;

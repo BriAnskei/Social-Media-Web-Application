@@ -551,7 +551,7 @@ export const MessageApi = {
     findOne: async (payload: {
       convoId: string;
       token: string;
-    }): Promise<MessageApiResponse> => {
+    }): Promise<MessageApiResponse & { unreadIds?: string[] }> => {
       try {
         const { convoId, token } = payload;
         const res = await api.post(
@@ -575,7 +575,9 @@ export const MessageApi = {
     getAll: async (data: {
       token: string;
       cursor?: string | null;
-    }): Promise<MessageApiResponse & { hasMore?: boolean }> => {
+    }): Promise<
+      MessageApiResponse & { hasMore?: boolean; unreadIds?: string[] }
+    > => {
       try {
         const { token, cursor } = data;
 

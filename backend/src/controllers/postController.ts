@@ -21,17 +21,9 @@ export const createPost = async (
   try {
     const postPayload = postRequestHanlder.getCreatePostPayload(req);
 
-    const job = await uploadQueue.add(
-      "uploadPost",
-      postPayload,
-      getErrDelayjson()
-    );
+    await uploadQueue.add("uploadPost", postPayload, getErrDelayjson());
 
-    const jobResponse = await job.waitUntilFinished(
-      getQueueEvents("uploadQueue")
-    );
-
-    res.json(jobResponse);
+    res.json({ success: true, message: "post added to queue" });
   } catch (error) {
     console.log(error);
     res.json({ success: false, message: "Error" });

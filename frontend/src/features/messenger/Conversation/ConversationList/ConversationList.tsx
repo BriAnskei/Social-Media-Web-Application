@@ -73,6 +73,8 @@ const ConversationList = ({ currentUser }: ConversationListPorp) => {
     try {
       const cursor = getCursor();
 
+      console.log("FETCHING CONVERSATION LIST: ", currentUser);
+
       const response = await dispatch(fetchAllConvoList({ cursor })).unwrap();
       const isHasMore = response?.hasMore as boolean;
 

@@ -31,6 +31,20 @@ export class MessageHanlder {
       this.convoRoomOnCLosed(socket, conversationId);
     });
   }
+
+  public handleDeleteConversation(config: {
+    userId: string;
+    convoId: string;
+  }): void {
+    const { userId, convoId } = config;
+    const convoRoom = this.getConvoRoom(convoId);
+
+    if (convoRoom) {
+      this.deleteUserInRoom(convoRoom, userId);
+    }
+    console.log("REMOVING USER IN THE ROOM FOR DELETION: ", convoRoom);
+  }
+
   private async convoRoomOnCLosed(socket: Socket, conversationId: string) {
     try {
       const conversationRoom = this.getConvoRoom(conversationId);
@@ -145,12 +159,10 @@ export class MessageHanlder {
       );
 
       if (!isCovoRoomInitialized) {
-        console.log("Setting a new room for conversation");
-
         this.activeConversations.set(conversationId, new Set());
       }
-      this.registerSocketConvoRoom({ socket, convoId: conversationId });
       this.activeConversations.get(conversationId)?.add(userId);
+      this.registerSocketConvoRoom({ socket, convoId: conversationId });
 
       this.emitConversationOnView({ convoId: conversationId, userId: userId });
 
@@ -182,9 +194,6 @@ export class MessageHanlder {
     messageData: IMessage;
   }) {
     try {
-      console.log("sending message global: ", data);
-
-      const { conversation } = data;
       const { recipient } = data.messageData;
 
       const convoId = data.conversation._id!.toString();
@@ -193,21 +202,17 @@ export class MessageHanlder {
       this.io.to(convoId).emit("message_on_sent", data);
 
       const isUserOnline = this.socketServer.isUserOnline(recipient.toString());
-      const recipientSocket = this.socketServer.getConnectedUser(
-        recipient.toString()
-      );
 
       const isUserViewingConvo = this.activeConversations
         .get(convoId)
         ?.has(recipient.toString());
 
       const isRecipientOnlineButNotViewingConvo =
-        recipientSocket && isUserOnline && !isUserViewingConvo;
+        isUserOnline && !isUserViewingConvo;
 
       if (isRecipientOnlineButNotViewingConvo) {
-        console.log(
-          "Emitting message for unview but active user: ",
-          recipientSocket
+        const recipientSocket = this.socketServer.getConnectedUser(
+          recipient.toString()
         );
 
         this.sentMessageOnRecipClosedConvo(recipientSocket.socketId, data);

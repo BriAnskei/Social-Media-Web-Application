@@ -9,6 +9,7 @@ import {
 
 import { redisEvents } from "./redisEvents";
 import { INotification } from "../models/notificationModel";
+import { IPost } from "../models/postModel";
 
 export const emitMessageOnSend = async (data: {
   conversation: IConversation;
@@ -72,16 +73,44 @@ export const emitUpdateDropContact = async (data: any) => {
 
 export const emitComment = async (payload: INotification) => {
   try {
-    const success = await redisEvents.emit("newNotification", payload);
-    throwErrOnFailed({ function: "emitComment", isSucces: success });
+    throwErrOnFailed({
+      function: "emitComment",
+      isSuccess: await redisEvents.emit("newNotification", payload),
+    });
   } catch (error) {
     logEmitterErr("emitComment", error as Error);
   }
 };
 
-function throwErrOnFailed(res: { function: string; isSucces: boolean }): void {
-  if (!res.isSucces) {
-    throw new Error(`${res.function}, 'Failed to emit on channed`);
+export const emitDeleteConvo = async (payload: {
+  userId: string;
+  convoId: string;
+}) => {
+  try {
+    throwErrOnFailed({
+      function: "emitDeleteConvo",
+      isSuccess: await redisEvents.emit("delete-convo", payload),
+    });
+  } catch (error) {
+    logEmitterErr("emitDeleteConvo", error as Error);
+  }
+};
+
+export const emitNewPostToOwner = async (cnfg: IPost) => {
+  try {
+    throwErrOnFailed({
+      function: "emitDeleteConvo",
+      isSuccess: await redisEvents.emit("newPost", cnfg),
+    });
+  } catch (error) {
+    logEmitterErr("emitDeleteConvo", error as Error);
+  }
+};
+
+// module function
+function throwErrOnFailed(res: { function: string; isSuccess: boolean }): void {
+  if (!res.isSuccess) {
+    throw new Error(`${res.function}, 'Failed to emit on channel`);
   }
 }
 

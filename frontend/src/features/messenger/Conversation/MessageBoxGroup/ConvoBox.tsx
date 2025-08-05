@@ -9,7 +9,6 @@ interface ConvoBoxProps {
     contactId: string,
     participantId: string
   ) => Promise<void>;
-
   currUserId: string;
 }
 
@@ -32,6 +31,7 @@ const ConvoBox = ({
   const handleDeleteConvo = async (e: any, convoId: string) => {
     e.stopPropagation();
     e.preventDefault();
+
     chatProp.deleteConvoToggle({ ref, convoId });
   };
 

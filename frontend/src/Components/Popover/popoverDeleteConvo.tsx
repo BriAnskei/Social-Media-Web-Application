@@ -1,10 +1,6 @@
 import { Button, Overlay, Popover } from "react-bootstrap";
 import { PopoverDeleteConvoType } from "./PopOverType";
 import { usePopoverContext } from "../../hooks/usePopover";
-import { useDispatch } from "react-redux";
-import { AppDispatch } from "../../store/store";
-import { deleteConversation } from "../../features/messenger/Conversation/conversationSlice";
-import toast from "react-hot-toast";
 import { useToastEffect } from "../../hooks/toast/useToastEffect";
 
 const PopoverDeleteConvo: React.FC<PopoverDeleteConvoType> = ({
@@ -14,7 +10,6 @@ const PopoverDeleteConvo: React.FC<PopoverDeleteConvoType> = ({
 }) => {
   const { chatProp } = usePopoverContext();
   const { handleDeleteEffect } = useToastEffect();
-  const dispatch = useDispatch<AppDispatch>();
 
   if (!target || !target.current) return null;
 

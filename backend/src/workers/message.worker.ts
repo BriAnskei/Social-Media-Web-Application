@@ -12,17 +12,21 @@ import { redisOptions } from "../queues/redisOption";
 
 connectDb();
 
-// Constants
-const QUEUE_NAME = "messageQueue";
-const JOB_NAME = "sendMessage";
-
 console.log("✅ Message worker started");
 
-async function handleSendMessageJob(payload: {
-  messagePayload: IMessageInput;
-  convoId: string;
-}) {
-  const { messagePayload, convoId } = payload;
+const QUEUE_NAME = "messageQueue";
+
+/**
+ * Processes jobs from the message queue
+ */
+async function processJob(job: Job) {
+  const { messagePayload, convoId } = job.data as {
+    messagePayload: IMessageInput;
+    convoId: string;
+  };
+
+  console.log("MESSAGE JOB WORKER");
+
   const session = await mongoose.startSession();
   session.startTransaction(); // Start a new MongoDB transaction for atomic operations
 
@@ -34,10 +38,23 @@ async function handleSendMessageJob(payload: {
       {
         $set: { deletedFor: [] },
         lastMessage: message._id,
-        lastMessageAt: new Date(),
+        lastMessageAt: messagePayload.createdAt,
       },
       { session, new: true }
     )) as IConversation;
+
+    if (!messagePayload.read) {
+      await Conversation.updateOne(
+        {
+          _id: convoId,
+          "unreadCounts.user": messagePayload.recipient,
+        },
+        {
+          $inc: { "unreadCounts.$.count": 1 }, // using  positional $ operator  in which index is to update
+        },
+        { session }
+      );
+    }
 
     // Commit the transaction — all operations above will be permanently saved
     await session.commitTransaction();
@@ -50,19 +67,6 @@ async function handleSendMessageJob(payload: {
   } finally {
     // End the session
     await session.endSession();
-  }
-}
-
-/**
- * Processes jobs from the message queue
- */
-async function processJob(job: Job) {
-  console.log("job detected", job.name);
-
-  if (job.name === JOB_NAME) {
-    await handleSendMessageJob(job.data);
-  } else {
-    console.warn(`No handler found for job: ${job.name}`);
   }
 }
 

@@ -25,7 +25,7 @@ export const ConvoService = {
         contactId,
       };
     } catch (error) {
-      throw error;
+      throw new Error("buildViewPayload" + (error as Error));
     }
   },
   buildPayloadForFetchingConvo: (req: ReqAuth) => {
@@ -63,7 +63,7 @@ export const ConvoService = {
         await conversation.populate("participants")
       ).populate("lastMessage");
     } catch (error) {
-      throw error;
+      throw new Error("createConversation" + (error as Error));
     }
   },
   deleteConvoByContactId: async (contactId: string) => {
@@ -80,17 +80,39 @@ export const ConvoService = {
       throw error;
     }
   },
-  findOneByContactIdPopulate: async (
-    contactId: string
-  ): Promise<IConversation | null> => {
+  findOneByContactIdPopulate: async (payLoad: {
+    contactId: string;
+    userId: string;
+  }): Promise<IConversation | null> => {
     try {
-      return await Conversation.findOne({
+      const { contactId, userId } = payLoad;
+
+      const conversation = await Conversation.findOne({
         contactId,
       })
-        .populate("participants")
-        .populate("lastMessage");
+        .populate(
+          "participants",
+          "username fullname email profilePicture followers following"
+        )
+        .populate("lastMessage")
+        .lean();
+
+      if (!conversation) {
+        return null;
+      }
+
+      const lastMessage = conversation.lastMessage as IMessage;
+
+      if (lastMessage) {
+        const hideFrom = lastMessage.hideFrom;
+        if (hideFrom && hideFrom.toString() === userId.toString()) {
+          conversation.lastMessage = undefined;
+        }
+      }
+
+      return conversation;
     } catch (error) {
-      throw error;
+      throw new Error("findOneByContactIdPopulate" + (error as Error));
     }
   },
   fetchConvosBasedOnCursor: async (data: {
@@ -350,18 +372,18 @@ export const ConvoService = {
           contactId.toString(),
           userId
         );
+      } else {
+        await messageService.markReadMessages(convoId as string, userId);
+        await ConvoService.resetUnreadCounts({
+          convoId: convoId as string,
+          userId,
+        });
+        await ConvoService.setLastMessageOnRead({ conversation, userId });
       }
-
-      await messageService.markReadMessages(convoId as string, userId);
-      await ConvoService.resetUnreadCounts({
-        convoId: convoId as string,
-        userId,
-      });
-      await ConvoService.setLastMessageOnRead({ conversation, userId });
 
       return conversation;
     } catch (error) {
-      throw error;
+      throw new Error("refreshConversation" + (error as Error));
     }
   },
   resetUnreadCounts: async (payload: { convoId: string; userId: string }) => {
@@ -400,7 +422,7 @@ export const ConvoService = {
       }
 
       if (msg && msg.recipient.toString() === userId.toString()) {
-        const res = await Conversation.updateOne(
+        await Conversation.updateOne(
           { _id: convoId, "lastMessageOnRead.user": userId },
           {
             "lastMessageOnRead.$.message": msg._id,
@@ -566,7 +588,7 @@ export const conversationFormatHelper = {
       );
 
       const unreadData = convo.unreadCounts.find(
-        (unread) => unread.user._id.toString() === userId!.toString()
+        (unread) => unread.user._id.toString() === userId.toString()
       );
 
       const lastMessageReadByParticipant = convo.lastMessageOnRead?.find(
@@ -582,7 +604,7 @@ export const conversationFormatHelper = {
         contactId: convo.contactId,
         participant: otherParticipant,
         isUserValidToRply,
-        lastMessage: convo.lastMessage,
+        lastMessage: convo.lastMessage as IMessage,
         lastMessageAt: convo.lastMessageAt,
         unreadCount: unreadData ? unreadData.count : 0,
         lastMessageOnRead: lastMessageReadByParticipant?.message,

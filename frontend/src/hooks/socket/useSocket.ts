@@ -8,7 +8,12 @@ import {
   FetchPostType,
   LikeHandlerTypes,
 } from "../../types/PostType";
-import { dropPost, postLiked, update } from "../../features/posts/postSlice";
+import {
+  addPost,
+  dropPost,
+  postLiked,
+  update,
+} from "../../features/posts/postSlice";
 import {
   addOrDropNotification,
   deleteList,
@@ -178,6 +183,13 @@ export const useSocket = () => {
     [dispatch]
   );
 
+  const handleNewPostUpload = useCallback(
+    (data: any) => {
+      dispatch(addPost(data));
+    },
+    [dispatch]
+  );
+
   useEffect(() => {
     if (!accessToken) {
       dispatch(getToken());
@@ -198,6 +210,7 @@ export const useSocket = () => {
         //delete event
         socket.off(SOCKET_EVENTS.posts.POST_DELETE);
 
+        socket.off("new-post-upload");
         socket.off("postLiked");
         socket.off("likeNotify");
 
@@ -205,7 +218,7 @@ export const useSocket = () => {
         socket.off(SOCKET_EVENTS.posts.COMMENT_NOTIF);
 
         socket.off("followed-user");
-        // uploading event
+        // uploading event-notification
         socket.off(SOCKET_EVENTS.posts.UPLOAD_POST);
 
         // contact, conversation events
@@ -224,6 +237,7 @@ export const useSocket = () => {
       // owner event
       socket.on("likeNotify", likeNotifEvents);
       socket.on(SOCKET_EVENTS.posts.COMMENT_NOTIF, commentNotifEvent);
+      socket.on("new-post-upload", handleNewPostUpload);
 
       // FollowEvent
       socket.on("followed-user", handleFollowEvent);
@@ -262,6 +276,7 @@ export const useSocket = () => {
     // Cleanup function
     return () => {
       if (socket) {
+        socket.on("new-post-upload", handleNewPostUpload);
         socket.off("postLiked", handleLikeEvent); // used to remove the event triggers when the component unmounts
         socket.off("likeNotify", likeNotifEvents);
 
@@ -295,8 +310,6 @@ export const useSocket = () => {
 
   const emitLike = useCallback(
     (data: { postId: string; postOwnerId: string; userId: string }) => {
-      console.log(socket, isConnected);
-
       if (socket && isConnected) {
         socket.emit("likePost", data);
       }
@@ -337,7 +350,7 @@ export const useSocket = () => {
     [socket, isConnected]
   );
 
-  const emitUpload = useCallback(
+  const emitUploadPostFollowerNotif = useCallback(
     (data: any) => {
       if (socket && isConnected) {
         socket.emit(SOCKET_EVENTS.posts.POST_UPLOADED, data);
@@ -374,7 +387,7 @@ export const useSocket = () => {
   return {
     socket,
     isConnected,
-    emitUpload,
+    emitUploadPostFollowerNotif,
     emitPostUpdate,
     emitPostDelete,
     emitLike,

@@ -29,7 +29,7 @@ const ViewPost = ({ postId }: Post) => {
   const { popover } = usePopoverContext();
 
   const postPayload = usePostById(postId);
-  const { postData, fetchCommentLoading } = postPayload;
+  const { postData } = postPayload;
 
   const postOwnerData = postData.user as FetchedUserType;
 

@@ -1,6 +1,6 @@
 import "./MessageBox.css";
 
-import { useEffect, useRef, useState } from "react";
+import { MutableRefObject, useEffect, useRef, useState } from "react";
 import { useDispatch } from "react-redux";
 import { AppDispatch } from "../../../store/store";
 import {
@@ -79,49 +79,22 @@ const MessageBox = ({ ChatWindowData, currentUserData }: MessageBoxProp) => {
     fetchAllData();
   }, []);
 
-  useEffect(() => {
-    function setViewportToBottom() {
-      if (!messages) return;
+  scrollHanlder(messages, lastMessageIndexRef, messagesRef, loading);
 
-      if (!isFetchingMore && messages.length <= 7) {
-        messagesRef.current?.scrollIntoView({
-          behavior: "instant",
-          block: "end",
-        });
-      }
-    }
-
-    function smoothScroll() {
-      if (!messages) return;
-
-      if (loading || messages.length > 7) {
-        messagesRef.current?.scrollIntoView({
-          behavior: "smooth",
-          block: "center",
-        });
-      }
-    }
-    smoothScroll();
-    setViewportToBottom();
-  }, [messages, loading]);
-
-  useEffect(() => {
-    dispatch(deleteConvoInUnRead(ChatWindowData.conversationId));
-  }, [ChatWindowData.conversationId]);
+  setReadConvo(dispatch, ChatWindowData);
 
   const closeChat = () => {
     if (ChatWindowData.minimized) return;
     const conversationId = conversation._id;
 
     emitConvoViewStatus(false, conversation?._id!);
-    dispatch(closeWindow({ conversationId }));
+    dispatch(closeWindow(conversationId));
     dispatch(dropConversation(conversationId));
     dispatch(dropMessageOnClose(conversationId));
   };
 
   const handleDelete = async () => {
     try {
-      dispatch(closeWindow({ conversationId }));
       await handleDeleteEffect(conversationId);
     } catch (error) {
       console.log("Failed to delete convo: ", error);
@@ -180,8 +153,6 @@ const MessageBox = ({ ChatWindowData, currentUserData }: MessageBoxProp) => {
       setMessageInput("");
       setImageUrl("");
       setImageFile(null);
-
-      lastMessageIndexRef.current = messages.length - 1;
 
       await dispatch(
         sentMessage({
@@ -355,3 +326,44 @@ const MessageBox = ({ ChatWindowData, currentUserData }: MessageBoxProp) => {
 };
 
 export default MessageBox;
+function setReadConvo(dispatch: AppDispatch, ChatWindowData: ChatWindowType) {
+  useEffect(() => {
+    dispatch(deleteConvoInUnRead(ChatWindowData.conversationId));
+  }, [ChatWindowData.conversationId]);
+}
+
+function scrollHanlder(
+  messages: Message[],
+  lastMessageIndexRef: MutableRefObject<number>,
+  messagesRef: MutableRefObject<HTMLDivElement | null>,
+  loading: boolean
+) {
+  useEffect(() => {
+    if (!messages) return;
+    const prevIndex = lastMessageIndexRef.current;
+    const currIndex = messages.length;
+
+    function setViewportToBottom() {
+      if (prevIndex === 0 && messages.length === 7) {
+        messagesRef.current?.scrollIntoView({
+          behavior: "instant",
+          block: "end",
+        });
+      }
+    }
+
+    function smoothScroll() {
+      if (messagesRef && currIndex === prevIndex + 1) {
+        messagesRef.current?.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
+      }
+    }
+
+    lastMessageIndexRef.current = messages.length;
+
+    smoothScroll();
+    setViewportToBottom();
+  }, [messages, loading]);
+}

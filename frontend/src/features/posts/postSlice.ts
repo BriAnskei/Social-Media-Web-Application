@@ -190,9 +190,9 @@ const postsSlice = createSlice({
       const { allIds, byId } = normalizeResponse(action.payload);
 
       if (!state.allIds.includes(allIds[0])) {
-        state.allIds.push(allIds[0]);
+        state.allIds = [allIds[0], ...state.allIds];
+        state.byId = { ...state.byId, ...byId };
       }
-      state.byId = { ...state.byId, ...byId };
     },
 
     update: (state, action: PayloadAction<FetchPostType>) => {
@@ -245,21 +245,6 @@ const postsSlice = createSlice({
         state.error = (action.payload as string) || "Failed to fetchPosts";
       })
 
-      // Uploading Post Cases
-      .addCase(createPost.pending, (state) => {
-        state.loading = true;
-      })
-      .addCase(createPost.fulfilled, (state, action) => {
-        const { byId, allIds } = normalizeResponse(
-          action.payload.posts as FetchPostType[]
-        );
-
-        if (!state.allIds.includes(allIds[0])) {
-          state.allIds = [allIds[0], ...state.allIds]; // Put the latest post in the first index, to sort it
-        }
-        state.byId = { ...state.byId, ...byId };
-        state.loading = false;
-      })
       .addCase(createPost.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;

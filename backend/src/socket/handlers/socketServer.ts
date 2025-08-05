@@ -27,6 +27,7 @@ import {
   commentService,
 } from "../../services/comment.service";
 import e from "express";
+import { IPost } from "../../models/postModel";
 
 interface ConnectedUser {
   userId: string;
@@ -78,7 +79,6 @@ const SOCKET_EVENTS = {
 export class SocketServer {
   private io: Server;
   private connectedUSers: Map<string, ConnectedUser> = new Map();
-  private serverEventListeberInitialized = false;
 
   public messagetHandler: MessageHanlder;
 
@@ -140,8 +140,11 @@ export class SocketServer {
   private setUpRedisEventListeners() {
     // Listen for message events from worker via Redis
     redisEvents.on("app_message_on_sent", (data) => {
-      console.log("🔥 Redis event received in socket handler:", data);
       this.messagetHandler.sentMessageGlobal(data);
+    });
+
+    redisEvents.on("delete-convo", (data: any) => {
+      this.messagetHandler.handleDeleteConversation(data);
     });
 
     redisEvents.on("createOrUpdate-contact", (data: any) => {
@@ -153,6 +156,10 @@ export class SocketServer {
     });
 
     // post evemts
+    redisEvents.on("newPost", (data: any) => {
+      this.handleUploadPost(data);
+    });
+
     redisEvents.on("post-like", (data: any) => {
       this.handleLikePost(data);
     });
@@ -279,6 +286,15 @@ export class SocketServer {
   }
 
   // Post Events
+  private handleUploadPost(data: IPost): void {
+    const user = data.user as IUser;
+    if (this.isUserOnline(user._id.toString())) {
+      const ownerSocket = this.getConnectedUser(user._id.toString());
+
+      this.io.to(ownerSocket.socketId).emit("new-post-upload", data);
+    }
+  }
+
   private async handleLikePost(
     data: LikeEventPayload,
     socket?: any
@@ -489,40 +505,4 @@ export class SocketServer {
     );
     this.io.emit("onlineUsers", onlineUsers);
   }
-}
-function createBulkedNotifPayload(
-  commenterBatch: string[],
-  data: CommentEventPayload,
-  capitializeFristWord: (text: string) => string,
-  postOwnerData: IUser
-) {
-  return commenterBatch.map((commenterId) => ({
-    receiver: commenterId,
-    sender: data.data.user._id.toString(),
-    post: data.postId,
-    message:
-      data.postOwnerId === data.data.user._id.toString()
-        ? "commented on his post"
-        : `commented on  ${capitializeFristWord(postOwnerData.username)} post`,
-    type: "comment",
-    createdAt: data.data.createdAt,
-  }));
-}
-
-function getUniqueUserIdsExceptCommenterAndPostOwner(
-  allIds: any,
-  data: CommentEventPayload
-) {
-  const commentSetData = new Set<string>();
-  for (let commenterId of allIds) {
-    let id = commenterId.toString();
-    // filter out the post owner and the commender id in the arraynotifData
-    // we will only gloably notify users, except postOwner(the owner it self commented) and other users(user who commented and commented again)
-    if (id !== data.postOwnerId && id !== data.data.user._id.toString()) {
-      commentSetData.add(id);
-    }
-  }
-
-  const NotifyId = Array.from(commentSetData);
-  return NotifyId;
 }

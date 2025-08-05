@@ -1,9 +1,7 @@
 import { Request, Response } from "express";
 import { MessageModel } from "../models/messageModel";
 
-import { messageService, requesHanlder } from "../services/message.service";
-import { UserChatRelationService } from "../services/UserChatRelation.service";
-import { ConvoService } from "../services/conversation.service";
+import { requesHanlder } from "../services/message.service";
 import { messageQueue } from "../queues/messageQueues";
 
 export interface ReqAuth extends Request {

@@ -10,7 +10,7 @@ import { useSocket } from "../../../hooks/socket/useSocket";
 
 const UploadModal: React.FC<ModalTypes> = ({ showModal, onClose }) => {
   const dispatch: AppDispatch = useDispatch();
-  const { emitUpload } = useSocket();
+  const { emitUploadPostFollowerNotif } = useSocket();
 
   const { currentUser } = useCurrentUser();
   const { profilePicture, _id, fullName } = currentUser;
@@ -58,23 +58,16 @@ const UploadModal: React.FC<ModalTypes> = ({ showModal, onClose }) => {
       formData.append("image", postInputData.image);
     }
     try {
-      const response = await dispatch(createPost(formData)).unwrap();
+      await dispatch(createPost(formData)).unwrap();
 
-      if (!response.success) return;
-      setPostInputData(() => ({
-        content: "",
-        image: undefined,
-      }));
       onClose(); // CLose the modal after posting
 
-      const postData = response.posts as FetchPostType;
+      // const eventPayload = {
+      //   userId: currentUser._id,
+      //   postId: postData._id,
+      // };
 
-      const eventPayload = {
-        userId: currentUser._id,
-        postId: postData._id,
-      };
-
-      emitUpload(eventPayload);
+      // emitUploadPostFollowerNotif(eventPayload);
     } catch (error) {
       console.error(error);
       onClose();
