@@ -42,6 +42,8 @@ export const setupChatSocket = ({
   isConnected,
   currUser,
 }: ChatSocketSetupParams) => {
+
+  
   if (!socket || !isConnected) {
     return null;
   }

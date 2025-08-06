@@ -185,7 +185,7 @@ const MessageBox = ({ ChatWindowData, currentUserData }: MessageBoxProp) => {
       const emitPayload = {
         userId: conversation.participant._id,
         followerId: currentUserData._id,
-        followingName: currentUserData.fullName,
+        followingName: currentUserData.fullName.match(/^\w+/)?.[0]!,
       };
 
       emitFollow(emitPayload);

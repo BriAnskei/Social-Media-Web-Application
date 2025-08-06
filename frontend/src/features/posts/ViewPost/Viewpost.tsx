@@ -28,8 +28,7 @@ const ViewPost = ({ postId }: Post) => {
   const { emitLike, emitComment } = useSocket();
   const { popover } = usePopoverContext();
 
-  const postPayload = usePostById(postId);
-  const { postData } = postPayload;
+  const postData = usePostById(postId);
 
   const postOwnerData = postData.user as FetchedUserType;
 
@@ -64,7 +63,12 @@ const ViewPost = ({ postId }: Post) => {
 
   const handleLike = async () => {
     try {
-      const res = await dispatch(toggleLike(postData._id)).unwrap();
+      const res = await dispatch(
+        toggleLike({
+          postId: postData._id,
+          userName: currentUser.fullName.match(/^\w+/)?.[0]!,
+        })
+      ).unwrap();
       // emit after succesfully saved itto DB
       const data = {
         postId: postData._id,
@@ -210,7 +214,7 @@ const ViewPost = ({ postId }: Post) => {
             <div className="comment-con-inputs">
               <div className="post-modal-profile">
                 <img
-                  src={`http://localhost:4000/uploads/profile/${currentUser._id}/${currentUser.profilePicture}`}
+                  src={userProfile(currentUser.profilePicture, currentUser._id)}
                   alt=""
                 />
               </div>

@@ -16,7 +16,7 @@ console.log("✅ like worker started");
 new Worker(
   "likeQueue",
   async (job) => {
-    const { userId, postId } = job.data;
+    const { userId, postId, userName } = job.data;
     const session = await mongoose.startSession();
     session.startTransaction();
     try {
@@ -34,7 +34,7 @@ new Worker(
             receiver: postOwnerId.toString(),
             sender: userId,
             post: postId,
-            message: "liked your post",
+            message: `${userName} liked your post`,
             type: "like",
           },
           session

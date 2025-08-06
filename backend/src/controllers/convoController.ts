@@ -23,15 +23,15 @@ export const findOrCreateConversation = async (
     const payload = ConvoService.buildViewPayload(req);
     const { userId, contactId } = payload;
 
-    console.log("RECIEVD PAYLOAD: ", payload);
-
     let conversation = await ConvoService.findOneByContactIdPopulate({
       contactId,
       userId,
     });
     const validUser = await contactService.validUsers(contactId);
 
-    if (!validUser || !userId) {
+    if (!validUser) {
+      console.error("Erorr, now valid users");
+
       return res.json({
         success: false,
         message: "Failed to open convo, no userId or valid user",
@@ -54,6 +54,8 @@ export const findOrCreateConversation = async (
       userId,
       validUser
     );
+
+    console.log("COnversation data: ", formatedData);
 
     res.json({
       success: true,

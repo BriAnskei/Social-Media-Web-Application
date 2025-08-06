@@ -22,7 +22,7 @@ const notificationSchema = new Schema<INotification>({
     type: mongoose.Schema.Types.ObjectId,
     ref: "Post",
     required: function () {
-      return ["like", "comment"].includes(this.type); // only requierd if one of this array element matches the type
+      return ["like", "comment", "upload"].includes(this.type); // only requierd if one of this array element matches the type
     },
   },
   message: { type: String, required: true },

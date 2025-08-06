@@ -19,6 +19,7 @@ import {
   FollowPayloadToast,
   useToastEffect,
 } from "../../../hooks/toast/useToastEffect";
+import { userProfile } from "../../../utils/ImageUrlHelper";
 
 interface Post {
   post: FetchPostType;
@@ -120,9 +121,9 @@ const Post = ({ post }: Post) => {
       dispatch(updateFollow(toastPayload.followPayload));
 
       const emitPayload = {
-        userId: post.user,
+        userId: postOwnerData._id,
         followerId: currentUser._id,
-        followingName: currentUser.fullName,
+        followingName: currentUser.fullName.match(/^\w+/)?.[0]!,
       };
 
       emitFollow(emitPayload);
@@ -144,7 +145,12 @@ const Post = ({ post }: Post) => {
       setLikeProgress(true);
       setLiked(!liked);
 
-      await dispatch(toggleLike(post._id)).unwrap();
+      await dispatch(
+        toggleLike({
+          postId: post._id,
+          userName: currentUser.fullName.match(/^\w+/)?.[0]!,
+        })
+      ).unwrap();
 
       // delayed timout to ensure no conflic in node app
       setTimeout(() => {
@@ -166,7 +172,7 @@ const Post = ({ post }: Post) => {
         <div className="post-info">
           <div className="profile-name">
             <img
-              src={`http://localhost:4000/uploads/profile/${postOwnerData?._id}/${postOwnerData?.profilePicture}`}
+              src={userProfile(postOwnerData.profilePicture, postOwnerData._id)}
               style={{ cursor: "pointer" }}
               onClick={viewPostOwnerProf}
             />
@@ -208,7 +214,7 @@ const Post = ({ post }: Post) => {
         {post.image && (
           <div className="image-container" onClick={toggleComments}>
             <img
-              src={`http://localhost:4000/images/posts/${post.user}/${post.image}`}
+              src={`http://localhost:4000/images/posts/${postOwnerData._id}/${post.image}`}
               alt=""
             />
           </div>

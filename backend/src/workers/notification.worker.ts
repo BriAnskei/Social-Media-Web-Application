@@ -32,8 +32,6 @@ new Worker(
     try {
       const payload = job.data as JobPayload;
 
-      console.log("notf worker payload recievd: ", payload);
-
       const userIds = await commentService.getUsersUniqueIds({
         postId: payload.post.postId,
         userId: payload.user._id,
@@ -77,13 +75,14 @@ function generateNotificationPayload(id: Types.ObjectId, payload: JobPayload) {
   };
 }
 function generateMessage(payload: JobPayload, id: Types.ObjectId) {
+  const regex = /^\w+/; // first name extraction
   return `${
     payload.post.postOwnerId === payload.user._id
       ? "Commented on his post"
       : payload.post.postOwnerId === id.toString()
-      ? "commented on your post"
-      : `${payload.user.fullName.split("")[0]} commented on ${
-          payload.post.postOwnerName.split("")[0]
+      ? `${payload.user.fullName.match(regex)?.[0]} commented on your post`
+      : `${payload.user.fullName.match(regex)?.[0]} commented on ${
+          payload.post.postOwnerName.match(regex)?.[0]
         }'s post`
   }`;
 }

@@ -96,7 +96,7 @@ export const emitDeleteConvo = async (payload: {
   }
 };
 
-export const emitNewPostToOwner = async (cnfg: IPost) => {
+export const emitNewPost = async (cnfg: { data: IPost; userName: string }) => {
   try {
     throwErrOnFailed({
       function: "emitDeleteConvo",

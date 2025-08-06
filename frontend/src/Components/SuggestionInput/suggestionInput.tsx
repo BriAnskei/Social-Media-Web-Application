@@ -4,6 +4,7 @@ import Spinner from "../Spinner/Spinner";
 import { FetchedUserType } from "../../types/user";
 import { userApi } from "../../utils/api";
 import { useCurrentUser } from "../../hooks/useUsers";
+import { userProfile } from "../../utils/ImageUrlHelper";
 
 interface Prop {
   onSelect?: (item: FetchedUserType) => void;
@@ -195,7 +196,10 @@ const SuggestionInput: React.FC<Prop> = ({
               >
                 <div className="list-user-cont" tabIndex={-1}>
                   <img
-                    src={`http://localhost:4000/uploads/profile/${user._id}/${user.profilePicture}`}
+                    src={userProfile(
+                      currentUser.profilePicture,
+                      currentUser._id
+                    )}
                     alt=""
                   />
                   {currentUser._id === user._id ? (

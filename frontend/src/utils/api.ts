@@ -64,11 +64,16 @@ export const postApi = {
     }
   },
 
-  toggleLike: async (token: string, postId: string): Promise<ApiResponse> => {
+  toggleLike: async (payload: {
+    token: string;
+    postId: string;
+    userName: string;
+  }): Promise<ApiResponse> => {
     try {
+      const { token, postId, userName } = payload;
       const response = await api.post(
         "/api/posts/like-toggle",
-        { postId },
+        { postId, userName },
         {
           headers: {
             token,

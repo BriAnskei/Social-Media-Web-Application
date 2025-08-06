@@ -57,7 +57,12 @@ export const createPost = createAsyncThunk(
 
 export const toggleLike = createAsyncThunk(
   "posts/toggle-like",
-  async (postId: string, { rejectWithValue, getState, dispatch }) => {
+  async (
+    payload: { postId: string; userName: string },
+    { rejectWithValue, getState, dispatch }
+  ) => {
+    const { postId, userName } = payload;
+
     const { auth, user } = getState() as RootState;
     const userId = user.currentUserId!;
     const accessToken = auth.accessToken;
@@ -68,7 +73,11 @@ export const toggleLike = createAsyncThunk(
     dispatch(postLiked({ postId, userId }));
 
     try {
-      const res = await postApi.toggleLike(accessToken, postId);
+      const res = await postApi.toggleLike({
+        token: accessToken,
+        postId,
+        userName,
+      });
 
       if (!res?.success)
         rejectWithValue(

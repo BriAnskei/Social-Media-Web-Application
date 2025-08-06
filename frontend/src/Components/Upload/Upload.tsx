@@ -3,6 +3,7 @@ import { useState } from "react";
 import UploadModal from "../Modal/UploadModal/UploadModal";
 import { useNavigate } from "react-router";
 import { useCurrentUser } from "../../hooks/useUsers";
+import { userProfile } from "../../utils/ImageUrlHelper";
 
 const Upload = () => {
   const navigate = useNavigate();
@@ -18,7 +19,7 @@ const Upload = () => {
       <UploadModal showModal={showUpload} onClose={toggleUpload} />
       <div className="create-post">
         <img
-          src={`http://localhost:4000/uploads/profile/${currentUser._id}/${currentUser.profilePicture}`}
+          src={userProfile(currentUser.profilePicture, currentUser._id)}
           onClick={() => navigate("/profile")}
         />
         <input

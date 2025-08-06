@@ -78,7 +78,7 @@ const Followers = () => {
         emitPayload = {
           userId: userId,
           followerId: currUserId,
-          followingName: currentUser.fullName,
+          followingName: currentUser.fullName.match(/^\w+/)?.[0]!,
         };
       }
 

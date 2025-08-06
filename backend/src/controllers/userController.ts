@@ -256,13 +256,12 @@ export const followUser = async (req: Request, res: Response): Promise<any> => {
 
     await UserChatRelationService.updateChatRelation(servicePayload);
 
-    let tobeFollowedData, whoFollowedData;
     let message;
 
     const returnUpdate = { new: true }; // nothing special, just return the updated data
 
     if (isFollowing) {
-      tobeFollowedData = await UserModel.findByIdAndUpdate(
+      await UserModel.findByIdAndUpdate(
         userId,
         {
           $pull: { followers: followerId },
@@ -270,7 +269,7 @@ export const followUser = async (req: Request, res: Response): Promise<any> => {
         returnUpdate
       );
 
-      whoFollowedData = await UserModel.findByIdAndUpdate(
+      await UserModel.findByIdAndUpdate(
         followerId,
         {
           $pull: { following: userId },
@@ -280,7 +279,7 @@ export const followUser = async (req: Request, res: Response): Promise<any> => {
 
       message = "User successfully unfollowed";
     } else {
-      tobeFollowedData = await UserModel.findByIdAndUpdate(
+      await UserModel.findByIdAndUpdate(
         userId,
         {
           $push: { followers: followerId },
@@ -288,7 +287,7 @@ export const followUser = async (req: Request, res: Response): Promise<any> => {
         returnUpdate
       );
 
-      whoFollowedData = await UserModel.findByIdAndUpdate(
+      await UserModel.findByIdAndUpdate(
         followerId,
         {
           $push: { following: userId },

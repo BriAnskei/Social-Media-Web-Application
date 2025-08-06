@@ -24,6 +24,7 @@ import {
   resetCommets,
 } from "../../../features/comment/commentSlice";
 import { CommentType } from "../../../types/PostType";
+import { userProfile } from "../../../utils/ImageUrlHelper";
 
 interface PostModal extends Omit<ModalTypes, "onClose"> {
   onClose: () => void;
@@ -31,7 +32,7 @@ interface PostModal extends Omit<ModalTypes, "onClose"> {
 }
 
 const ViewPostModal: React.FC<PostModal> = ({ showModal, onClose, postId }) => {
-  const { postData } = usePostById(postId);
+  const postData = usePostById(postId);
   const postOwnerData = postData.user as FetchedUserType;
 
   const dispatch = useDispatch<AppDispatch>();
@@ -99,7 +100,10 @@ const ViewPostModal: React.FC<PostModal> = ({ showModal, onClose, postId }) => {
         return;
       }
 
-      emitFollow(data);
+      emitFollow({
+        ...data,
+        followingName: currentUser.fullName.match(/^\w+/)?.[0]!,
+      });
     } catch (error) {
       console.error(error);
     }
@@ -110,7 +114,12 @@ const ViewPostModal: React.FC<PostModal> = ({ showModal, onClose, postId }) => {
       if (likeOnProgress) return;
       setLikeOnProgress(true);
       setIsLiked(!isLiked);
-      await dispatch(toggleLike(postId));
+      await dispatch(
+        toggleLike({
+          postId,
+          userName: currentUser.fullName.match(/^\w+/)?.[0]!,
+        })
+      );
 
       setTimeout(() => {
         setLikeOnProgress(false);
@@ -149,6 +158,7 @@ const ViewPostModal: React.FC<PostModal> = ({ showModal, onClose, postId }) => {
     };
 
     emitComment(emitionPayload);
+
     const commentPayload = {
       postId: postId,
       user: currentUser,
@@ -203,7 +213,10 @@ const ViewPostModal: React.FC<PostModal> = ({ showModal, onClose, postId }) => {
                     <div className="post-modal-content-data">
                       <div className="post-modal-profile-data">
                         <img
-                          src={`http://localhost:4000/uploads/profile/${postOwnerData?._id}/${postOwnerData?.profilePicture}`}
+                          src={userProfile(
+                            currentUser.profilePicture,
+                            currentUser._id
+                          )}
                           alt=""
                         />
                         <div className="post-modal-name-date">
@@ -303,7 +316,10 @@ const ViewPostModal: React.FC<PostModal> = ({ showModal, onClose, postId }) => {
                     <div className="comment-con-inputs">
                       <div className="post-modal-profile">
                         <img
-                          src={`http://localhost:4000/uploads/profile/${currentUser._id}/${currentUser.profilePicture}`}
+                          src={userProfile(
+                            currentUser.profilePicture,
+                            currentUser._id
+                          )}
                           alt=""
                         />
                       </div>

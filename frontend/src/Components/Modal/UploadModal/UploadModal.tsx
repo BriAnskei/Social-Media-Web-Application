@@ -7,6 +7,7 @@ import { FetchPostType, UploadPostTypes } from "../../../types/PostType";
 import { createPost } from "../../../features/posts/postSlice";
 import { useCurrentUser } from "../../../hooks/useUsers";
 import { useSocket } from "../../../hooks/socket/useSocket";
+import { userProfile } from "../../../utils/ImageUrlHelper";
 
 const UploadModal: React.FC<ModalTypes> = ({ showModal, onClose }) => {
   const dispatch: AppDispatch = useDispatch();
@@ -14,6 +15,8 @@ const UploadModal: React.FC<ModalTypes> = ({ showModal, onClose }) => {
 
   const { currentUser } = useCurrentUser();
   const { profilePicture, _id, fullName } = currentUser;
+
+  const fileInputRef = useRef<any>();
 
   const [postInputData, setPostInputData] = useState<UploadPostTypes>({
     content: "",
@@ -60,8 +63,6 @@ const UploadModal: React.FC<ModalTypes> = ({ showModal, onClose }) => {
     try {
       await dispatch(createPost(formData)).unwrap();
 
-      onClose(); // CLose the modal after posting
-
       // const eventPayload = {
       //   userId: currentUser._id,
       //   postId: postData._id,
@@ -70,8 +71,20 @@ const UploadModal: React.FC<ModalTypes> = ({ showModal, onClose }) => {
       // emitUploadPostFollowerNotif(eventPayload);
     } catch (error) {
       console.error(error);
-      onClose();
+    } finally {
+      closeModel();
     }
+  };
+
+  const closeModel = () => {
+    fileInputRef.current.value = "";
+    fileInputRef.current.type = "text";
+    fileInputRef.current.type = "file";
+    setPostInputData({
+      content: "",
+      image: undefined,
+    });
+    onClose();
   };
 
   return (
@@ -85,16 +98,13 @@ const UploadModal: React.FC<ModalTypes> = ({ showModal, onClose }) => {
           <div className="modal-header upload-header">
             <div className="post-logo">Create post</div>
             <div className="chatt-close">
-              <span onClick={() => onClose()}>X</span>
+              <span onClick={() => closeModel()}>X</span>
             </div>
           </div>
           <div className="modal-body create-post-body">
             <div className="create-post-container">
               <div className="user-logo">
-                <img
-                  src={`http://localhost:4000/uploads/profile/${_id}/${profilePicture}`}
-                  alt=""
-                />
+                <img src={userProfile(profilePicture, _id)} alt="" />
                 <span>{fullName}</span>
               </div>
 
@@ -113,6 +123,7 @@ const UploadModal: React.FC<ModalTypes> = ({ showModal, onClose }) => {
                   value={postInputData.content}
                 />
                 <input
+                  ref={fileInputRef}
                   className="form-control"
                   type="file"
                   name="image"

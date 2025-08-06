@@ -29,11 +29,7 @@ export const selectCurrentUserPost = createSelector(
 // Optional: Add a selector to get a single user post by ID
 export const selectPostById = createSelector(
   [byId, (_, postId: string) => postId],
-  (postById, postId) => {
-    return {
-      postData: postById[postId] || ({} as FetchPostType),
-    };
-  }
+  (postById, postId) => postById[postId] || ({} as FetchPostType)
 );
 
 export const selectPostsByUserId = createSelector(

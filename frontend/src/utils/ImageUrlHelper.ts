@@ -1,5 +1,5 @@
-export const userProfile = (fileName: string, id: string) => {
-  return fileName !== ""
+export const userProfile = (fileName: string | undefined, id: string) => {
+  return fileName && fileName !== ""
     ? `http://localhost:4000/uploads/profile/${id}/${fileName}`
     : "http://localhost:4000/no-profile/no-profile.jpg";
 };

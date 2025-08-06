@@ -2,6 +2,7 @@ import mongoose, { Types } from "mongoose";
 import { NotifData } from "../controllers/notifController";
 import notificationModel, { INotification } from "../models/notificationModel";
 import { UserData } from "./comment.service";
+import { errThrower } from "./errHandler";
 
 interface CommentPayload {
   receiver: string;
@@ -19,6 +20,15 @@ export const notifService = {
       return await notificationModel.create(payload);
     } catch (error) {
       throw error;
+    }
+  },
+  notfifyFollowerOnUploadPost: async (payload: {
+    userId: string;
+    postId: string;
+  }): Promise<void> => {
+    try {
+    } catch (error) {
+      errThrower("notfifyFollowerOnUploadPost", error as Error);
     }
   },
   createOrDropNotif: async (

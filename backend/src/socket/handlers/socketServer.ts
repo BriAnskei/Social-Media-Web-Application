@@ -187,22 +187,10 @@ export class SocketServer {
 
       socket.on("disconnect", () => this.handleDisconnection(socket));
 
-      socket.on(SOCKET_EVENTS.posts.POST_CREATED, (data: any) => {
-        this.handlePostUploadEvent(socket, data);
-      });
-
       // user event
       socket.on(SOCKET_EVENTS.user.USER_FOLLOW, (data: FollowEvent) => {
         this.handleFollowEvent(socket, data);
       });
-
-      // post notfication
-      socket.on(
-        SOCKET_EVENTS.notification.POST_UPLOADED,
-        (data: PostUploadNotifEvent) => {
-          this.handlePostUploadEvent(socket, data);
-        }
-      );
 
       // on post update
       socket.on(SOCKET_EVENTS.posts.POST_ON_UPDATE, (data: PostUpdateEvent) => {
@@ -286,12 +274,34 @@ export class SocketServer {
   }
 
   // Post Events
-  private handleUploadPost(data: IPost): void {
-    const user = data.user as IUser;
+  private async handleUploadPost(payload: {
+    data: IPost;
+    userName: string;
+  }): Promise<void> {
+    try {
+      const { data, userName } = payload;
+
+      // emit the post to owner
+      this.emitNewPostToUploader(data);
+
+      const followerNotifPayload = {
+        userId: data.user._id.toString(),
+        postId: data._id as string,
+        userName,
+      };
+
+      await this.notifFollowersHandler(followerNotifPayload);
+    } catch (error) {
+      console.log("handleUploadPost, ", error);
+    }
+  }
+
+  private emitNewPostToUploader(newPost: IPost): void {
+    const user = newPost.user as IUser;
     if (this.isUserOnline(user._id.toString())) {
       const ownerSocket = this.getConnectedUser(user._id.toString());
 
-      this.io.to(ownerSocket.socketId).emit("new-post-upload", data);
+      this.io.to(ownerSocket.socketId).emit("new-post-upload", newPost);
     }
   }
 
@@ -356,8 +366,11 @@ export class SocketServer {
   private async handleCommentNotification(
     config: INotification
   ): Promise<void> {
-    if (this.isUserOnline(config.receiver.toString())) {
-      this.io.to(config.receiver.toString()).emit("newCommentNotify", config);
+    const reciever: string = config.receiver.toString();
+
+    if (this.isUserOnline(reciever)) {
+      const userSocket = this.getConnectedUser(reciever);
+      this.io.to(userSocket.socketId).emit("newCommentNotify", config);
     }
   }
 
@@ -366,9 +379,13 @@ export class SocketServer {
   }
 
   // Notify followers, whne uploading a post
-  private async handlePostUploadEvent(socket: any, data: any): Promise<void> {
+  private async notifFollowersHandler(data: {
+    userId: string;
+    postId: string;
+    userName: string;
+  }): Promise<void> {
     try {
-      const { userId, postId } = data;
+      const { userId, postId, userName } = data;
 
       const usersFollowers = await userService.getUsersFolowers(userId);
 
@@ -386,7 +403,7 @@ export class SocketServer {
           receiver: followerId,
           sender: mongoose.Types.ObjectId.createFromHexString(userId),
           post: mongoose.Types.ObjectId.createFromHexString(postId),
-          message: "uploaded a new post",
+          message: `${userName} uploaded a new post`,
           type: "upload",
         }));
 
@@ -397,8 +414,6 @@ export class SocketServer {
           const followerSocket = this.connectedUSers.get(followerId.toString());
 
           if (followerSocket) {
-            console.log("sending data to follower: ", followerSocket);
-
             const notifData = { isExist: false, data: response[i] };
             this.io
               .to(followerSocket.socketId)
@@ -407,8 +422,7 @@ export class SocketServer {
         }
       }
     } catch (error) {
-      console.error("Error handling post upload event: ", error);
-      socket.emit("error", "Failed to process post upload notifications");
+      throw new Error("emitFollowerNotifOnPostUpload, " + (error as Error));
     }
   }
 
@@ -429,12 +443,12 @@ export class SocketServer {
     data: { followerId: string; followingName: string; userId: string }
   ): Promise<void> {
     try {
-      const { followerId, userId } = data;
+      const { followerId, userId, followingName } = data;
 
       const followEventPayload: NotifData = {
         receiver: userId,
         sender: followerId,
-        message: "started following you",
+        message: `${followingName} started following you`,
         type: "follow",
       };
 

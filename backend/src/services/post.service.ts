@@ -3,22 +3,27 @@ import mongoose, { ClientSession } from "mongoose";
 import { ExtentRequest } from "../controllers/postController";
 import postModel, { IPost } from "../models/postModel";
 import { errorLog } from "./errHandler";
+import { IUser } from "../models/userModel";
 
 export const postService = {
   createPost: async (payload: {
     user: mongoose.mongo.BSON.ObjectId;
     content: any;
     image?: string;
-  }): Promise<IPost> => {
+  }): Promise<{ newPost: IPost; userName: string }> => {
     try {
-      return (await postModel.create(payload)).populate(
-        "user",
-        "username fullName profilePicture"
-      );
+      const newPost = await (
+        await postModel.create(payload)
+      ).populate("user", "username fullName profilePicture");
+
+      const user = newPost.user as IUser;
+
+      return { newPost, userName: user.fullName.match(/^\w+/)?.[0]! };
     } catch (error) {
       throw errorLog("postService", error as Error);
     }
   },
+
   fetchAllPost: async () => {
     try {
       const posts = await postModel
@@ -111,7 +116,7 @@ export const postRequestHanlder = {
       if (!userId) throw new Error("User Id is required");
 
       return {
-        user: mongoose.Types.ObjectId.createFromHexString(userId),
+        user: userId,
         content: req.body.content,
         image: req.file?.filename,
       };

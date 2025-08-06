@@ -68,7 +68,7 @@ const Profile: React.FC<ProfileProp> = ({ data }) => {
       const emitPayload = {
         userId: data._id,
         followerId: currentUser._id,
-        followingName: currentUser.fullName,
+        followingName: currentUser.fullName.match(/^\w+/)?.[0]!,
       };
 
       emitFollowEvent(emitPayload);

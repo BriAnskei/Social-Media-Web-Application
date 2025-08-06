@@ -260,9 +260,9 @@ export const useSocket = () => {
 
       socket.on(SOCKET_EVENTS.posts.ADD_COMMENT, handleAddCommentEvent);
 
-      socket.onAny((eventName, ...args) => {
-        console.log("SOcket event recivedd:L ", eventName, args);
-      });
+      // socket.onAny((eventName, ...args) => {
+      //   console.log("SOcket event recivedd:L ", eventName, args);
+      // });
 
       socket.on("error", (error: Error) => {
         console.error("Socket error:", error);
@@ -336,7 +336,7 @@ export const useSocket = () => {
   );
 
   const emitFollow = useCallback(
-    (data: any) => {
+    (data: { userId: string; followerId: string; followingName: string }) => {
       if (socket && isConnected) {
         socket.emit("user-follow", data);
       } else {

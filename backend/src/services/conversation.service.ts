@@ -92,7 +92,7 @@ export const ConvoService = {
       })
         .populate(
           "participants",
-          "username fullname email profilePicture followers following"
+          "username fullName email profilePicture followers following"
         )
         .populate("lastMessage")
         .lean();
@@ -402,14 +402,13 @@ export const ConvoService = {
   setLastMessageOnRead: async (payload: {
     conversation: IConversation;
     userId: string;
-  }) => {
+  }): Promise<void> => {
     try {
       const { conversation, userId } = payload;
       const { _id: convoId } = payload.conversation;
       const msg = conversation.lastMessage as IMessage;
 
       if (!msg) {
-        console.info("No Message to Read");
         return;
       }
 

@@ -18,6 +18,7 @@ const storage = {
   postPathSave: multer.diskStorage({
     destination(req: MulterRequest, file, callback) {
       const userId = req.userId;
+
       const uploadPath = `uploads/posts/${userId}`;
       fs.mkdirSync(uploadPath, { recursive: true });
       callback(null, uploadPath);

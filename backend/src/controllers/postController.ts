@@ -88,7 +88,11 @@ export const likeToggled = async (req: ExtentRequest, res: Response) => {
   try {
     await likeQueue.add(
       "postliked",
-      { postId: req.body.postId, userId: req.userId },
+      {
+        userName: req.body.userName,
+        postId: req.body.postId,
+        userId: req.userId,
+      },
       {
         attempts: 3, // retry 3 timnes it fails
         backoff: {

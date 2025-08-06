@@ -220,9 +220,6 @@ const userSlice = createSlice({
           const updatedFollowers = new Set(userToBeFollowed.followers);
           const updatedFollowing = new Set(userWhoFollowed.following);
 
-          updatedFollowers.delete(followerId);
-          updatedFollowing.delete(userId);
-
           if (
             updatedFollowers.has(followerId) &&
             updatedFollowing.has(userId)

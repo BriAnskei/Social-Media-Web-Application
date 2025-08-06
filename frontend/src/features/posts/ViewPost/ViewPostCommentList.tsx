@@ -5,6 +5,8 @@ import { FetchedUserType } from "../../../types/user";
 import { userProfile } from "../../../utils/ImageUrlHelper";
 import { AppDispatch } from "../../../store/store";
 import ViewPostCommentFetcher from "./ViewPostCommentFetcher";
+import { useComment } from "../../../hooks/useComment";
+import { fetchComments } from "../../comment/commentSlice";
 
 interface CommentListProp {
   postData: FetchPostType;
@@ -17,19 +19,23 @@ const ViewPostCommentList = ({
   viewUserProfile,
   dispatch,
 }: CommentListProp) => {
+  const { comments, hasMore, loading, err } = useComment(postData._id);
+
   const scrollRef = useRef<any>(null);
   const lastScrollRef = useRef<number>(0);
 
-  const [cursor, setCursor] = useState<string>("");
-  const [hasMoreComments, setHasMoreComment] = useState(false);
-
   useEffect(() => {
-    const lastCommentCursor = postData.comments[0];
+    const fetchInitialComments = async (): Promise<void> => {
+      try {
+        if (!postData._id) return;
 
-    console.log("expected laast comment cursor: ", lastCommentCursor.content);
+        await dispatch(fetchComments({ postId: postData._id }));
+      } catch (error) {
+        console.error(error, err);
+      }
+    };
 
-    setCursor(lastCommentCursor.createdAt);
-    setHasMoreComment(postData.hasMoreComments);
+    fetchInitialComments();
   }, [postData._id]);
 
   return (
@@ -39,19 +45,18 @@ const ViewPostCommentList = ({
         ref={scrollRef}
       >
         <ViewPostCommentFetcher
-          hasMore={hasMoreComments}
-          cursor={cursor}
-          setHasMore={setHasMoreComment}
+          loading={loading}
+          hasMore={hasMore}
+          comments={comments}
           postId={postData._id}
-          setCursor={setCursor}
           dispatch={dispatch}
           scrollRef={scrollRef}
           lastScrollRef={lastScrollRef}
         />
-        {!postData.comments || postData.comments.length == 0 ? (
+        {!comments || comments.length == 0 ? (
           <>Write a comment</>
         ) : (
-          postData.comments.map((comment, index) => {
+          comments.map((comment, index) => {
             const commentUserData = comment.user as FetchedUserType;
 
             return (

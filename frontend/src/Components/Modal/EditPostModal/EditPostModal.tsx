@@ -8,6 +8,7 @@ import { useDispatch } from "react-redux";
 import { AppDispatch } from "../../../store/store";
 import { updatePost } from "../../../features/posts/postSlice";
 import { PostUpdateEvent, useSocket } from "../../../hooks/socket/useSocket";
+import { userProfile } from "../../../utils/ImageUrlHelper";
 
 interface EditPostProp {
   postId: string;
@@ -183,10 +184,7 @@ const EditPostModal: React.FC<EditPostProp> = ({ postId, show, onClose }) => {
             ) : (
               <div className="create-post-container">
                 <div className="user-logo">
-                  <img
-                    src={`http://localhost:4000/uploads/profile/${_id}/${profilePicture}`}
-                    alt=""
-                  />
+                  <img src={userProfile(profilePicture, _id)} alt="" />
                   <span>{fullName}</span>
                 </div>
 

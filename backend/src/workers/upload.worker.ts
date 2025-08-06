@@ -2,13 +2,14 @@ import "dotenv/config";
 import { connectDb } from "../config/db";
 
 import { Worker } from "bullmq";
-import postModel from "../models/postModel";
 import { redisOptions } from "../queues/redisOption";
 import mongoose from "mongoose";
+import { emitNewPost } from "../events/emitters";
 import { postService } from "../services/post.service";
-import { emitNewPostToOwner } from "../events/emitters";
 
 connectDb();
+
+console.log("✅ upload worker started");
 
 export interface JopPayload {
   user: mongoose.mongo.BSON.ObjectId;
@@ -21,12 +22,25 @@ new Worker(
   async (job) => {
     try {
       const postPayload = job.data as JopPayload;
-      const newPost = await postService.createPost(postPayload);
 
-      await emitNewPostToOwner(newPost);
+      console.log("JON PAYLOAED RECIEVED: ", postPayload);
+
+      const payloadRes = await postService.createPost(postPayload);
+
+      await emitNewPost({
+        data: payloadRes.newPost,
+        userName: payloadRes.userName,
+      });
     } catch (error) {
       console.log("failed on worker-uploadQueue", error);
     }
   },
-  { connection: redisOptions }
+  {
+    connection: redisOptions,
+    concurrency: 10,
+    limiter: {
+      max: 100,
+      duration: 60000,
+    },
+  }
 );

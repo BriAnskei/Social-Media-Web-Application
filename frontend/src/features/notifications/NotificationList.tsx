@@ -115,11 +115,7 @@ const NotificationList = () => {
                     className={`notif-message ${
                       !notifData.read && "unread-message"
                     }`}
-                  >{`${
-                    senderData
-                      ? capitializeFristWord(senderData.username)
-                      : "..."
-                  } ${notifData.message}`}</div>
+                  >{` ${notifData.message}`}</div>
                 </div>
                 <div className="notif-data">
                   <span>{showDateCreationDetails(notifData.createdAt)}</span>

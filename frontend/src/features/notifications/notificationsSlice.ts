@@ -103,6 +103,8 @@ const notificationSlice = createSlice({
       const { isExist, data } = action.payload;
       const { byId, allIds } = normalizeResponse(data);
 
+      console.log("NEW NOTIFICATION PAYLOAD: ", byId);
+
       // if data exist, remove. Otherwise add the data to state
       if (!isExist) {
         if (!state.allIds.includes(allIds[0])) {
