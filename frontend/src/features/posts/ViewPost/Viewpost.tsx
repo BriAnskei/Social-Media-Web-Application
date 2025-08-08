@@ -1,8 +1,8 @@
 import "./Viewpost.css";
-import { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "../../../store/store";
-import { fetchPost, toggleLike } from "../postSlice";
+import { fetchPost, increamentComment, toggleLike } from "../postSlice";
 import { usePostById } from "../../../hooks/usePost";
 import Spinner from "../../../Components/Spinner/Spinner";
 import { useCurrentUser } from "../../../hooks/useUsers";
@@ -14,6 +14,7 @@ import { viewProfile } from "../../../Components/Modal/globalSlice";
 import { usePopoverContext } from "../../../hooks/usePopover";
 import { userProfile } from "../../../utils/ImageUrlHelper";
 import ViewPostCommentList from "./ViewPostCommentList";
+import { addComment, resetCommets } from "../../comment/commentSlice";
 
 interface Post {
   postId: string;
@@ -41,6 +42,10 @@ const ViewPost = ({ postId }: Post) => {
   const target = useRef(null);
 
   useEffect(() => {
+    dispatch(resetCommets(postId));
+  }, []);
+
+  useEffect(() => {
     const getPostData = async (postId: string) => {
       if (!postId || Object.keys(postData).length === 0) {
         navigate("/");
@@ -51,7 +56,7 @@ const ViewPost = ({ postId }: Post) => {
       setIsSucess(res.success);
     };
     getPostData(postId);
-  }, [dispatch, postId, postData]);
+  }, [dispatch, postId]);
 
   useEffect(() => {
     if (!postData.likes) return;
@@ -84,21 +89,41 @@ const ViewPost = ({ postId }: Post) => {
     }
   };
 
-  const submitComment = async () => {
+  const submitComment = (e: React.FormEvent) => {
+    e.preventDefault();
+
     // Check if comment is empty
     if (!commentInput.trim()) return;
 
-    try {
-      setCommentInput("");
-    } catch (error) {
-      console.log(error);
-    }
+    const emitionPayload = {
+      user: currentUser,
+      post: {
+        postId: postData._id,
+        postOwnerId: postOwnerData._id,
+        postOwnerName: postOwnerData.fullName,
+      },
+      content: commentInput,
+      createdAt: new Date(),
+    };
+
+    emitComment(emitionPayload);
+
+    const commentPayload = {
+      postId: postId,
+      user: currentUser,
+      content: commentInput,
+      createdAt: new Date().toISOString(),
+    };
+
+    dispatch(addComment(commentPayload));
+    dispatch(increamentComment(postId));
+    setCommentInput("");
   };
 
   const onKeyEvent = (e: any) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault(); // prevent from adding new line
-      submitComment();
+      submitComment(e);
     }
   };
 
@@ -208,7 +233,7 @@ const ViewPost = ({ postId }: Post) => {
             </div>
             <ViewPostCommentList
               dispatch={dispatch}
-              postData={postData}
+              postId={postId}
               viewUserProfile={viewUserProfile}
             />
             <div className="comment-con-inputs">
@@ -221,8 +246,7 @@ const ViewPost = ({ postId }: Post) => {
               <div className="modal-input-con">
                 <form
                   onSubmit={(e) => {
-                    e.preventDefault();
-                    submitComment();
+                    submitComment(e);
                   }}
                 >
                   <AutoResizeTextarea

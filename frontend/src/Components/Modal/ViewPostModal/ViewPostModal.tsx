@@ -142,7 +142,7 @@ const ViewPostModal: React.FC<PostModal> = ({ showModal, onClose, postId }) => {
     }
   };
 
-  const submitComment = async () => {
+  const submitComment = () => {
     // Check if comment is empty
     if (!commentInput.trim()) return;
 
@@ -255,7 +255,7 @@ const ViewPostModal: React.FC<PostModal> = ({ showModal, onClose, postId }) => {
                     {postData.image && (
                       <div className="post-modal-image-container">
                         <img
-                          src={`http://localhost:4000/images/posts/${postData.user}/${postData.image}`}
+                          src={`http://localhost:4000/images/posts/${postOwnerData._id}/${postData.image}`}
                           alt=""
                         />
                       </div>
@@ -270,7 +270,7 @@ const ViewPostModal: React.FC<PostModal> = ({ showModal, onClose, postId }) => {
                         )}
                       </span>
 
-                      {postData.totalComments && (
+                      {postData.totalComments > 0 && (
                         <span>
                           {`${postData.totalComments} Comment${
                             postData.totalComments > 1 ? "s" : ""

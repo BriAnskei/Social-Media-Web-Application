@@ -221,7 +221,6 @@ const postsSlice = createSlice({
 
         delete state.byId[postId];
         state.allIds = state.allIds.filter((id) => id !== postId);
-        console.log("Post succesfully deleted");
       } catch (error) {
         console.error("failed to delete", error);
       }
@@ -271,13 +270,9 @@ const postsSlice = createSlice({
         state.error = null;
       })
       .addCase(fetchPost.fulfilled, (state, action) => {
-        console.log("PAYLOAD RESPONSE: ", action.payload);
-
         const { byId, allIds } = normalizeResponse(action.payload.posts);
 
         if (!state.allIds.includes(allIds[0]) && !state.byId[allIds[0]]) {
-          console.log("ID IS NOT IN THA POSTSS");
-
           state.allIds.unshift(allIds[0]);
           state.byId = { ...state.byId, ...byId };
         }

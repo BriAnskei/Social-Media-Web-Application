@@ -57,8 +57,6 @@ export const fetchAllConvoList = createAsyncThunk(
         cursor: data.cursor,
       });
 
-      console.log("COnversation response: ", res);
-
       const { hasMore, conversations, unreadIds } = res;
 
       return { hasMore, conversations, unreadIds };
@@ -77,8 +75,6 @@ export const openConversation = createAsyncThunk(
   "conversation/open",
   async (data: openConversationPayload, { rejectWithValue, getState }) => {
     try {
-      console.log("OPEN CONVERSATION Payload; ", data);
-
       const { auth } = getState() as RootState;
       const token = auth.accessToken;
 

@@ -10,6 +10,8 @@ import {
 import { contactService } from "../services/contact.service";
 import { emitDeleteConvo } from "../events/emitters";
 import { IMessage } from "../models/messageModel";
+import { userService } from "../services/user.service";
+import { IUser } from "../models/userModel";
 
 export interface ReqAuth extends Request {
   userId?: string;
@@ -197,6 +199,32 @@ export const deleteConversation = async (
     });
   } catch (error) {
     console.log(error);
+    res.json({ success: false, message: "Error" });
+  }
+};
+
+export const searchConversation = async (
+  req: ReqAuth,
+  res: Response
+): Promise<void> => {
+  try {
+    const userId = req.userId as string;
+    const query = req.query.query;
+    const correspondingUsers = await userService.regexSearch(query as string);
+
+    const conversationResult: IConversation[] =
+      await ConvoService.getUniqueConversations({
+        userId,
+        users: correspondingUsers,
+      });
+
+    res.json({
+      success: true,
+      message: "Match conversation found",
+      conversations: conversationResult,
+    });
+  } catch (error) {
+    console.log("Failed on searchConversation", error);
     res.json({ success: false, message: "Error" });
   }
 };

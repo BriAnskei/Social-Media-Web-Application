@@ -26,6 +26,8 @@ const ViewPostCommentFetcher = ({
   const [isFetching, setIsFetching] = useState<boolean>(false);
   const fetchMore = useCallback(async () => {
     try {
+      console.log("FETCHING MORE");
+
       setIsFetching(true);
       if (!scrollRef.current) {
         console.error("Scroll element is not initialize");
@@ -44,7 +46,7 @@ const ViewPostCommentFetcher = ({
     } finally {
       setIsFetching(false);
     }
-  }, [comments, postId]);
+  }, [postId, comments]);
 
   function setNewSrollHeight(scrollElement: HTMLElement) {
     setTimeout(() => {

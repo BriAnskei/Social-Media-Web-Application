@@ -9,6 +9,7 @@ import { FetchedUserType } from "../../../../types/user";
 import { ConversationService } from "../../../../services/conversation.service";
 import MessageBoxGroup from "../MessageBoxGroup/MessageBoxGroup";
 import { fetchAllConvoList } from "../conversationSlice";
+import SearchConvoHandler from "./SearchConvoHandler";
 
 interface ConversationListPorp {
   currentUser: FetchedUserType;
@@ -25,6 +26,23 @@ const ConversationList = ({ currentUser }: ConversationListPorp) => {
 
   const convoListScrollRef = useRef<any>(null);
   const prevScrollViewRef = useRef<number>(0);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      async function initialFetch() {
+        try {
+          await dispatch(fetchAllContact());
+          await fetchConversationList();
+        } catch (error) {
+          console.log("Faild on initial fetch");
+        }
+      }
+
+      initialFetch();
+    };
+
+    fetchData();
+  }, []);
 
   const closeDropDown = () => {
     // Find all open dropdown menus and remove their 'show' class
@@ -53,27 +71,9 @@ const ConversationList = ({ currentUser }: ConversationListPorp) => {
     }
   };
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        await dispatch(fetchAllContact());
-        await fetchConversationList();
-      } catch (error) {
-        console.error(
-          "Failed to fetch data for conversation and contact list, ",
-          error
-        );
-      }
-    };
-
-    fetchData();
-  }, []);
-
   const fetchConversationList = useCallback(async () => {
     try {
       const cursor = getCursor();
-
-      console.log("FETCHING CONVERSATION LIST: ", currentUser);
 
       const response = await dispatch(fetchAllConvoList({ cursor })).unwrap();
       const isHasMore = response?.hasMore as boolean;
@@ -126,13 +126,7 @@ const ConversationList = ({ currentUser }: ConversationListPorp) => {
         <div className="chats-header">
           <span>Chats</span>
           <div className="search-chat">
-            <input type="text" placeholder="Search chat" />
-            <span
-              className="material-symbols-outlined"
-              style={{ cursor: "pointer" }}
-            >
-              search
-            </span>
+            <SearchConvoHandler />
           </div>
         </div>
         <ContactList openConversation={openConvoOnMessageBox} />

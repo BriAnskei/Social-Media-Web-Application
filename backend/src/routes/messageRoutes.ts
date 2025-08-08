@@ -6,6 +6,7 @@ import {
   findOne,
   findOrCreateConversation,
   getConversations,
+  searchConversation,
 } from "../controllers/convoController";
 import upload from "../middleware/upload";
 import { addMessage, getMessages } from "../controllers/messageController";
@@ -24,6 +25,7 @@ messageRouter.post(
 messageRouter.post("/conversation/findOne", authMiddleware, findOne);
 messageRouter.post("/conversation/get", authMiddleware, getConversations);
 messageRouter.post("/conversation/drop", authMiddleware, deleteConversation);
+messageRouter.get("/conversation/find", authMiddleware, searchConversation);
 
 // message
 messageRouter.post(

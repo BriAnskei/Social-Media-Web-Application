@@ -16,8 +16,11 @@
   gap: 0.5rem;
 }
 
-.view-post-con .comment-list-viewpost {
+.comment-list-viewpost {
   padding: 12px 12px 0px 12px;
+  max-height: 300px;
+  overflow: auto;
+  padding: 12px;
 }
 
 /* comment fetcher element */

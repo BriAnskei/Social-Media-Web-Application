@@ -120,10 +120,3 @@ export const generateCommentPayload = (
     createdAt: payload.createdAt,
   };
 };
-function generatePostCommentPayload(payload: CommentRequestPayload) {
-  return {
-    sender: payload.user,
-    post: payload.post,
-    createdAt: payload.createdAt,
-  };
-}

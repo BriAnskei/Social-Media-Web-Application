@@ -1,5 +1,6 @@
 import jwt from "jsonwebtoken";
 import UserModel, { IUser } from "../models/userModel";
+import { errThrower } from "./errHandler";
 
 export const userService = {
   createToken: (userId: string) => {
@@ -43,6 +44,19 @@ export const userService = {
     } catch (error) {
       console.log("getUserById, ", error);
       throw new Error("getUserById , " + (error as Error));
+    }
+  },
+  regexSearch: async (query: string): Promise<IUser[]> => {
+    try {
+      return await UserModel.find({
+        $or: [
+          { username: new RegExp(query as string, "i") }, // case sensitive
+          { fullName: new RegExp(query as string, "i") },
+        ],
+      });
+    } catch (error) {
+      errThrower("regexSearch", error as Error);
+      return [];
     }
   },
 };

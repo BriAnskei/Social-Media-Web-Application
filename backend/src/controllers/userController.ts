@@ -1,14 +1,12 @@
 import { Request, Response } from "express";
 import bcrypt from "bcrypt";
 import validator from "validator";
-import UserModel, { IUser } from "../models/userModel";
+import UserModel from "../models/userModel";
 
 import path from "path";
 import fs from "fs";
 
 import { generateNameSuffix, getImages } from "../middleware/upload";
-import { contactService } from "../services/contact.service";
-import { ConvoService } from "../services/conversation.service";
 import {
   ChatRelationPayload,
   UserChatRelationService,
@@ -319,12 +317,7 @@ export const profileSearch = async (
       });
     }
 
-    const result = await UserModel.find({
-      $or: [
-        { username: new RegExp(query as string, "i") }, // case sensitive
-        { fullName: new RegExp(query as string, "i") },
-      ],
-    });
+    const result = await userService.regexSearch(query as string);
 
     res.json({
       success: true,

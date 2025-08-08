@@ -2,9 +2,10 @@ import mongoose from "mongoose";
 import { Conversation, IConversation } from "../models/conversationModel";
 import { messageService } from "./message.service";
 import { IMessage } from "../models/messageModel";
-import { ReqAuth } from "../controllers/convoController";
+import { ReqAuth, searchConversation } from "../controllers/convoController";
 import { IUser } from "../models/userModel";
 import { messageHanlder } from "../server";
+import { errThrower } from "./errHandler";
 
 interface ViewConvoPayload {
   userId: string;
@@ -517,6 +518,48 @@ export const ConvoService = {
 
     if (!ConvoService.isConvoValid(conversation!)) {
       ConvoService.deleteConvoById(conversation!._id as string);
+    }
+  },
+  searchConvoByParticipant: async (
+    participant: [string, string]
+  ): Promise<IConversation | null | undefined> => {
+    try {
+      const [user1, user2] = participant;
+      return await Conversation.findOne({
+        $and: [{ participants: user1 }, { participants: user2 }],
+      }).lean();
+    } catch (error) {
+      errThrower("searchConvoByParticipant", error as Error);
+    }
+  },
+  getUniqueConversations: async (payload: {
+    userId: string;
+    users: IUser[];
+  }): Promise<IConversation[]> => {
+    try {
+      const { userId, users } = payload;
+      const convoUniqueIDs = new Set<string>();
+      const conversationResult: IConversation[] = [];
+
+      for (let user of users) {
+        const otherUser = user._id.toString();
+        const conversation = await ConvoService.searchConvoByParticipant([
+          userId,
+          otherUser,
+        ]);
+        if (conversation) {
+          const convoId = conversation._id!.toString();
+
+          if (!convoUniqueIDs.has(convoId)) {
+            conversationResult.push(conversation);
+          }
+          convoUniqueIDs.add(convoId);
+        }
+      }
+      return conversationResult;
+    } catch (error) {
+      errThrower("getUniqueConversations", error as Error);
+      return [];
     }
   },
 };

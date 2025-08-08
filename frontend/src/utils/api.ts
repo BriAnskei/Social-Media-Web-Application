@@ -93,25 +93,6 @@ export const postApi = {
     }
   },
 
-  uploadComment: async (
-    data: CommentEventPayload
-  ): Promise<ApiResponse & CommentApiResponse> => {
-    try {
-      const res = await api.post("/api/posts/add-comment", data, {
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-      return res.data;
-    } catch (error) {
-      console.error(error);
-      return {
-        success: false,
-        message: "Network Error Occured",
-      };
-    }
-  },
-
   getPostById: async (postId: string): Promise<ApiResponse> => {
     try {
       if (!postId) {
@@ -178,8 +159,6 @@ export const commentApi = {
   }): Promise<ApiResponse & { hasMore?: boolean }> => {
     try {
       const { token, postId, cursor } = payload;
-
-      console.log("Getting comments: ", payload);
 
       const res = await api.get(`api/comment/get/${postId}`, {
         params: {
@@ -506,6 +485,30 @@ export const MessageApi = {
     },
   },
   conversation: {
+    search: async (payload: {
+      token: string;
+      query: string;
+    }): Promise<MessageApiResponse> => {
+      try {
+        const { query, token } = payload;
+        const conersation = await api.get("/api/messages/conversation/find", {
+          params: {
+            query,
+          },
+          headers: {
+            token,
+            "Content-Type": "application/json",
+          },
+        });
+        return conersation.data;
+      } catch (error) {
+        console.log(error);
+        return {
+          success: false,
+          message: "Network Error Occured: " + error,
+        };
+      }
+    },
     drop: async (
       token: string,
       conversationId: string
