@@ -37,9 +37,25 @@ const NavControl = ({
   const { shouldRender: renderConvoBadge, isVisible: visibleConvoBadge } =
     useNavbarBadge(isThereUnReadConvo);
 
+  const [isDropDownShown, setIsDropDownShown] = useState(false);
+
   useEffect(() => {
-    console.log("A convo has been updated");
-  }, [isThereUnReadConvo]);
+    // Get the dropdown wrapper instead of the menu
+    const dropdownWrapper = document.querySelector(".chat .dropdown");
+
+    if (!dropdownWrapper) return;
+
+    const handleShow = () => setIsDropDownShown(true);
+    const handleHide = () => setIsDropDownShown(false);
+
+    dropdownWrapper.addEventListener("shown.bs.dropdown", handleShow);
+    dropdownWrapper.addEventListener("hidden.bs.dropdown", handleHide);
+
+    return () => {
+      dropdownWrapper.removeEventListener("shown.bs.dropdown", handleShow);
+      dropdownWrapper.removeEventListener("hidden.bs.dropdown", handleHide);
+    };
+  }, []);
 
   useEffect(() => {
     const dropdownTrigger = document.getElementById("notification-trigger");
@@ -100,8 +116,14 @@ const NavControl = ({
                 aria-expanded="false"
               ></span>
             )}
-            <div className="dropdown-menu dropdown-menu-end ">
-              <ConversationList currentUser={currentUser} />
+            <div
+              id="convoDropdown"
+              className="dropdown-menu dropdown-menu-end "
+            >
+              <ConversationList
+                isDropDownShown={isDropDownShown}
+                currentUser={currentUser}
+              />
             </div>
           </div>
         </li>

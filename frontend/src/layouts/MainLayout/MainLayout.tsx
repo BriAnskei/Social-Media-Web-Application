@@ -80,7 +80,7 @@ const MainLayout = () => {
 
   useEffect(() => {
     if (isAuthenticated) {
-      dispatch(fetchAllNotifs());
+      dispatch(fetchAllNotifs({}));
     }
   }, []);
 

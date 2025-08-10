@@ -210,13 +210,16 @@ export const searchConversation = async (
   try {
     const userId = req.userId as string;
     const query = req.query.query;
-    const correspondingUsers = await userService.regexSearch(query as string);
 
-    const conversationResult: IConversation[] =
-      await ConvoService.getUniqueConversations({
-        userId,
-        users: correspondingUsers,
-      });
+    const correspondingUsers = await userService.regexSearch(
+      query as string,
+      userId
+    );
+
+    const conversationResult = await ConvoService.getUniqueConversations({
+      userId,
+      users: correspondingUsers,
+    });
 
     res.json({
       success: true,

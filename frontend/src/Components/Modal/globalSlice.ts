@@ -163,30 +163,44 @@ const globalSlice = createSlice({
     toggleViewFollow: (state) => {
       state.viewFollow.show = !state.viewFollow.show;
     },
+    maximizeChatWindow: (state, action) => {
+      const conversationId = action.payload;
+
+      const windowIndex = state.chatWindows.findIndex(
+        (chatWindow) => chatWindow.conversationId === conversationId
+      );
+
+      if (windowIndex !== -1) {
+        state.chatWindows[windowIndex].minimized = false;
+      }
+    },
     openChatWindow: (state, action) => {
       const { conversationId, participantId } = action.payload;
 
       const isWindowExist = state.chatWindows.findIndex(
         (chatWindow) => chatWindow.conversationId === conversationId
       );
-      if (isWindowExist !== -1) {
-      } else {
-        const chatWindowPayload: ChatWindowType = {
-          conversationId,
-          participantId,
-          minimized: false,
-        };
 
-        state.chatWindows.push(chatWindowPayload);
+      const chatWindowPayload: ChatWindowType = {
+        conversationId,
+        participantId,
+        minimized: false,
+      };
+
+      if (isWindowExist === -1) {
+        if (state.chatWindows.length === 2) {
+          state.chatWindows.pop();
+          state.chatWindows.unshift(chatWindowPayload);
+        } else {
+          state.chatWindows.push(chatWindowPayload);
+        }
       }
     },
     closeWindow: (state, action) => {
       const convoId = action.payload;
-      console.log("CLosing window: ", convoId, current(state).chatWindows);
       state.chatWindows = state.chatWindows.filter(
         (chatWindow) => chatWindow.conversationId !== convoId
       );
-      console.log("update", current(state).chatWindows);
     },
     toggleMinimize: (state, action) => {
       const { conversationId } = action.payload;
@@ -213,7 +227,6 @@ const globalSlice = createSlice({
       }
     },
     resetGlobalState: () => {
-      console.log("RESITING GLOBAL STATE");
       return initialState;
     },
   },
@@ -231,7 +244,7 @@ export const {
   openEditProfileModal,
   viewProfile,
   toggleViewFollow,
-
+  maximizeChatWindow,
   viewImage,
   viewImageClose,
 

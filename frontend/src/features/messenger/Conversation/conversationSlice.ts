@@ -136,14 +136,38 @@ export const findOneConvoUpdateOnCloseMessage = createAsyncThunk(
   }
 );
 
+export const filterConversation = createAsyncThunk(
+  "conversation/find",
+  async (query: string, { rejectWithValue, getState }) => {
+    try {
+      const state = getState() as RootState;
+      const { accessToken } = state.auth;
+
+      if (!accessToken)
+        return rejectWithValue("filterConversation, Error: no accesstoken");
+
+      const res = await MessageApi.conversation.search({
+        query,
+        token: accessToken,
+      });
+
+      return res.conversations;
+    } catch (error) {
+      rejectWithValue("Failed to filter: " + error);
+    }
+  }
+);
+
 interface ConversationState extends NormalizeState<ConversationType> {
   isFetchingMore: boolean;
   unreadIds: string[];
+  searchedIds: string[];
 }
 
 const initialState: ConversationState = {
   byId: {},
   allIds: [],
+  searchedIds: [],
   isFetchingMore: false,
   unreadIds: [],
   loading: false,
@@ -327,6 +351,29 @@ const conversationSlice = createSlice({
       })
       .addCase(openConversation.rejected, (state, action) => {
         state.error = action.payload as string;
+      })
+      .addCase(filterConversation.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(filterConversation.fulfilled, (state, action) => {
+        const converstions = action.payload as ConversationType[];
+        state.searchedIds = [];
+
+        for (let convo of converstions) {
+          const { byId, allIds } = normalizeResponse(convo);
+          if (!state.searchedIds.includes(allIds[0])) {
+            state.searchedIds.push(allIds[0]);
+          }
+
+          if (state.byId[allIds[0]]) {
+            state.byId = { ...state.byId, ...byId };
+          }
+        }
+        state.loading = false;
+      })
+      .addCase(filterConversation.rejected, (state, action) => {
+        state.error = action.payload as string;
+        state.loading = false;
       });
   },
 });

@@ -196,10 +196,7 @@ const SuggestionInput: React.FC<Prop> = ({
               >
                 <div className="list-user-cont" tabIndex={-1}>
                   <img
-                    src={userProfile(
-                      currentUser.profilePicture,
-                      currentUser._id
-                    )}
+                    src={userProfile(user.profilePicture, user._id)}
                     alt=""
                   />
                   {currentUser._id === user._id ? (

@@ -46,9 +46,10 @@ export const userService = {
       throw new Error("getUserById , " + (error as Error));
     }
   },
-  regexSearch: async (query: string): Promise<IUser[]> => {
+  regexSearch: async (query: string, userId?: string): Promise<IUser[]> => {
     try {
       return await UserModel.find({
+        ...(userId && { _id: { $ne: userId } }),
         $or: [
           { username: new RegExp(query as string, "i") }, // case sensitive
           { fullName: new RegExp(query as string, "i") },

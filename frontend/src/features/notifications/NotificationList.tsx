@@ -43,10 +43,6 @@ const NotificationList = () => {
     }
   };
 
-  const capitializeFristWord = (text: string) => {
-    return String(text).charAt(0).toUpperCase() + String(text).slice(1);
-  };
-
   const showDateCreationDetails = (createdAt: Date) => {
     const created = new Date(createdAt);
     const now = new Date();
@@ -87,9 +83,6 @@ const NotificationList = () => {
         ) : (
           allIds.map((id, index) => {
             const notifData = byId[id];
-            const senderId = notifData.sender; // get sender by notif
-
-            const senderData = userById[senderId];
 
             return (
               <div

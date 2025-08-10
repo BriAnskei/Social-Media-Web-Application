@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import "./UploadModal.css";
 import { ModalTypes } from "../../../types/modalTypes";
 import { useDispatch } from "react-redux";
@@ -11,18 +11,23 @@ import { userProfile } from "../../../utils/ImageUrlHelper";
 
 const UploadModal: React.FC<ModalTypes> = ({ showModal, onClose }) => {
   const dispatch: AppDispatch = useDispatch();
-  const { emitUploadPostFollowerNotif } = useSocket();
 
   const { currentUser } = useCurrentUser();
   const { profilePicture, _id, fullName } = currentUser;
-
-  const fileInputRef = useRef<any>();
 
   const [postInputData, setPostInputData] = useState<UploadPostTypes>({
     content: "",
   });
   const [fontSize, setFontSize] = useState("25px");
+
+  const fileInputRef = useRef<any>();
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    if (showModal && textAreaRef.current) {
+      textAreaRef.current.focus();
+    }
+  }, [showModal]);
 
   const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target?.files;
@@ -62,13 +67,6 @@ const UploadModal: React.FC<ModalTypes> = ({ showModal, onClose }) => {
     }
     try {
       await dispatch(createPost(formData)).unwrap();
-
-      // const eventPayload = {
-      //   userId: currentUser._id,
-      //   postId: postData._id,
-      // };
-
-      // emitUploadPostFollowerNotif(eventPayload);
     } catch (error) {
       console.error(error);
     } finally {

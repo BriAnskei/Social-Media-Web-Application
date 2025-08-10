@@ -73,11 +73,13 @@ const MessageBox = ({ ChatWindowData, currentUserData }: MessageBoxProp) => {
   useEffect(() => {
     emitConvoViewStatus(true, conversation?._id!);
     async function fetchAllData() {
+      if (messages && messages.length > 0) return;
+
       await fetchMessages(conversationId, null);
     }
 
     fetchAllData();
-  }, []);
+  }, [conversationId]);
 
   scrollHanlder(messages, lastMessageIndexRef, messagesRef, loading);
 
@@ -208,6 +210,10 @@ const MessageBox = ({ ChatWindowData, currentUserData }: MessageBoxProp) => {
     dispatch(viewProfile(userParticipant));
     navigate("/view/profile");
   };
+
+  useEffect(() => {
+    console.log("minimize update: ", minimized);
+  }, [minimized]);
 
   const isConversationNotReady = !conversation;
   const isMessagesNotReady = !messages;
@@ -353,10 +359,10 @@ function scrollHanlder(
     }
 
     function smoothScroll() {
-      if (messagesRef && currIndex === prevIndex + 1) {
+      if (currIndex === prevIndex + 1) {
         messagesRef.current?.scrollIntoView({
           behavior: "smooth",
-          block: "center",
+          block: "end",
         });
       }
     }

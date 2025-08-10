@@ -8,6 +8,9 @@ interface MessageBoxGroupProp {
   loading: boolean;
   isFetchingMore: boolean;
   allIds: string[];
+  searchIds: string[];
+  searchLoading: boolean;
+  hasSearch: boolean;
   byId: { [key: string]: ConversationType };
   currUserId: string;
   convoListScrollRef: React.MutableRefObject<any>;
@@ -23,19 +26,24 @@ const MessageBoxGroup = ({
   openConvoOnMessageBox,
   convoListScrollRef,
   byId,
+  searchLoading,
+  searchIds,
   allIds,
+  hasSearch,
   currUserId,
   isFetchingMore,
   loading,
 }: MessageBoxGroupProp) => {
+  const convoIds = hasSearch ? searchIds : allIds;
+
   return (
     <div className="chat-list" ref={convoListScrollRef} onScroll={handleScroll}>
-      {loading ? (
+      {loading || searchLoading ? (
         <Spinner />
-      ) : allIds.length === 0 ? (
-        <>No Conversation</>
+      ) : convoIds.length === 0 ? (
+        <>{hasSearch ? <>Conversation not found</> : <>No Conversation</>}</>
       ) : (
-        allIds.map((id) => {
+        convoIds.map((id) => {
           const conversation = byId[id];
 
           return (

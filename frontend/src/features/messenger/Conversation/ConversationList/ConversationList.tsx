@@ -13,16 +13,24 @@ import SearchConvoHandler from "./SearchConvoHandler";
 
 interface ConversationListPorp {
   currentUser: FetchedUserType;
+  isDropDownShown: boolean;
 }
 
-const ConversationList = ({ currentUser }: ConversationListPorp) => {
+const ConversationList = ({
+  currentUser,
+  isDropDownShown,
+}: ConversationListPorp) => {
   const dispatch: AppDispatch = useDispatch();
 
-  const { allIds, byId, loading, isFetchingMore } = useSelector(
+  const { allIds, searchedIds, byId, loading, isFetchingMore } = useSelector(
     (state: RootState) => state.conversation
   );
 
   const [hasMore, setHasMore] = useState<boolean>(true);
+
+  const [hasSearch, setHasSearch] = useState<boolean>(false);
+  const [searchLoading, setSearchLoading] = useState<boolean>(false);
+  const [searchConversation, setSearch] = useState<string>("");
 
   const convoListScrollRef = useRef<any>(null);
   const prevScrollViewRef = useRef<number>(0);
@@ -44,9 +52,16 @@ const ConversationList = ({ currentUser }: ConversationListPorp) => {
     fetchData();
   }, []);
 
+  // dropdown listener
+  useEffect(() => {
+    if (!isDropDownShown) {
+      setSearch("");
+    }
+  }, [isDropDownShown]);
+
   const closeDropDown = () => {
     // Find all open dropdown menus and remove their 'show' class
-    const dropDown = document.querySelector(".dropdown-menu.show");
+    const dropDown = document.getElementById("convoDropdown");
 
     if (dropDown) {
       dropDown.classList.remove("show");
@@ -126,12 +141,21 @@ const ConversationList = ({ currentUser }: ConversationListPorp) => {
         <div className="chats-header">
           <span>Chats</span>
           <div className="search-chat">
-            <SearchConvoHandler />
+            <SearchConvoHandler
+              searchConversation={searchConversation}
+              setSearch={setSearch}
+              setSearchLoading={setSearchLoading}
+              setHasSearch={setHasSearch}
+              dispatch={dispatch}
+            />
           </div>
         </div>
         <ContactList openConversation={openConvoOnMessageBox} />
         <MessageBoxGroup
+          searchLoading={searchLoading}
+          hasSearch={hasSearch}
           convoListScrollRef={convoListScrollRef}
+          searchIds={searchedIds}
           byId={byId}
           allIds={allIds}
           currUserId={currentUser._id}

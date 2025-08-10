@@ -25,8 +25,6 @@ async function processJob(job: Job) {
     convoId: string;
   };
 
-  console.log("MESSAGE JOB WORKER");
-
   const session = await mongoose.startSession();
   session.startTransaction(); // Start a new MongoDB transaction for atomic operations
 

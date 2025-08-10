@@ -13,6 +13,7 @@ import { useDispatch } from "react-redux";
 import { SocketContext } from "../../context/SocketContext";
 import { FetchedUserType } from "../../types/user";
 import { useCurrentUser } from "../useUsers";
+import { maximizeChatWindow } from "../../Components/Modal/globalSlice";
 
 const CHAT_EVENTS = {
   open_conversation: "conversation_room-active",
@@ -42,8 +43,6 @@ export const setupChatSocket = ({
   isConnected,
   currUser,
 }: ChatSocketSetupParams) => {
-
-  
   if (!socket || !isConnected) {
     return null;
   }
@@ -55,6 +54,8 @@ export const setupChatSocket = ({
   }) => {
     const { conversation, messageData } = data;
     const { _id: currUserId } = currUser;
+
+    dispatch(maximizeChatWindow(conversation._id));
 
     // add message in the conversation messages
     dispatch(

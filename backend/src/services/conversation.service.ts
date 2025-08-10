@@ -524,10 +524,60 @@ export const ConvoService = {
     participant: [string, string]
   ): Promise<IConversation | null | undefined> => {
     try {
-      const [user1, user2] = participant;
-      return await Conversation.findOne({
-        $and: [{ participants: user1 }, { participants: user2 }],
-      }).lean();
+      const [userId, otherUserId] = participant;
+
+      const convo = await Conversation.aggregate([
+        {
+          $match: {
+            participants: {
+              $all: [
+                new mongoose.Types.ObjectId(userId),
+                new mongoose.Types.ObjectId(otherUserId),
+              ],
+            },
+            deletedFor: { $nin: [new mongoose.Types.ObjectId(userId)] },
+            lastMessage: { $ne: null },
+          },
+        },
+        {
+          $lookup: {
+            from: "messages",
+            localField: "lastMessage",
+            foreignField: "_id",
+            as: "lastMessageData",
+          },
+        },
+        {
+          $match: {
+            "lastMessageData.hideFrom": {
+              $ne: new mongoose.Types.ObjectId(userId),
+            },
+          },
+        },
+        {
+          $lookup: {
+            from: "users",
+            localField: "participants",
+            foreignField: "_id",
+            as: "participants",
+          },
+        },
+        {
+          $addFields: {
+            lastMessage: { $arrayElemAt: ["$lastMessageData", 0] },
+          },
+        },
+        {
+          $project: {
+            lastMessageData: 0, // Remove the temporary field
+          },
+        },
+        {
+          $sort: { lastMessageAt: -1 },
+        },
+      ]);
+
+      return convo[0];
     } catch (error) {
       errThrower("searchConvoByParticipant", error as Error);
     }
@@ -535,11 +585,11 @@ export const ConvoService = {
   getUniqueConversations: async (payload: {
     userId: string;
     users: IUser[];
-  }): Promise<IConversation[]> => {
+  }): Promise<FormattedConversation[]> => {
     try {
       const { userId, users } = payload;
       const convoUniqueIDs = new Set<string>();
-      const conversationResult: IConversation[] = [];
+      const conversationResult: FormattedConversation[] = [];
 
       for (let user of users) {
         const otherUser = user._id.toString();
@@ -547,15 +597,23 @@ export const ConvoService = {
           userId,
           otherUser,
         ]);
+
         if (conversation) {
           const convoId = conversation._id!.toString();
 
           if (!convoUniqueIDs.has(convoId)) {
-            conversationResult.push(conversation);
+            conversationResult.push(
+              conversationFormatHelper.formatConversationData(
+                conversation,
+                userId,
+                conversation.validFor
+              )
+            );
           }
           convoUniqueIDs.add(convoId);
         }
       }
+
       return conversationResult;
     } catch (error) {
       errThrower("getUniqueConversations", error as Error);
@@ -599,7 +657,7 @@ export const conversationFormatHelper = {
       );
 
       const lastMessageReadByParticipant = conversation.lastMessageOnRead?.find(
-        (data) => data.user === otherParticipant
+        (data) => data.user.toString() === otherParticipant?.toString()
       );
 
       if (!otherParticipant || !unreadData) {
