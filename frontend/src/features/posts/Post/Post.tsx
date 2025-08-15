@@ -7,7 +7,7 @@ import { FetchedUserType } from "../../../types/user";
 import { AppDispatch } from "../../../store/store";
 import { useSocket } from "../../../hooks/socket/useSocket";
 
-import { useCurrentUser } from "../../../hooks/useUsers";
+import { useCurrentUser, useUserById } from "../../../hooks/useUsers";
 import { updateFollow } from "../../users/userSlice";
 import {
   openPostModal,
@@ -32,7 +32,9 @@ const Post = ({ post }: Post) => {
   const { handleFollowEffect } = useToastEffect();
   const navigate = useNavigate();
 
-  const postOwnerData = post.user as FetchedUserType;
+  const postOwnerObject = post.user as FetchedUserType;
+
+  const postOwnerData = useUserById(postOwnerObject._id);
 
   const dispatch = useDispatch<AppDispatch>();
 
@@ -56,7 +58,10 @@ const Post = ({ post }: Post) => {
   }, [post, currentUser._id]);
 
   useEffect(() => {
-    if (post.user !== currentUser._id) {
+    const postOwner = post.user as FetchedUserType;
+    console.log("");
+
+    if (postOwner._id !== currentUser._id) {
       validateFollow();
     }
   }, [postOwnerData?.followers, currentUser?.following]);

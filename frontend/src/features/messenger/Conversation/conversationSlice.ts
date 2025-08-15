@@ -365,7 +365,7 @@ const conversationSlice = createSlice({
             state.searchedIds.push(allIds[0]);
           }
 
-          if (state.byId[allIds[0]]) {
+          if (!state.byId[allIds[0]]) {
             state.byId = { ...state.byId, ...byId };
           }
         }

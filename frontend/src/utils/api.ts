@@ -1,7 +1,7 @@
 import axios from "axios";
 import { LoginTypes, RegisterTypes } from "../types/AuthTypes";
 import { FollowPayload } from "../types/user";
-import { CommentApiResponse, CommentEventPayload } from "../types/PostType";
+
 import { ApiResponse, MessageApiResponse } from "../types/ApiResponseType";
 import { openConversationPayload } from "../features/messenger/Conversation/conversationSlice";
 import { Message } from "../types/MessengerTypes";
@@ -12,6 +12,32 @@ export const api = axios.create({
 });
 
 export const postApi = {
+  fetchUserPost: async (payload: {
+    token: string;
+    userId: string;
+    cursor?: string;
+  }): Promise<ApiResponse & { hasMore?: boolean }> => {
+    try {
+      const { token, userId, cursor } = payload;
+
+      const response = await api.get(`/api/posts/user/${userId}`, {
+        params: {
+          cursor,
+        },
+        headers: {
+          token,
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      return response.data;
+    } catch (error) {
+      return {
+        success: false,
+        message: "Updating error" + error,
+      };
+    }
+  },
   update: async (
     token: string,
     data: FormData,
@@ -34,9 +60,15 @@ export const postApi = {
     }
   },
 
-  fetchPost: async (): Promise<ApiResponse> => {
+  fetchPost: async (
+    cursor?: string
+  ): Promise<ApiResponse & { hasMore?: boolean }> => {
     try {
-      const response = await api.get(`/api/posts/postlist`);
+      const response = await api.get(`/api/posts/postlist`, {
+        params: {
+          cursor,
+        },
+      });
 
       return response.data;
     } catch (error) {
@@ -390,11 +422,19 @@ export const notificationApi = {
     }
   },
 
-  fetchAllNotif: async (token: string): Promise<ApiResponse> => {
+  fetchAllNotif: async (payload: {
+    token: string;
+    cursor?: string;
+  }): Promise<ApiResponse & { hasMore?: boolean }> => {
     try {
+      const { token, cursor } = payload;
       const response = await api.get("api/notify/get", {
+        params: {
+          cursor,
+        },
         headers: {
           token,
+          "Content-Type": "application/json",
         },
       });
       return response.data;
@@ -491,7 +531,7 @@ export const MessageApi = {
     }): Promise<MessageApiResponse> => {
       try {
         const { query, token } = payload;
-        const conersation = await api.get("/api/messages/conversation/find", {
+        const response = await api.get("/api/messages/conversation/find", {
           params: {
             query,
           },
@@ -500,7 +540,10 @@ export const MessageApi = {
             "Content-Type": "application/json",
           },
         });
-        return conersation.data;
+
+        console.log("FILTER RESPONSE: ", response.data);
+
+        return response.data;
       } catch (error) {
         console.log(error);
         return {

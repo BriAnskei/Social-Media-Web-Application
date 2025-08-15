@@ -1,4 +1,4 @@
-import NotificationList from "../../features/notifications/NotificationList";
+import Notifications from "../../features/notifications/Notifications";
 import { Link } from "react-router";
 import ConversationList from "../../features/messenger/Conversation/ConversationList/ConversationList";
 
@@ -16,13 +16,14 @@ interface NotificationProp {
 
 interface NavControllProp {
   onPageRefresh: () => Promise<void>;
+  onUserPageRefresh: () => void;
   dispatch: AppDispatch;
   notificationProp: NotificationProp;
 }
 
 const NavControl = ({
   onPageRefresh,
-
+  onUserPageRefresh,
   dispatch,
   notificationProp,
 }: NavControllProp) => {
@@ -154,11 +155,11 @@ const NavControl = ({
               className="dropdown-menu dropdown-menu-end"
               style={{ padding: "0" }}
             >
-              <NotificationList />
+              <Notifications />
             </div>
           </div>
         </li>
-        <Link to={"/profile"}>
+        <Link to={"/profile"} onClick={onUserPageRefresh}>
           <span className="material-symbols-outlined .symbols">person</span>
         </Link>
       </ul>

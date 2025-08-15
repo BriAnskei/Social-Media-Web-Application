@@ -1,5 +1,5 @@
 import "./Viewpost.css";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "../../../store/store";
 import { fetchPost, increamentComment, toggleLike } from "../postSlice";
@@ -10,11 +10,15 @@ import { useSocket } from "../../../hooks/socket/useSocket";
 import AutoResizeTextarea from "../../../utils/AutoResizeTextaria";
 import { useNavigate } from "react-router";
 import { FetchedUserType } from "../../../types/user";
-import { viewProfile } from "../../../Components/Modal/globalSlice";
+import {
+  removeViewPost,
+  viewProfile,
+} from "../../../Components/Modal/globalSlice";
 import { usePopoverContext } from "../../../hooks/usePopover";
 import { userProfile } from "../../../utils/ImageUrlHelper";
 import ViewPostCommentList from "./ViewPostCommentList";
 import { addComment, resetCommets } from "../../comment/commentSlice";
+import { FetchPostType } from "../../../types/PostType";
 
 interface Post {
   postId: string;
@@ -29,9 +33,12 @@ const ViewPost = ({ postId }: Post) => {
   const { emitLike, emitComment } = useSocket();
   const { popover } = usePopoverContext();
 
-  const postData = usePostById(postId);
+  const [postData, setPostData] = useState<FetchPostType>({} as FetchPostType);
 
-  const postOwnerData = postData.user as FetchedUserType;
+  const postOwnerData = useMemo(
+    () => postData.user as FetchedUserType,
+    [postData]
+  );
 
   const [isSuccess, setIsSucess] = useState(false); // Fetcher response, loading flag
 
@@ -43,17 +50,17 @@ const ViewPost = ({ postId }: Post) => {
 
   useEffect(() => {
     dispatch(resetCommets(postId));
+
+    return () => {
+      dispatch(removeViewPost());
+    };
   }, []);
 
   useEffect(() => {
     const getPostData = async (postId: string) => {
-      if (!postId || Object.keys(postData).length === 0) {
-        navigate("/");
-        return;
-      }
-
       const res = await dispatch(fetchPost(postId)).unwrap();
       setIsSucess(res.success);
+      setPostData(res.posts as FetchPostType);
     };
     getPostData(postId);
   }, [dispatch, postId]);

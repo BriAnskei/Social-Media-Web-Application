@@ -15,6 +15,7 @@ interface CommentListProp {
   viewUserProfile: (user: FetchedUserType) => void;
   dispatch: AppDispatch;
   modalOnShow: boolean;
+  totalComments: number;
 }
 
 const CommentList = ({
@@ -22,6 +23,7 @@ const CommentList = ({
   viewUserProfile,
   dispatch,
   modalOnShow,
+  totalComments,
 }: CommentListProp) => {
   const { comments, hasMore, loading, err } = useComment(postId);
 
@@ -35,7 +37,7 @@ const CommentList = ({
   useEffect(() => {
     const fetchInitialComments = async () => {
       try {
-        if (modalOnShow) {
+        if (modalOnShow && totalComments > 0) {
           await dispatch(fetchComments({ postId }));
         }
       } catch (error) {
@@ -125,7 +127,7 @@ const CommentList = ({
       }
 
       function instantScroll() {
-        if (comments && comments.length === 10) {
+        if (comments && comments.length <= 10) {
           buttonRef.current.scrollIntoView({
             behavior: "instant",
             block: "end",

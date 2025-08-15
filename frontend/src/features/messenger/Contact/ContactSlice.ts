@@ -5,13 +5,16 @@ import { RootState } from "../../../store/store";
 import { MessageApi } from "../../../utils/api";
 import { normalizeResponse } from "../../../utils/normalizeResponse";
 
-interface Contactstate extends NormalizeState<ContactType> {}
+interface Contactstate extends NormalizeState<ContactType> {
+  searchedIds: string[];
+}
 
 const initialState: Contactstate = {
   byId: {},
   allIds: [],
   loading: false,
   error: null,
+  searchedIds: [],
 };
 
 export const fetchAllContact = createAsyncThunk(
@@ -38,6 +41,20 @@ const contactSlice = createSlice({
   name: "contact",
   initialState,
   reducers: {
+    filterContacts: (state, action) => {
+      const filteredContacts: ContactType[] = action.payload;
+
+      for (let contact of filteredContacts) {
+        const { byId, allIds } = normalizeResponse(contact);
+        if (!state.searchedIds.includes(allIds[0])) {
+          state.searchedIds.push(allIds[0]);
+        }
+
+        if (state.byId[allIds[0]]) {
+          state.byId = { ...state.byId, ...byId };
+        }
+      }
+    },
     createOrUpdateContact: (
       state,
       action: PayloadAction<{ contact: ContactType }>

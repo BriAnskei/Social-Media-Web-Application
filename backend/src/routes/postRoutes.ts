@@ -5,15 +5,16 @@ import {
   deletePost,
   findPostById,
   likeToggled,
-  postsLists,
+  getPosts,
   updatePost,
+  getPostByUserId,
 } from "../controllers/postController";
 import upload from "../middleware/upload";
 import authMiddleware from "../middleware/auth";
 
 const postRouter = express.Router();
 
-postRouter.get("/postlist", postsLists);
+postRouter.get("/postlist", getPosts);
 postRouter.post(
   "/upload",
   authMiddleware,
@@ -34,5 +35,6 @@ postRouter.get(
   upload.post.delete.single(),
   deletePost
 );
+postRouter.get("/user/:userId", getPostByUserId);
 
 export default postRouter;

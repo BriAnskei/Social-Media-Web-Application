@@ -221,10 +221,16 @@ export const searchConversation = async (
       users: correspondingUsers,
     });
 
+    const contactResult = await contactService.getUniqueContacts({
+      userId,
+      users: correspondingUsers,
+    });
+
     res.json({
       success: true,
       message: "Match conversation found",
       conversations: conversationResult,
+      contacts: contactResult,
     });
   } catch (error) {
     console.log("Failed on searchConversation", error);

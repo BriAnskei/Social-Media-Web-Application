@@ -14,6 +14,7 @@ import {
   FollowPayloadToast,
   useToastEffect,
 } from "../../../hooks/toast/useToastEffect";
+import { userProfile } from "../../../utils/ImageUrlHelper";
 
 interface ProfileProp {
   data: FetchedUserType;
@@ -91,15 +92,10 @@ const Profile: React.FC<ProfileProp> = ({ data }) => {
     dispatch(toggleViewFollow());
   };
 
-  const imgUrl =
-    data.profilePicture !== ""
-      ? `http://localhost:4000/uploads/profile/${data._id}/${data.profilePicture}`
-      : "http://localhost:4000/no-profile/no-profile.jpg";
-
   return (
     <>
       <div className="profile-main">
-        <img src={imgUrl} alt="" />
+        <img src={userProfile(data.profilePicture, data._id)} alt="" />
         <div className="profile-info">
           <h1>{data.fullName}</h1>
           <div

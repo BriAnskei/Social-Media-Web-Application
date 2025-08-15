@@ -2,24 +2,17 @@ import "./ProfilePage.css";
 import Profile from "../../features/users/profile/Profile";
 import { useCurrentUser } from "../../hooks/useUsers";
 
-import { useCurrentUserPosts } from "../../hooks/usePost";
 import UserPosts from "../../features/posts/UserPosts/UserPosts";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import ImageDisplay from "../../Components/ImageDisplay/ImageDisplay";
+import { useDispatch } from "react-redux";
+import { AppDispatch } from "../../store/store";
 
 const ProfilePage = () => {
+  const dispatch = useDispatch<AppDispatch>();
   const { currentUser } = useCurrentUser();
 
-  const { loading, currentUserPosts: posts } = useCurrentUserPosts();
-
   const [view, setView] = useState("posts");
-
-  // scroll to top when render
-  useEffect(() => {
-    if (window.pageYOffset > 0) {
-      window.scrollTo(0, 0);
-    }
-  }, []);
 
   return (
     <div className="profile-cont">
@@ -35,7 +28,7 @@ const ProfilePage = () => {
         </div>
       </div>
       {view === "posts" ? (
-        <UserPosts loading={loading} posts={posts} />
+        <UserPosts userId={currentUser._id} dispatch={dispatch} />
       ) : (
         <ImageDisplay userId={currentUser._id} />
       )}

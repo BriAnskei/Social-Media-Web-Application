@@ -5,9 +5,5 @@ const allIds = (state: RootState) => state.notification.allIds;
 
 export const selectUnreadNotif = createSelector(
   [byId, allIds],
-  (byId, allIds) => {
-    const unreadNotif = allIds.filter((id) => byId[id].read === false);
-
-    return unreadNotif;
-  }
+  (byId, allIds) => allIds.filter((id) => byId[id].read === false)
 );

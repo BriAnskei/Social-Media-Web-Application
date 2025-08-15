@@ -10,6 +10,7 @@ import { ConversationService } from "../../../../services/conversation.service";
 import MessageBoxGroup from "../MessageBoxGroup/MessageBoxGroup";
 import { fetchAllConvoList } from "../conversationSlice";
 import SearchConvoHandler from "./SearchConvoHandler";
+import { ConversationType } from "../../../../types/MessengerTypes";
 
 interface ConversationListPorp {
   currentUser: FetchedUserType;
@@ -26,8 +27,10 @@ const ConversationList = ({
     (state: RootState) => state.conversation
   );
 
+  // pagination
   const [hasMore, setHasMore] = useState<boolean>(true);
 
+  // on search/filter
   const [hasSearch, setHasSearch] = useState<boolean>(false);
   const [searchLoading, setSearchLoading] = useState<boolean>(false);
   const [searchConversation, setSearch] = useState<string>("");
@@ -76,6 +79,7 @@ const ConversationList = ({
   const handleScroll = () => {
     const element = convoListScrollRef.current;
     const scrollTop = element.scrollTop;
+
     const scrollHeight = element.scrollHeight;
     const offsetHeight = element.offsetHeight;
 
@@ -88,7 +92,7 @@ const ConversationList = ({
 
   const fetchConversationList = useCallback(async () => {
     try {
-      const cursor = getCursor();
+      const cursor = getCursor(allIds, byId);
 
       const response = await dispatch(fetchAllConvoList({ cursor })).unwrap();
       const isHasMore = response?.hasMore as boolean;
@@ -124,11 +128,6 @@ const ConversationList = ({
     setUpViewHeight();
   }, [hasMore, allIds]);
 
-  const getCursor = (): string | null => {
-    return allIds.length > 0
-      ? byId[allIds[allIds.length - 1]].lastMessageAt
-      : null;
-  };
   const setUpViewHeight = () => {
     setTimeout(() => {
       convoListScrollRef.current.scrollTop = prevScrollViewRef.current;
@@ -139,7 +138,7 @@ const ConversationList = ({
     <>
       <div className="conversationList-cont">
         <div className="chats-header">
-          <span>Chats</span>
+          <h3>Chats</h3>
           <div className="search-chat">
             <SearchConvoHandler
               searchConversation={searchConversation}
@@ -170,3 +169,12 @@ const ConversationList = ({
 };
 
 export default ConversationList;
+
+function getCursor(
+  allIds: string[],
+  byId: { [key: string]: ConversationType }
+): string | null {
+  return allIds.length > 0
+    ? byId[allIds[allIds.length - 1]].lastMessageAt
+    : null;
+}

@@ -7,8 +7,57 @@ import {
   emitCreateUpdateContact,
   emitUpdateDropContact,
 } from "../events/emitters";
+import { IUser } from "../models/userModel";
 
 export const contactService = {
+  searchContactByUsers: async (
+    users: [string, string]
+  ): Promise<IContact | null> => {
+    try {
+      const [userId, otherUserId] = users;
+      const contact = await Contact.findOne({
+        user: {
+          $all: [
+            new mongoose.Types.ObjectId(userId),
+            new mongoose.Types.ObjectId(otherUserId),
+          ],
+        },
+        validFor: new mongoose.Types.ObjectId(userId),
+      });
+      return contact;
+    } catch (error) {
+      throw new Error("searchContactByUsers" + (error as Error));
+    }
+  },
+
+  getUniqueContacts: async (payload: { userId: string; users: IUser[] }) => {
+    try {
+      const { userId, users } = payload;
+      const uniqueContactSet = new Set();
+
+      for (let user of users) {
+        const otherUserId = user._id.toString();
+
+        const contact = await contactService.searchContactByUsers([
+          userId,
+          otherUserId,
+        ]);
+
+        if (contact) {
+          const formData = contactFormatHelper.formatContactSigleData(
+            userId,
+            contact
+          );
+          uniqueContactSet.add(formData);
+        }
+      }
+
+      return Array.from(uniqueContactSet);
+    } catch (error) {
+      throw new Error("getUniqueContacts" + (error as Error));
+    }
+  },
+
   createOrUpdateContact: async (userId: string, otherUserId: string) => {
     try {
       let contact = await Contact.findOne({

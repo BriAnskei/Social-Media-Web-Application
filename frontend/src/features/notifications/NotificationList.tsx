@@ -1,47 +1,24 @@
-import "./NotificationList.css";
-import { useDispatch, useSelector } from "react-redux";
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import { useSelector } from "react-redux";
 import { AppDispatch, RootState } from "../../store/store";
+import { fetchAllNotifs } from "./notificationsSlice";
 
-import { useNavigate } from "react-router";
-import { viewPost } from "../../Components/Modal/globalSlice";
-import { faXTwitter } from "@fortawesome/free-brands-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+interface NotificationListProp {
+  listOnClick: (postId: string | undefined, type: string) => void;
+  displayLogoType: (notificationType: string) => string;
+  dispatch: AppDispatch;
+}
 
-const NotificationList = () => {
-  const navigate = useNavigate();
-  const dispatch = useDispatch<AppDispatch>();
-
-  const { allIds, byId, loading } = useSelector(
+const NotificationList = ({
+  listOnClick,
+  displayLogoType,
+  dispatch,
+}: NotificationListProp) => {
+  const { allIds, byId, loading, hasMore, fetchingMore } = useSelector(
     (state: RootState) => state.notification
   );
 
-  const userById = useSelector((state: RootState) => state.user.byId);
-
-  const displayLogoType = (notificationType: string): string => {
-    switch (notificationType) {
-      case "like":
-        return "thumb_up";
-      case "follow":
-        return "person_add";
-      case "comment":
-        return "forum";
-      case "upload":
-        return "notification_add";
-      default:
-        return "notification_important";
-    }
-  };
-
-  const listOnClick = async (postId: string | undefined, type: string) => {
-    if (!type) throw new Error("No type to dispatch this action");
-
-    if (type === "upload" || type === "comment" || type === "like") {
-      if (!postId) throw new Error("No postId to dispatch this action");
-
-      dispatch(viewPost(postId));
-      navigate("/viewpost");
-    }
-  };
+  const notifScrollRef = useRef<HTMLDivElement | null>(null);
 
   const showDateCreationDetails = (createdAt: Date) => {
     const created = new Date(createdAt);
@@ -71,53 +48,75 @@ const NotificationList = () => {
     return new Date(createdAt).toLocaleDateString();
   };
 
-  return (
-    <div className="notif-container">
-      <div className="notif-header">
-        <FontAwesomeIcon icon={faXTwitter} />
-        <span>Notification</span>
-      </div>
-      <div className="notif-list">
-        {loading ? (
-          <>Loading</>
-        ) : (
-          allIds.map((id, index) => {
-            const notifData = byId[id];
+  const handleScroll = async () => {
+    const element = notifScrollRef.current;
 
-            return (
-              <div
-                className={`notification ${
-                  !notifData.read ? "unread-backgroud" : ""
-                }  ${
-                  notifData.type === "upload" ||
-                  notifData.type === "comment" ||
-                  notifData.type === "like"
-                    ? "cursor-onclick"
-                    : ""
-                }`}
-                key={index}
-                onClick={() => listOnClick(notifData.post, notifData.type)}
-              >
-                <div className="notif-content">
-                  <div className="type-logo">
-                    <span className="material-symbols-outlined">
-                      {displayLogoType(notifData.type)}
-                    </span>
-                  </div>
-                  <div
-                    className={`notif-message ${
-                      !notifData.read && "unread-message"
-                    }`}
-                  >{` ${notifData.message}`}</div>
+    // return undifine reference or no more notifs
+    if (!element || !hasMore || fetchingMore) return;
+
+    const scrollTop = element.scrollTop;
+    const scrollHeight = element.scrollHeight;
+    const offsetHeight = element.offsetHeight;
+
+    if (scrollTop === scrollHeight - offsetHeight) {
+      await fetchMoreNotifs();
+    }
+  };
+
+  const fetchMoreNotifs = useCallback(async () => {
+    try {
+      const cursor: string = new Date(
+        byId[allIds[allIds.length - 1]].createdAt
+      ).toISOString();
+
+      await dispatch(fetchAllNotifs({ cursor }));
+    } catch (error) {
+      console.log("Failed to fetch more comments: ", error);
+    }
+  }, [allIds]);
+
+  return (
+    <div className="notif-list" ref={notifScrollRef} onScroll={handleScroll}>
+      {loading ? (
+        <>Loading</>
+      ) : (
+        allIds.map((id, index) => {
+          const notifData = byId[id];
+
+          return (
+            <div
+              className={`notification ${
+                !notifData.read ? "unread-backgroud" : ""
+              }  ${
+                notifData.type === "upload" ||
+                notifData.type === "comment" ||
+                notifData.type === "like"
+                  ? "cursor-onclick"
+                  : ""
+              }`}
+              key={index}
+              onClick={() => listOnClick(notifData.post, notifData.type)}
+            >
+              <div className="notif-content">
+                <div className="type-logo">
+                  <span className="material-symbols-outlined">
+                    {displayLogoType(notifData.type)}
+                  </span>
                 </div>
-                <div className="notif-data">
-                  <span>{showDateCreationDetails(notifData.createdAt)}</span>
-                </div>
+                <div
+                  className={`notif-message ${
+                    !notifData.read && "unread-message"
+                  }`}
+                >{` ${notifData.message}`}</div>
               </div>
-            );
-          })
-        )}
-      </div>
+              <div className="notif-data">
+                <span>{showDateCreationDetails(notifData.createdAt)}</span>
+              </div>
+            </div>
+          );
+        })
+      )}
+      {fetchingMore && <>Fething more</>}
     </div>
   );
 };

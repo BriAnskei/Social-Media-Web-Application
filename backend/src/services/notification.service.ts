@@ -56,7 +56,35 @@ export const notifService = {
       throw new Error("createOrDropNotif, " + (error as Error));
     }
   },
+  fetchNotifications: async (payload: {
+    cursor?: string;
+    userId: string;
+    limit?: number;
+  }): Promise<
+    { notifications: INotification[]; hasMore: boolean } | undefined
+  > => {
+    try {
+      const { cursor, userId, limit = 10 } = payload;
+      const notifications = await notificationModel
+        .find({
+          receiver: { $eq: userId },
+          ...(cursor && { createdAt: { $lt: cursor } }),
+        })
+        .limit(limit + 1)
+        .sort({ createdAt: -1 })
+        .lean();
 
+      let hasMore: boolean = false;
+      if (notifications.length > limit) {
+        notifications.pop();
+        hasMore = true;
+      }
+
+      return { notifications, hasMore };
+    } catch (error) {
+      errThrower("fetchNotifications", error as Error);
+    }
+  },
   AddOrDropFollowNotif: async (data: NotifData): Promise<any> => {
     try {
       const isNotifExist = await notificationModel.findOne({

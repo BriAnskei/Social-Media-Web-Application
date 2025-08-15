@@ -1,50 +1,53 @@
-import { useEffect, useRef } from "react";
-
 import "./PostList.css";
 import Post from "../Post/Post";
-import { AppDispatch, RootState } from "../../../store/store";
-import { useDispatch, useSelector } from "react-redux";
-import { fetchAllPost } from "../postSlice";
-import Spinner from "../../../Components/Spinner/Spinner";
-import { FetchedUserType } from "../../../types/user";
+
+import Spinner, { MessageSpinner } from "../../../Components/Spinner/Spinner";
+import { useInfiniteScroll } from "../../../hooks/useInfiniteScroll";
+import { usePosts } from "../../../hooks/usePost";
+import { useScrollResoration } from "../../../hooks/useScrollRestoration";
 
 const PostList = () => {
-  const dispatch: AppDispatch = useDispatch();
-  const posts = useSelector((state: RootState) => state.posts.byId);
-  const postIds = useSelector((state: RootState) => state.posts.allIds);
-  const postLoading = useSelector((state: RootState) => state.posts.loading);
-  const userLodaing = useSelector((state: RootState) => state.user.loading);
-  const { accessToken, isAuthenticated } = useSelector(
-    (state: RootState) => state.auth
-  );
+  const { posts, postIds, loading, fetchingMore, hasMore, fetchPosts } =
+    usePosts();
 
-  const test = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    const fetchData = async () => {
-      await dispatch(fetchAllPost());
-    };
-
-    if (accessToken && isAuthenticated) {
-      fetchData();
+  const fetchMorePosts = () => {
+    const lastPost = posts[postIds[postIds.length - 1]];
+    if (lastPost) {
+      fetchPosts(lastPost.createdAt);
     }
-  }, []);
+  };
+
+  const lastPostRef = useInfiniteScroll(fetchMorePosts, hasMore, fetchingMore);
+  useScrollResoration();
 
   return (
     <>
-      <div className="postlist-container" ref={test}>
-        {postLoading || userLodaing ? (
+      <div className="postlist-container">
+        {loading ? (
           <Spinner />
         ) : (
-          postIds.map((postId) => {
+          postIds.map((postId, index) => {
             const post = posts[postId];
+            const isLastPost: boolean = index === postIds.length - 1;
 
             return (
-              <div key={postId}>
+              <div key={postId} ref={isLastPost ? lastPostRef : undefined}>
                 <Post post={post} />
               </div>
             );
           })
+        )}
+        {/* Fetching more loading */}
+        {fetchingMore && (
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "center",
+              padding: "8px 0",
+            }}
+          >
+            <MessageSpinner />
+          </div>
         )}
       </div>
     </>

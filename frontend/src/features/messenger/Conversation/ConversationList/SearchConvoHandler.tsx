@@ -53,6 +53,7 @@ const SearchConvoHandler = ({
   return (
     <input
       type="text"
+      name="search"
       placeholder="Search chat"
       value={searchConversation}
       onChange={onChange}

@@ -11,9 +11,12 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  flex-wrap: wrap;
-  padding: 8px;
+  padding: 8px 10px;
   height: 44px;
+}
+
+.chats-header h2 {
+  margin: 0;
 }
 
 .chats-header .search-chat {
@@ -23,18 +26,11 @@
 }
 
 .search-chat input {
-  height: 2rem;
+  height: 2.5rem;
   border-radius: 9px;
-  border: 1px solid gray;
-
+  font-size: 1.1rem;
+  border: 2px solid black;
   padding: 10px;
-}
-
-.search-chat button {
-  background-color: inherit;
-  border: 1px solid gray;
-  padding: 3px;
-  border-radius: 5px;
 }
 
 .chat-list {

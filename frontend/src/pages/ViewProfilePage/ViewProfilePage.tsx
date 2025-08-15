@@ -8,17 +8,19 @@ import { useUserById } from "../../hooks/useUsers";
 import { usePostsByUserId } from "../../hooks/usePost";
 import ImageDisplay from "../../Components/ImageDisplay/ImageDisplay";
 import UserPosts from "../../features/posts/UserPosts/UserPosts";
+import { useDispatch } from "react-redux";
+import { AppDispatch } from "../../store/store";
 
 interface ViewProfileProp {
   data: FetchedUserType;
 }
 
 const ViewProfilePage = ({ data }: ViewProfileProp) => {
+  const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
 
   const userData = useUserById(data._id);
   const postData = usePostsByUserId(data._id);
-  const { loading, userPosts } = postData;
 
   const [view, setView] = useState("posts");
 
@@ -49,7 +51,7 @@ const ViewProfilePage = ({ data }: ViewProfileProp) => {
         </div>
       </div>
       {view === "posts" ? (
-        <UserPosts loading={loading} posts={userPosts} />
+        <UserPosts userId={data._id} dispatch={dispatch} />
       ) : (
         <ImageDisplay userId={data._id} />
       )}

@@ -15,32 +15,42 @@ export interface NotifData {
   data: NotificationType;
 }
 
-interface NotificationState extends NormalizeState<NotificationType> {}
+interface NotificationState extends NormalizeState<NotificationType> {
+  hasMore: boolean;
+  fetchingMore: boolean;
+}
 
 const initialState: NotificationState = {
   byId: {},
   allIds: [],
   loading: false,
   error: null,
+  hasMore: false,
+  fetchingMore: false,
 };
 
 export const fetchAllNotifs = createAsyncThunk(
   "notification/get",
-  async (_: void, { getState }) => {
+  async (payload: { cursor?: string }, { getState }) => {
     const { auth } = getState() as RootState;
     const accessToken = auth.accessToken;
 
     if (!accessToken) throw new Error("Access token is required");
 
     try {
-      const res = await notificationApi.fetchAllNotif(accessToken);
+      const res = await notificationApi.fetchAllNotif({
+        token: accessToken,
+        cursor: payload.cursor,
+      });
 
       if (!res.success) {
         console.error("Notif fetching error: ", res.message);
         return;
       }
 
-      return res.notifications;
+      const { notifications, hasMore } = res;
+
+      return { notifications, hasMore };
     } catch (error) {
       console.error("Notif fetching error: ", error);
     }
@@ -103,8 +113,6 @@ const notificationSlice = createSlice({
       const { isExist, data } = action.payload;
       const { byId, allIds } = normalizeResponse(data);
 
-      console.log("NEW NOTIFICATION PAYLOAD: ", byId);
-
       // if data exist, remove. Otherwise add the data to state
       if (!isExist) {
         if (!state.allIds.includes(allIds[0])) {
@@ -133,24 +141,36 @@ const notificationSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      .addCase(fetchAllNotifs.pending, (state) => {
+      .addCase(fetchAllNotifs.pending, (state, action) => {
+        const cursor = action.meta.arg.cursor;
+
+        // specify loading flag based on cursor
+        if (cursor) {
+          state.fetchingMore = true;
+        } else {
+          state.loading = true;
+        }
+
         state.error = null;
-        state.loading = true;
       })
       .addCase(fetchAllNotifs.fulfilled, (state, action) => {
-        const NotifData = normalizeResponse(action.payload);
+        const { allIds, byId } = normalizeResponse(
+          action.payload?.notifications
+        );
 
-        // reset first
-        state.allIds = [];
-        state.byId = {};
+        state.allIds = [...state.allIds, ...allIds];
 
-        state.allIds = NotifData.allIds;
-        state.byId = NotifData.byId;
+        state.byId = { ...byId, ...state.byId };
         state.error = null;
+        state.hasMore = action.payload?.hasMore!;
+
+        state.fetchingMore = false;
+
         state.loading = false;
       })
       .addCase(fetchAllNotifs.rejected, (state, action) => {
         state.error = action.payload as string;
+        state.fetchingMore = false;
         state.loading = false;
       })
 

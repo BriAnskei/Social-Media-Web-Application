@@ -10,7 +10,12 @@ import { FetchedUserType } from "../../types/user";
 import { viewProfile } from "../Modal/globalSlice";
 import { useCurrentUser } from "../../hooks/useUsers";
 import { useLocation } from "react-router";
-import { fetchAllPost } from "../../features/posts/postSlice";
+import {
+  fetchAllPost,
+  fetchUserPost,
+  resetData,
+  resetUsersPosts,
+} from "../../features/posts/postSlice";
 
 import NavControl from "./NavControl";
 import { useUnreadNotif } from "../../hooks/useUnreadNotif";
@@ -52,9 +57,26 @@ const Navbr = () => {
     }
   };
 
+  const onUserPageRefresh = async () => {
+    const { pathname } = location;
+
+    if (pathname === "/profile") {
+      if (window.pageYOffset === 0) {
+        dispatch(resetUsersPosts());
+        await dispatch(fetchUserPost({ userId: currentUser._id }));
+      } else {
+        window.scrollTo({
+          top: 0,
+          behavior: "smooth",
+        });
+      }
+    }
+  };
+
   const homePageOnFetch = async () => {
     try {
-      await dispatch(fetchAllPost());
+      dispatch(resetData());
+      await dispatch(fetchAllPost({}));
     } catch (error) {
       console.log("Error refreshing post: ", error);
     }
@@ -71,6 +93,7 @@ const Navbr = () => {
         </div>
         <div className="navbar-act">
           <NavControl
+            onUserPageRefresh={onUserPageRefresh}
             onPageRefresh={onPageRefresh}
             notificationProp={unReadNotifPayload}
             dispatch={dispatch}

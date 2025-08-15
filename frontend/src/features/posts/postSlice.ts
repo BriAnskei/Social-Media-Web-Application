@@ -6,21 +6,59 @@ import { NormalizeState } from "../../types/NormalizeType";
 import { RootState } from "../../store/store";
 import { normalizeResponse } from "../../utils/normalizeResponse";
 
-interface Poststate extends NormalizeState<FetchPostType> {}
+interface Poststate extends NormalizeState<FetchPostType> {
+  hasMore: boolean;
+  fetchingMore: boolean;
+  userPostIds: string[];
+  userPostById: { [key: string]: FetchPostType };
+  hasMoreUserPost: boolean;
+}
 
 // Create the initial state using the adapter
 const initialState: Poststate = {
   byId: {},
   allIds: [],
+  // viewing user profile(post)
+  userPostIds: [],
+  userPostById: {},
+  hasMoreUserPost: false,
+
   loading: false,
+  fetchingMore: false,
+  hasMore: false,
   error: null,
 };
 
+export const fetchUserPost = createAsyncThunk(
+  "posts/userPosts",
+  async (
+    payload: { userId: string; cursor?: string },
+    { rejectWithValue, getState }
+  ) => {
+    try {
+      const state = getState() as RootState;
+
+      const { userId, cursor } = payload;
+      const token = state.auth.accessToken;
+      if (!token)
+        return rejectWithValue("accessToken is requied for this process");
+
+      console.log("fetching user posts: ", token, userId, cursor);
+
+      const res = await postApi.fetchUserPost({ token, userId, cursor });
+
+      return res;
+    } catch (error) {
+      rejectWithValue("Failed to fetch posts: " + error);
+    }
+  }
+);
+
 export const fetchAllPost = createAsyncThunk(
   "posts/getPosts",
-  async (_: void, { rejectWithValue }) => {
+  async (payload: { cursor?: string }, { rejectWithValue }) => {
     try {
-      const response = await postApi.fetchPost();
+      const response = await postApi.fetchPost(payload.cursor);
 
       if (!response.success) {
         return rejectWithValue(response.message || "Fetching posts failed");
@@ -98,11 +136,14 @@ export const fetchPost = createAsyncThunk(
       // check first if the post already exist in the state
       const { posts } = getState() as RootState;
 
-      if (posts.allIds.includes(postId) && posts.byId[postId]) {
+      if (posts.byId[postId]) {
+        console.log("POST ALREADY EXIST");
+
         return { success: true, posts: posts.byId[postId] };
       }
 
       const res = await postApi.getPostById(postId);
+      console.log("fetching post response: ", res);
 
       if (!res.success) {
         return rejectWithValue(res.message || "Failed to retrived post");
@@ -171,9 +212,13 @@ const postsSlice = createSlice({
   name: "posts",
   initialState,
   reducers: {
-    resetData: (state) => {
-      state.allIds = [];
-      state.byId = {};
+    resetData: () => {
+      return initialState;
+    },
+    resetUsersPosts: (state) => {
+      state.hasMoreUserPost = false;
+      state.userPostById = {};
+      state.userPostIds = [];
     },
     postLiked: (
       // global funtion
@@ -189,10 +234,20 @@ const postsSlice = createSlice({
 
       if (!isliked) {
         state.byId[postId].likes.push(userId);
+
+        if (state.userPostById[postId]) {
+          state.userPostById[postId].likes.push(userId);
+        }
       } else {
         state.byId[postId].likes = state.byId[postId].likes.filter(
           (likeId) => likeId !== userId
         );
+
+        if (state.userPostById[postId]) {
+          state.byId[postId].likes = state.byId[postId].likes.filter(
+            (likeId) => likeId !== userId
+          );
+        }
       }
     },
     addPost: (state, action: PayloadAction<FetchPostType>): void => {
@@ -213,6 +268,14 @@ const postsSlice = createSlice({
         content: postData.content || "",
         image: postData.image || "",
       };
+
+      if (state.userPostById[postData._id]) {
+        state.userPostById[postData._id] = {
+          ...state.byId[postData._id],
+          content: postData.content || "",
+          image: postData.image || "",
+        };
+      }
     },
 
     dropPost: (state, action) => {
@@ -228,29 +291,38 @@ const postsSlice = createSlice({
     increamentComment: (state, action) => {
       const postId: string = action.payload;
       state.byId[postId].totalComments += 1;
+
+      // this will also update the profile page posts
+      if (state.userPostById[postId]) {
+        state.userPostById[postId].totalComments += 1;
+      }
     },
   },
   extraReducers: (builder) => {
     builder
-      // Fetching Post Cases
-      .addCase(fetchAllPost.pending, (state) => {
-        state.loading = true;
+
+      .addCase(fetchAllPost.pending, (state, action) => {
+        if (action.meta.arg.cursor) {
+          state.fetchingMore = true;
+        } else {
+          state.loading = true;
+        }
+
         state.error = null;
       })
       .addCase(fetchAllPost.fulfilled, (state, action) => {
         const { allIds, byId } = normalizeResponse(action.payload.posts);
 
-        // Reset all data in the state
-        state.byId = {};
-        state.allIds = [];
-
-        state.allIds = allIds;
+        state.allIds = [...state.allIds, ...allIds];
         state.byId = { ...state.byId, ...byId };
+        state.hasMore = action.payload.hasMore ?? false;
         state.loading = false;
+        state.fetchingMore = false;
       })
       .addCase(fetchAllPost.rejected, (state, action) => {
-        state.loading = false;
         state.error = (action.payload as string) || "Failed to fetchPosts";
+        state.fetchingMore = false;
+        state.loading = false;
       })
 
       .addCase(createPost.rejected, (state, action) => {
@@ -299,6 +371,30 @@ const postsSlice = createSlice({
       .addCase(deletePost.rejected, (state, action) => {
         state.error = action.payload as string;
         state.loading = false;
+      })
+      .addCase(fetchUserPost.pending, (state, action) => {
+        if (action.meta.arg.cursor) {
+          state.fetchingMore = true;
+        } else {
+          state.loading = true;
+        }
+      })
+      .addCase(fetchUserPost.fulfilled, (state, action) => {
+        const { byId, allIds } = normalizeResponse(action.payload?.posts);
+        const hasMore = action.payload?.hasMore;
+
+        state.hasMoreUserPost = hasMore ?? false;
+
+        state.userPostById = { ...state.userPostById, ...byId };
+        state.userPostIds = [...state.userPostIds, ...allIds];
+
+        state.fetchingMore = false;
+        state.loading = false;
+      })
+      .addCase(fetchUserPost.rejected, (state, action) => {
+        state.error = action.payload as string;
+        state.fetchingMore = false;
+        state.loading = false;
       });
   },
 });
@@ -308,6 +404,7 @@ export const {
   increamentComment,
   addPost,
   resetData,
+  resetUsersPosts,
   update,
   dropPost,
 } = postsSlice.actions;

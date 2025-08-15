@@ -1,10 +1,12 @@
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import {
   selectCurrentUserPost,
   selectPostById,
   selectPostsByUserId,
 } from "../features/posts/postSelector";
-import { RootState } from "../store/store";
+import { AppDispatch, RootState } from "../store/store";
+import { useCallback, useEffect } from "react";
+import { fetchAllPost, resetData } from "../features/posts/postSlice";
 
 export const useCurrentUserPosts = () => {
   const result = useSelector(selectCurrentUserPost);
@@ -25,3 +27,26 @@ export const usePostsByUserId = (userId: string) => {
   );
   return postsData;
 };
+
+export function usePosts() {
+  const dispatch: AppDispatch = useDispatch();
+  const { byId, allIds, loading, fetchingMore, hasMore } = useSelector(
+    (state: RootState) => state.posts
+  );
+
+  const fetchPosts = useCallback(
+    async (cursor?: string) => {
+      await dispatch(fetchAllPost(cursor ? { cursor } : {}));
+    },
+    [dispatch]
+  );
+
+  return {
+    posts: byId,
+    postIds: allIds,
+    loading,
+    fetchingMore,
+    hasMore,
+    fetchPosts,
+  };
+}

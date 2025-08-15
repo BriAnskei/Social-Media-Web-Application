@@ -1,8 +1,8 @@
 import "../models/userModel";
-import mongoose, { ClientSession } from "mongoose";
+import mongoose, { ClientSession, ObjectId } from "mongoose";
 import { ExtentRequest } from "../controllers/postController";
 import postModel, { IPost } from "../models/postModel";
-import { errorLog } from "./errHandler";
+import { errorLog, errThrower } from "./errHandler";
 import { IUser } from "../models/userModel";
 
 export const postService = {
@@ -24,17 +24,58 @@ export const postService = {
     }
   },
 
-  fetchAllPost: async () => {
+  fetchUserPosts: async (payload: {
+    userId: string;
+    limit?: number;
+    cursor?: string;
+  }): Promise<{ posts: IPost[]; hasMore: boolean }> => {
     try {
+      const { userId, limit = 10, cursor } = payload;
       const posts = await postModel
-        .find()
+        .find({ user: userId, ...(cursor && { createdAt: { $lt: cursor } }) })
+        .sort({ createdAt: -1 })
+        .limit(limit + 1)
         .populate("user", "fullName username profilePicture followers")
         .populate("totalComments")
         .lean();
 
-      return posts;
+      let hasMore: boolean = false;
+      if (posts.length > limit) {
+        posts.pop();
+        hasMore = true;
+      }
+
+      return { posts, hasMore };
     } catch (error) {
-      throw error;
+      throw errorLog("fetchUserPosts", error as Error);
+    }
+  },
+
+  fetchAllPost: async (payload: {
+    cursor?: string;
+    limit?: number;
+  }): Promise<{ posts: IPost[]; hasMore: boolean }> => {
+    try {
+      const { cursor, limit = 10 } = payload;
+      const posts = await postModel
+        .find({ ...(cursor && { createdAt: { $lt: cursor } }) })
+        .sort({ createdAt: -1 })
+        .populate("user", "fullName username profilePicture followers")
+        .populate("totalComments")
+        .limit(limit + 1)
+        .lean();
+
+      let hasMore: boolean = false;
+
+      if (posts.length > limit) {
+        posts.pop();
+        hasMore = true;
+      }
+
+      return { posts, hasMore };
+    } catch (error) {
+      errThrower("fetchAllPost", error as Error);
+      return { posts: [], hasMore: false };
     }
   },
   toggleLikeRetrivePostData: async (

@@ -70,16 +70,39 @@ export const updatePost = async (req: Request, res: Response): Promise<any> => {
   }
 };
 
-export const postsLists = async (_: Request, res: Response): Promise<void> => {
+export const getPostByUserId = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
   try {
-    let posts = await postService.fetchAllPost();
+    const userId = req.params.userId.toString();
+    const cursor = req.query.cursor as string;
+
+    const response = await postService.fetchUserPosts({ userId, cursor });
+
+    res.json({
+      success: true,
+      ...response,
+    });
+  } catch (error) {
+    console.error("getPostByUserId, ", error);
+    res.json({ success: false, message: "Error" });
+  }
+};
+
+export const getPosts = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const cursor: string = req.query.cursor as string;
+
+    const response = await postService.fetchAllPost({ cursor });
+
     res.json({
       success: true,
       message: "post fetched",
-      posts: posts,
+      ...response,
     });
   } catch (error) {
-    errorLog("postsLists", error as Error);
+    errorLog("getPosts", error as Error);
     res.json({ success: false, message: "Error" });
   }
 };
@@ -165,7 +188,9 @@ export const findPostById = async (
 
     if (!postId) throw new Error("Invvalid no Id recieved");
 
-    const postData = await postModel.findById(postId);
+    const postData = await postModel
+      .findById(postId)
+      .populate("user", "fullName username profilePicture followers");
 
     if (!postData) {
       return res.json({ success: false, message: "Post not found" });

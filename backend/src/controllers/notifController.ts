@@ -2,6 +2,8 @@ import { Request, Response } from "express";
 import notificationModel, { INotification } from "../models/notificationModel";
 import mongoose from "mongoose";
 import { log } from "console";
+import { errorLog } from "../services/errHandler";
+import { notifService } from "../services/notification.service";
 
 interface initialReq extends Request {
   userId?: string;
@@ -37,18 +39,22 @@ export const saveCommentNotif = async (data: NotifData): Promise<any> => {
 export const getNotification = async (
   req: initialReq,
   res: Response
-): Promise<any> => {
+): Promise<void> => {
   try {
-    const notifications = await notificationModel
-      .find({
-        receiver: { $eq: req.userId },
-      })
-      .sort({ createdAt: -1 }); // sort by date
+    const userId = req.userId;
+    const cursor = req.query.cursor as string;
 
-    res.json({ success: true, notifications });
+    const fetcherRespinse = await notifService.fetchNotifications({
+      cursor,
+      userId: userId!.toString(),
+    });
+
+    const { notifications, hasMore } = fetcherRespinse!;
+
+    res.json({ success: true, notifications, hasMore });
   } catch (error) {
-    console.log(error);
-    return res.json({ success: false, message: "Error" });
+    errorLog("getNotification", error as Error);
+    res.json({ success: false, message: "Error" });
   }
 };
 

@@ -308,6 +308,7 @@ const ViewPostModal: React.FC<PostModal> = ({ showModal, onClose, postId }) => {
                     {/* comment list */}
                     <CommentList
                       modalOnShow={showModal}
+                      totalComments={postData.totalComments}
                       dispatch={dispatch}
                       postId={postId}
                       viewUserProfile={viewUserProfile}

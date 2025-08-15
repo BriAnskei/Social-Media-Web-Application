@@ -211,10 +211,6 @@ const MessageBox = ({ ChatWindowData, currentUserData }: MessageBoxProp) => {
     navigate("/view/profile");
   };
 
-  useEffect(() => {
-    console.log("minimize update: ", minimized);
-  }, [minimized]);
-
   const isConversationNotReady = !conversation;
   const isMessagesNotReady = !messages;
 

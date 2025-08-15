@@ -1,6 +1,7 @@
 import { createSelector } from "@reduxjs/toolkit";
 import { RootState } from "../../store/store";
 import { FetchPostType } from "../../types/PostType";
+import { FetchedUserType } from "../../types/user";
 
 const byId = (state: RootState) => state.posts.byId;
 const allIds = (state: RootState) => state.posts.allIds;
@@ -12,8 +13,13 @@ const userLoading = (state: RootState) => state.user.loading;
 export const selectCurrentUserPost = createSelector(
   [byId, allIds, currentUserId, postLoading, userLoading],
   (postById, allIds, currentUserId, postLoading, userLoading) => {
+    console.log("current userIdd: ", currentUserId);
+
     const currentUsersPost = allIds
-      .filter((id) => postById[id].user === currentUserId)
+      .filter((id) => {
+        const userData = postById[id].user as FetchedUserType;
+        return userData._id === currentUserId;
+      })
       .map((id) => postById[id]);
 
     return {

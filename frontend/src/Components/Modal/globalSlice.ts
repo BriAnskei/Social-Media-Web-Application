@@ -129,6 +129,9 @@ const globalSlice = createSlice({
       if (!action.payload) throw new Error("Error: No Id received");
       state.postData.postId = action.payload;
     },
+    removeViewPost: (state) => {
+      state.postData.postId = "";
+    },
 
     toggleEditModal: (state, action: PayloadAction<string | null>) => {
       state.editPostModal.show = !state.editPostModal.show;
@@ -240,6 +243,7 @@ export const {
   closeEditProfileModal,
   toggleEditModal,
   toggleDeleteModal,
+  removeViewPost,
 
   openEditProfileModal,
   viewProfile,
