@@ -215,7 +215,7 @@ export class MessageHanlder {
           recipient.toString()
         );
 
-        this.sentMessageOnRecipClosedConvo(recipientSocket.socketId, data);
+        this.sentMessageOnRecipClosedConvo(recipientSocket!.socketId, data);
       }
     } catch (error) {
       console.error("sentMessageGlobal, " + (error as Error));

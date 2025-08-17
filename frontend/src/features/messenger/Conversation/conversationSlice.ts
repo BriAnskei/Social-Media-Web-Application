@@ -12,6 +12,7 @@ import { RootState } from "../../../store/store";
 import { normalizeResponse } from "../../../utils/normalizeResponse";
 import { ClosedConversationMessagePayload } from "../../../hooks/socket/useChatSocket";
 import { closeWindow } from "../../../Components/Modal/globalSlice";
+import { filterContacts, filterLoading } from "../Contact/ContactSlice";
 
 export const deleteConversation = createAsyncThunk(
   "conversation/drop",
@@ -138,8 +139,9 @@ export const findOneConvoUpdateOnCloseMessage = createAsyncThunk(
 
 export const filterConversation = createAsyncThunk(
   "conversation/find",
-  async (query: string, { rejectWithValue, getState }) => {
+  async (query: string, { rejectWithValue, getState, dispatch }) => {
     try {
+      dispatch(filterLoading(true));
       const state = getState() as RootState;
       const { accessToken } = state.auth;
 
@@ -151,9 +153,13 @@ export const filterConversation = createAsyncThunk(
         token: accessToken,
       });
 
+      dispatch(filterContacts(res.contacts));
+
       return res.conversations;
     } catch (error) {
       rejectWithValue("Failed to filter: " + error);
+    } finally {
+      dispatch(filterLoading(false));
     }
   }
 );

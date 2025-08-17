@@ -8,6 +8,10 @@ import { AppDispatch } from "../../store/store";
 import { markAllRead } from "../../features/notifications/notificationsSlice";
 import { useUnreadConversation } from "../../hooks/useConversation";
 import { useNavbarBadge } from "../../hooks/navbarBadge/useNavbarBadge.";
+import {
+  fetchAllContact,
+  resetContact,
+} from "../../features/messenger/Contact/ContactSlice";
 
 interface NotificationProp {
   hasNotification: boolean;
@@ -47,7 +51,10 @@ const NavControl = ({
     if (!dropdownWrapper) return;
 
     const handleShow = () => setIsDropDownShown(true);
-    const handleHide = () => setIsDropDownShown(false);
+    const handleHide = () => {
+      setIsDropDownShown(false);
+      dispatch(resetContact());
+    };
 
     dropdownWrapper.addEventListener("shown.bs.dropdown", handleShow);
     dropdownWrapper.addEventListener("hidden.bs.dropdown", handleHide);

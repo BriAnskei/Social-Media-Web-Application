@@ -7,19 +7,29 @@ import { normalizeResponse } from "../../../utils/normalizeResponse";
 
 interface Contactstate extends NormalizeState<ContactType> {
   searchedIds: string[];
+  filterByIds: { [key: string]: ContactType };
+  filterLoading: boolean;
+  hasFilter: boolean;
+  hasMore: boolean;
+  fetchingMore: boolean;
 }
 
 const initialState: Contactstate = {
   byId: {},
   allIds: [],
   loading: false,
+  filterLoading: false,
+  hasFilter: false,
   error: null,
   searchedIds: [],
+  filterByIds: {},
+  hasMore: false,
+  fetchingMore: false,
 };
 
 export const fetchAllContact = createAsyncThunk(
   "contact/get",
-  async (_: void, { getState, rejectWithValue }) => {
+  async (payload: { cursor?: Date }, { getState, rejectWithValue }) => {
     try {
       const state = getState() as RootState;
       const token = state.auth.accessToken;
@@ -28,7 +38,10 @@ export const fetchAllContact = createAsyncThunk(
         return rejectWithValue("no accessToken to validate this request");
       }
 
-      const res = await MessageApi.contacts.getAllContact(token);
+      const res = await MessageApi.contacts.getAllContact({
+        token,
+        cursor: payload.cursor,
+      });
 
       return res;
     } catch (error) {
@@ -41,19 +54,23 @@ const contactSlice = createSlice({
   name: "contact",
   initialState,
   reducers: {
+    resetContact: () => {
+      return initialState;
+    },
+    hasSearch: (state, action) => {
+      state.hasFilter = action.payload;
+    },
+    filterLoading: (state, action) => {
+      state.filterLoading = action.payload;
+    },
     filterContacts: (state, action) => {
-      const filteredContacts: ContactType[] = action.payload;
-
-      for (let contact of filteredContacts) {
-        const { byId, allIds } = normalizeResponse(contact);
-        if (!state.searchedIds.includes(allIds[0])) {
-          state.searchedIds.push(allIds[0]);
-        }
-
-        if (state.byId[allIds[0]]) {
-          state.byId = { ...state.byId, ...byId };
-        }
-      }
+      const { byId, allIds } = normalizeResponse(action.payload);
+      state.searchedIds = allIds;
+      state.filterByIds = byId;
+    },
+    clearFilter: (state) => {
+      state.searchedIds = [];
+      state.filterByIds = {};
     },
     createOrUpdateContact: (
       state,
@@ -79,22 +96,37 @@ const contactSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      .addCase(fetchAllContact.pending, (state) => {
-        state.loading = true;
+      .addCase(fetchAllContact.pending, (state, action) => {
+        if (action.meta.arg.cursor) {
+          state.fetchingMore = true;
+        } else {
+          state.loading = true;
+        }
       })
       .addCase(fetchAllContact.fulfilled, (state, action) => {
         const { allIds, byId } = normalizeResponse(action.payload?.contacts);
 
-        state.allIds = allIds;
-        state.byId = { ...byId };
+        state.allIds = [...state.allIds, ...allIds];
+        state.byId = { ...state.byId, ...byId };
         state.loading = false;
+        state.fetchingMore = false;
+        state.hasMore = action.payload?.hasMore ?? false;
       })
       .addCase(fetchAllContact.rejected, (state, action) => {
         state.loading = false;
+        state.fetchingMore = false;
         state.error = action.payload as string;
       });
   },
 });
 
-export const { createOrUpdateContact, deleteContact } = contactSlice.actions;
+export const {
+  createOrUpdateContact,
+  deleteContact,
+  filterContacts,
+  filterLoading,
+  hasSearch,
+  clearFilter,
+  resetContact,
+} = contactSlice.actions;
 export default contactSlice.reducer;

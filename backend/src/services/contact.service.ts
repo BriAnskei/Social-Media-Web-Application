@@ -10,6 +10,34 @@ import {
 import { IUser } from "../models/userModel";
 
 export const contactService = {
+  getContacts: async (payload: {
+    userId: string;
+    cursor?: string;
+    limit?: number;
+  }): Promise<{ contacts: IContact[]; hasMore: boolean }> => {
+    try {
+      const { userId, cursor, limit = 10 } = payload;
+      const contacts = await Contact.find({
+        $and: [{ user: userId }, { validFor: userId }],
+        ...(cursor && { createdAt: { $lt: cursor } }),
+      })
+        .sort({ createdAt: -1 })
+        .limit(limit + 1)
+        .populate("user", "fullName username profilePicture followers")
+        .lean();
+
+      let hasMore: boolean = contacts.length > limit;
+
+      if (hasMore) {
+        contacts.pop();
+      }
+
+      return { contacts, hasMore };
+    } catch (error) {
+      throw new Error("getContacts, " + (error as Error));
+    }
+  },
+
   searchContactByUsers: async (
     users: [string, string]
   ): Promise<IContact | null> => {
@@ -23,7 +51,9 @@ export const contactService = {
           ],
         },
         validFor: new mongoose.Types.ObjectId(userId),
-      });
+      })
+        .populate("user", "fullName username profilePicture followers")
+        .lean();
       return contact;
     } catch (error) {
       throw new Error("searchContactByUsers" + (error as Error));

@@ -4,7 +4,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "../../../../store/store";
 
 import ContactList from "../../Contact/ContactList";
-import { fetchAllContact } from "../../Contact/ContactSlice";
+import { clearFilter, fetchAllContact } from "../../Contact/ContactSlice";
 import { FetchedUserType } from "../../../../types/user";
 import { ConversationService } from "../../../../services/conversation.service";
 import MessageBoxGroup from "../MessageBoxGroup/MessageBoxGroup";
@@ -42,7 +42,7 @@ const ConversationList = ({
     const fetchData = async () => {
       async function initialFetch() {
         try {
-          await dispatch(fetchAllContact());
+          await dispatch(fetchAllContact({}));
           await fetchConversationList();
         } catch (error) {
           console.log("Faild on initial fetch");
@@ -59,6 +59,7 @@ const ConversationList = ({
   useEffect(() => {
     if (!isDropDownShown) {
       setSearch("");
+      dispatch(clearFilter());
     }
   }, [isDropDownShown]);
 
@@ -149,7 +150,11 @@ const ConversationList = ({
             />
           </div>
         </div>
-        <ContactList openConversation={openConvoOnMessageBox} />
+        <ContactList
+          isDropDownShown={isDropDownShown}
+          openConversation={openConvoOnMessageBox}
+          dispatch={dispatch}
+        />
         <MessageBoxGroup
           searchLoading={searchLoading}
           hasSearch={hasSearch}

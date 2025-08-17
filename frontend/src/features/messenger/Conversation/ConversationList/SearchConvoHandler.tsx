@@ -1,6 +1,11 @@
 import React, { useEffect, useRef, useState } from "react";
 import { AppDispatch } from "../../../../store/store";
 import { filterConversation } from "../conversationSlice";
+import {
+  clearFilter,
+  filterLoading,
+  hasSearch,
+} from "../../Contact/ContactSlice";
 
 interface SearchConvoHandlerProp {
   dispatch: AppDispatch;
@@ -20,8 +25,10 @@ const SearchConvoHandler = ({
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
+    dispatch(hasSearch(searchConversation.length > 0));
     setHasSearch(searchConversation.length > 0);
     setSearchLoading(searchConversation.length > 0);
+    dispatch(filterLoading(searchConversation.length > 0));
   }, [searchConversation]);
 
   const onChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -52,6 +59,7 @@ const SearchConvoHandler = ({
 
   return (
     <input
+      autoComplete="off"
       type="text"
       name="search"
       placeholder="Search chat"

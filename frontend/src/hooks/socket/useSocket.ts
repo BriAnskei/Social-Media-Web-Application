@@ -11,6 +11,7 @@ import {
 import {
   addPost,
   dropPost,
+  increamentComment,
   postLiked,
   update,
 } from "../../features/posts/postSlice";
@@ -178,6 +179,8 @@ export const useSocket = () => {
 
   const handleAddCommentEvent = useCallback(
     (data: any) => {
+      console.log("comment added:", data);
+      dispatch(increamentComment(data.postId));
       dispatch(addComment(data));
     },
     [dispatch]

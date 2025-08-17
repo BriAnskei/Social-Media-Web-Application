@@ -14,7 +14,7 @@ import { addMessage, getMessages } from "../controllers/messageController";
 const messageRouter: Router = express.Router();
 
 // contacts
-messageRouter.post("/contact/get", authMiddleware, getAllContacts);
+messageRouter.get("/contact/get", authMiddleware, getAllContacts);
 
 // conversation
 messageRouter.post(

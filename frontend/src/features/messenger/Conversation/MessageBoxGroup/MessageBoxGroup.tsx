@@ -38,10 +38,20 @@ const MessageBoxGroup = ({
 
   return (
     <div className="chat-list" ref={convoListScrollRef} onScroll={handleScroll}>
-      {loading || searchLoading ? (
-        <Spinner />
+      {searchLoading || loading ? (
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+        >
+          <Spinner />
+        </div>
       ) : convoIds.length === 0 ? (
-        <>{hasSearch ? <>Conversation not found</> : <>No Conversation</>}</>
+        <div style={{ display: "flex", justifyContent: "center" }}>
+          {hasSearch ? <>Conversation not found</> : <>No Conversation</>}
+        </div>
       ) : (
         convoIds.map((id) => {
           const conversation = byId[id];

@@ -122,11 +122,6 @@ const SuggestionInput: React.FC<Prop> = ({
           block: "nearest",
           inline: "nearest",
         });
-        // activeElement.scrollIntoView({ block: "nearest", inline: "nearest" }) scrolls the element into view smoothly:
-
-        // block: "nearest": Vertically aligns the element to the nearest edge of the container.
-
-        // inline: "nearest": Horizontally aligns the element to the nearest edge of the container.
       }
     }
   }, [activeIndex]);
@@ -146,31 +141,32 @@ const SuggestionInput: React.FC<Prop> = ({
 
   return (
     <div className="suggestion-wrapper">
-      <div className="input-group mb-1">
-        <form onSubmit={(e) => e.preventDefault()}>
-          <input
-            ref={inputRef}
-            type="text"
-            placeholder={placeholder}
-            value={query}
-            onBlur={handleUnfucosedInput}
-            onKeyDown={handleKeyDown}
-            onChange={handleInputChange}
-            //  this is for screen reader
-            aria-label="Search"
-            aria-expanded={suggestions.length > 0}
-            aria-autocomplete="list"
-            aria-controls={
-              suggestions.length > 0 ? "search-suggestions" : undefined
-            }
-            aria-activedescendant={
-              activeIndex >= 0
-                ? `suggestion-${suggestions[activeIndex]?._id}`
-                : undefined
-            }
-          />
-        </form>
-      </div>
+      <form onSubmit={(e) => e.preventDefault()}>
+        <input
+          autoComplete="off"
+          id="user-search"
+          ref={inputRef}
+          name="search"
+          type="text"
+          placeholder={placeholder}
+          value={query}
+          onBlur={handleUnfucosedInput}
+          onKeyDown={handleKeyDown}
+          onChange={handleInputChange}
+          //  this is for screen reader
+          aria-label="Search"
+          aria-expanded={suggestions.length > 0}
+          aria-autocomplete="list"
+          aria-controls={
+            suggestions.length > 0 ? "search-suggestions" : undefined
+          }
+          aria-activedescendant={
+            activeIndex >= 0
+              ? `suggestion-${suggestions[activeIndex]?._id}`
+              : undefined
+          }
+        />
+      </form>
 
       {/* Suggestions dropdown */}
       {suggestions.length > 0 && !loading && (

@@ -27,8 +27,6 @@ export const fetchComments = createAsyncThunk(
       const state = getState() as RootState;
       const token = state.auth.accessToken;
 
-      console.log("FETCHING COMMNET SLICE TRIGGERED");
-
       if (!token) return rejectWithValue("No token to process this request");
 
       const res = await commentApi.getComments({ token, postId, cursor });

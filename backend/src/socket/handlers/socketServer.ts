@@ -212,11 +212,9 @@ export class SocketServer {
     });
   }
 
-  public getConnectedUser(userId: string): ConnectedUser {
+  public getConnectedUser(userId: string): ConnectedUser | undefined {
     const socketData = this.connectedUSers.get(userId);
 
-    if (!socketData)
-      throw new Error("getConnectedUser, Error: Cannot find socket data");
     return socketData;
   }
 
@@ -231,6 +229,7 @@ export class SocketServer {
         content: payLoad.content,
         createAt: payLoad.createdAt,
       };
+      // emit to all users
       socket.broadcast.emit("postComment", boadcastPayload);
 
       await commentService.addComment(payLoad);
@@ -301,7 +300,7 @@ export class SocketServer {
     if (this.isUserOnline(user._id.toString())) {
       const ownerSocket = this.getConnectedUser(user._id.toString());
 
-      this.io.to(ownerSocket.socketId).emit("new-post-upload", newPost);
+      this.io.to(ownerSocket!.socketId).emit("new-post-upload", newPost);
     }
   }
 
@@ -315,9 +314,9 @@ export class SocketServer {
 
       const ownerSocket = this.getConnectedUser(postOwnerId);
 
-      // only sent an emit  to the owwner if the notif data is initialize
+      // only sent an emit  to the owwner if the socket and notif data is initialize
       // this means that the liker is not the owner
-      if (notifData) {
+      if (notifData && ownerSocket) {
         this.io
           .to(ownerSocket.socketId)
           .emit(SOCKET_EVENTS.posts.LIKE_NOTIFY, notifData);
@@ -335,7 +334,7 @@ export class SocketServer {
     try {
       const senderSocket = this.getConnectedUser(userId);
 
-      const socket = this.getUserSocketInstance(senderSocket.socketId);
+      const socket = this.getUserSocketInstance(senderSocket!.socketId);
 
       // boadcast to all users (that is in the room in cluding the owner) except the sender
       socket.broadcast.emit(SOCKET_EVENTS.posts.POST_LIKED, {
@@ -370,7 +369,7 @@ export class SocketServer {
 
     if (this.isUserOnline(reciever)) {
       const userSocket = this.getConnectedUser(reciever);
-      this.io.to(userSocket.socketId).emit("newCommentNotify", config);
+      this.io.to(userSocket!.socketId).emit("newCommentNotify", config);
     }
   }
 

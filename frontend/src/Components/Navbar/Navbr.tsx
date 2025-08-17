@@ -87,9 +87,8 @@ const Navbr = () => {
       <div className="navbar">
         <div className="logo">
           <span>Social App</span>
-          <div className="suggestion-wrapper">
-            <SuggestionInput onSelect={handleOnSeach} />
-          </div>
+
+          <SuggestionInput onSelect={handleOnSeach} />
         </div>
         <div className="navbar-act">
           <NavControl

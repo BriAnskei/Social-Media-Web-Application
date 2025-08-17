@@ -1,4 +1,9 @@
-import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
+import {
+  createAsyncThunk,
+  createSlice,
+  current,
+  PayloadAction,
+} from "@reduxjs/toolkit";
 
 import { postApi } from "../../utils/api";
 import { FetchPostType, LikeHandlerTypes } from "../../types/PostType";
@@ -18,7 +23,7 @@ interface Poststate extends NormalizeState<FetchPostType> {
 const initialState: Poststate = {
   byId: {},
   allIds: [],
-  // viewing user profile(post)
+  // viewing user profile(posts timeline)
   userPostIds: [],
   userPostById: {},
   hasMoreUserPost: false,
@@ -137,13 +142,10 @@ export const fetchPost = createAsyncThunk(
       const { posts } = getState() as RootState;
 
       if (posts.byId[postId]) {
-        console.log("POST ALREADY EXIST");
-
         return { success: true, posts: posts.byId[postId] };
       }
 
       const res = await postApi.getPostById(postId);
-      console.log("fetching post response: ", res);
 
       if (!res.success) {
         return rejectWithValue(res.message || "Failed to retrived post");
@@ -228,25 +230,25 @@ const postsSlice = createSlice({
       const { postId, userId } = action.payload;
 
       // check if the user is included in the likes array prop of post
-      const isliked = state.byId[postId].likes.some(
-        (likerId) => likerId === userId
-      );
+      const likes = new Set(state.byId[postId].likes);
 
-      if (!isliked) {
+      if (!likes.has(userId)) {
         state.byId[postId].likes.push(userId);
 
         if (state.userPostById[postId]) {
           state.userPostById[postId].likes.push(userId);
         }
       } else {
-        state.byId[postId].likes = state.byId[postId].likes.filter(
-          (likeId) => likeId !== userId
-        );
+        likes.delete(userId);
+        state.byId[postId].likes = Array.from(likes);
 
         if (state.userPostById[postId]) {
-          state.byId[postId].likes = state.byId[postId].likes.filter(
-            (likeId) => likeId !== userId
-          );
+          const userPostLikes = new Set(state.userPostById[postId].likes);
+
+          userPostLikes.delete(userId);
+          console.log(Array.from(userPostLikes));
+
+          state.userPostById[postId].likes = Array.from(userPostLikes);
         }
       }
     },

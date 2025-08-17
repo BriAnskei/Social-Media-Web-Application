@@ -3,7 +3,7 @@ import "./ImageDisplay.css";
 
 import { AppDispatch } from "../../store/store";
 import { useDispatch } from "react-redux";
-import { viewImage } from "../Modal/globalSlice";
+import { toggleViewMessageImage, viewImage } from "../Modal/globalSlice";
 import { getImages } from "../../features/users/userSlice";
 import Spinner from "../Spinner/Spinner";
 
@@ -78,7 +78,7 @@ const ImageDisplay = ({ userId }: ImageDisplayProp) => {
                 <div
                   key={index}
                   className="image-box"
-                  onClick={() => viewImageModal(img)}
+                  onClick={() => dispatch(toggleViewMessageImage(img))}
                 >
                   <img src={img} />
                 </div>
@@ -91,7 +91,7 @@ const ImageDisplay = ({ userId }: ImageDisplayProp) => {
               <div
                 key={index}
                 className="image-box"
-                onClick={() => viewImageModal(img)}
+                onClick={() => dispatch(toggleViewMessageImage(img))}
               >
                 <img src={img} />
               </div>

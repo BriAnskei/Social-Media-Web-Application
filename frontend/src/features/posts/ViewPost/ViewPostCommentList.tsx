@@ -69,19 +69,8 @@ const ViewPostCommentList = React.memo(
       fetchInitialComments();
     }, [postId]);
 
-    const onScroll = () => {
-      console.log(
-        "ONSCROLL: ",
-        scrollRef.current.scrollTop,
-        scrollRef.current.scrollHeight
-      );
-    };
     return (
-      <div
-        className=" comment-list-viewpost"
-        ref={scrollRef}
-        onScroll={onScroll}
-      >
+      <div className=" comment-list-viewpost" ref={scrollRef}>
         <div>
           <ViewPostCommentFetcher
             loading={loading}

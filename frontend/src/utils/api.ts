@@ -502,12 +502,19 @@ export const notificationApi = {
 
 export const MessageApi = {
   contacts: {
-    getAllContact: async (token: string): Promise<MessageApiResponse> => {
+    getAllContact: async (payload: {
+      token: string;
+      cursor?: Date;
+    }): Promise<MessageApiResponse & { hasMore?: boolean }> => {
       try {
-        const res = await api.post(
+        const { token, cursor } = payload;
+        const res = await api.get(
           "api/messages/contact/get",
-          {},
+
           {
+            params: {
+              cursor,
+            },
             headers: {
               token,
               "Content-Type": "application/json",
@@ -540,8 +547,6 @@ export const MessageApi = {
             "Content-Type": "application/json",
           },
         });
-
-        console.log("FILTER RESPONSE: ", response.data);
 
         return response.data;
       } catch (error) {

@@ -31,6 +31,10 @@ const NotificationList = ({
 
     if (isSameDay) {
       return showOnlyTime(created); // implement this function to format time
+    }
+
+    if (now.getDate() - createdAt.getDate() <= 4) {
+      console.log("who days ago");
     } else {
       return showOnlyDate(created); // implement this function to format date
     }

@@ -155,7 +155,7 @@ const Post = ({ post }: Post) => {
           postId: post._id,
           userName: currentUser.fullName.match(/^\w+/)?.[0]!,
         })
-      ).unwrap();
+      );
 
       // delayed timout to ensure no conflic in node app
       setTimeout(() => {

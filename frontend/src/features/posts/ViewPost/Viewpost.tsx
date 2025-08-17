@@ -2,7 +2,12 @@ import "./Viewpost.css";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "../../../store/store";
-import { fetchPost, increamentComment, toggleLike } from "../postSlice";
+import {
+  fetchPost,
+  increamentComment,
+  postLiked,
+  toggleLike,
+} from "../postSlice";
 import { usePostById } from "../../../hooks/usePost";
 import Spinner from "../../../Components/Spinner/Spinner";
 import { useCurrentUser } from "../../../hooks/useUsers";
@@ -27,10 +32,10 @@ interface Post {
 const ViewPost = ({ postId }: Post) => {
   const navigate = useNavigate();
   const dispatch = useDispatch<AppDispatch>();
-  const { loading } = useSelector((state: RootState) => state.posts);
+
   const { currentUser } = useCurrentUser();
 
-  const { emitLike, emitComment } = useSocket();
+  const { emitComment } = useSocket();
   const { popover } = usePopoverContext();
 
   const [postData, setPostData] = useState<FetchPostType>({} as FetchPostType);
@@ -40,9 +45,12 @@ const ViewPost = ({ postId }: Post) => {
     [postData]
   );
 
+  const [loading, setLoading] = useState(false);
   const [isSuccess, setIsSucess] = useState(false); // Fetcher response, loading flag
 
   const [isLiked, setIsLiked] = useState(false);
+  const [likeProgress, setLikeProgress] = useState(false);
+
   const [commentInput, setCommentInput] = useState("");
 
   // popover ref
@@ -53,47 +61,67 @@ const ViewPost = ({ postId }: Post) => {
 
     return () => {
       dispatch(removeViewPost());
+      dispatch(resetCommets(postId));
     };
   }, []);
 
   useEffect(() => {
     const getPostData = async (postId: string) => {
-      const res = await dispatch(fetchPost(postId)).unwrap();
-      setIsSucess(res.success);
-      setPostData(res.posts as FetchPostType);
+      try {
+        setLoading(true);
+        const res = await dispatch(fetchPost(postId)).unwrap();
+        setIsSucess(res.success);
+        setPostData(res.posts as FetchPostType);
+      } catch (error) {
+        console.log("Failed to fetch viewpost: ", error);
+      } finally {
+        setLoading(false);
+      }
     };
     getPostData(postId);
   }, [dispatch, postId]);
 
   useEffect(() => {
-    if (!postData.likes) return;
+    const isPostLiked = () => {
+      if (!loading) {
+        const likes = new Set(postData.likes);
+        setIsLiked(likes.has(currentUser._id));
+      }
+    };
 
-    if (postData.likes.includes(currentUser._id)) {
-      setIsLiked(true);
-    }
-  }, [postData]);
+    isPostLiked();
+  }, [postData.likes, loading]);
 
   const handleLike = async () => {
     try {
-      const res = await dispatch(
+      if (likeProgress) return;
+      setLikeProgress(true);
+
+      await dispatch(
         toggleLike({
           postId: postData._id,
           userName: currentUser.fullName.match(/^\w+/)?.[0]!,
         })
       ).unwrap();
-      // emit after succesfully saved itto DB
-      const data = {
-        postId: postData._id,
-        postOwnerId: postOwnerData._id,
-        userId: currentUser._id!,
-      };
-      if (res.success) {
-        emitLike(data);
-        setIsLiked(!isLiked);
-      }
+      toggleLikePostHanlder();
+
+      setIsLiked(!isLiked);
+
+      setTimeout(() => setLikeProgress(false), 200);
     } catch (error) {
       console.error(error);
     }
+  };
+
+  const toggleLikePostHanlder = () => {
+    const likes = new Set(postData.likes);
+
+    if (likes.has(currentUser._id)) {
+      likes.delete(currentUser._id);
+    } else {
+      likes.add(currentUser._id);
+    }
+    setPostData((post) => ({ ...post, likes: Array.from(likes) }));
   };
 
   const submitComment = (e: React.FormEvent) => {
@@ -122,8 +150,12 @@ const ViewPost = ({ postId }: Post) => {
       createdAt: new Date().toISOString(),
     };
 
-    dispatch(addComment(commentPayload));
+    setPostData((postData) => ({
+      ...postData,
+      totalComments: postData.totalComments + 1,
+    }));
     dispatch(increamentComment(postId));
+    dispatch(addComment(commentPayload));
     setCommentInput("");
   };
 

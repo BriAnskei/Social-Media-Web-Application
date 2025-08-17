@@ -46,8 +46,6 @@ export const commentService = {
     createdAt: Date;
   }) => {
     try {
-      console.log("Creted comment payload: ", payload);
-
       await CommentModel.create(payload);
     } catch (error) {
       throw error;
