@@ -2,7 +2,38 @@
 
 A full-stack social media application where users can connect, share posts, and engage with each other through likes, comments, and real-time conversations.
 
-![Homepage Screenshot](homepage-screenshot.png)
+## 📸 Application Screenshots
+
+### 🔐 Authentication
+
+- **Login**
+  ![Login](assets/login.png)
+- **Registration**
+  ![Registration](assets/registration.png)
+
+### 🏠 Main Features
+
+- **Home Page**
+  ![Home Page](assets/home-page.png)
+- **Profile Page**
+  ![Profile Page](assets/profile-page.png)
+- **Searching**
+  ![Searching](assets/searching-features.png)
+- **Follow Feature**
+  ![Follow Feature](assets/followfeature.png)
+- **View Followers**
+  ![View Followers](assets/view-followers.png)
+
+### 💬 Interactions
+
+- **Comment**
+  ![Comment](assets/comment.png)
+- **Conversation**
+  ![Conversation](assets/conversation.png)
+- **Conversation List**
+  ![Conversation List](assets/conversationlist.png)
+- **Notification**
+  ![Notification](assets/notfication.png)
 
 ## ✨ Features
 
