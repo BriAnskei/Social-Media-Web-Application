@@ -41,6 +41,10 @@ const ContactList = ({
     [byId, filterByIds]
   );
 
+  useEffect(() => {
+    console.log("contact list update: ", contactIds);
+  }, [contactIds]);
+
   const scrollRef = useRef<HTMLDivElement | null>(null);
   let lastIndex = useMemo(() => contactIds.length - 1, [contactIds.length]);
 
@@ -70,7 +74,6 @@ const ContactList = ({
     async function initialFetch() {
       try {
         if (isDropDownShown) {
-          await dispatch(fetchAllContact({}));
           setTimeout(() => {
             if (scrollRef.current) scrollRef.current.scrollLeft = 0;
           }, 200);

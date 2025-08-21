@@ -6,7 +6,7 @@
     "server": "nodemon src/server.ts",
     "build": "tsc",
     "start": "node dist/serve.js",
-    "worker": "concurrently  \"npx ts-node src/workers/notification.worker.ts\" \"npx ts-node src/workers/message.worker.ts\" \"npx ts-node src/workers/like.worker.ts\"  \"npx ts-node src/workers/comment.worker.ts\"  \"npx ts-node src/workers/upload.worker.ts\"  \"npx ts-node src/workers/comment.worker.ts\""
+    "worker": "concurrently  \"ts-node-dev --respawn src/workers/Commentnotif.worker.ts\" \"ts-node-dev --respawn src/workers/message.worker.ts\" \"ts-node-dev --respawn src/workers/like.worker.ts\"  \"ts-node-dev --respawn src/workers/comment.worker.ts\"  \"ts-node-dev --respawn src/workers/upload.worker.ts\"  \"ts-node-dev --respawn src/workers/comment.worker.ts\""
   },
   "keywords": [],
   "author": "",
@@ -43,6 +43,7 @@
     "concurrently": "^9.2.0",
     "nodemon": "^3.1.9",
     "ts-node": "^10.9.2",
+    "ts-node-dev": "^2.0.0",
     "typescript": "^5.7.2"
   }
 }

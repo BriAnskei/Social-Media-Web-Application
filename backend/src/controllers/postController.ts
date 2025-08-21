@@ -215,7 +215,7 @@ export const deletePost = async (req: Request, res: Response): Promise<any> => {
     }
 
     const result = await postModel.deleteOne({ _id: postId });
-
+    console.log("post deleted: ", postId);
     res.json({
       success: true,
       message: `SuccesFully deleted; acknowledge: ${result.acknowledged}, deletedCount: ${result.deletedCount}`,

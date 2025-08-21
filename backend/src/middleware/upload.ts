@@ -112,6 +112,8 @@ function deleteImageMiddleWare() {
         return next();
       }
 
+      console.log("DELDING file photo: ", fileName);
+
       const userId = req.userId;
       if (!userId) {
         throw new Error("No user Id received in the request to process this");

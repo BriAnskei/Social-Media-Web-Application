@@ -44,56 +44,9 @@ const NavControl = ({
 
   const [isDropDownShown, setIsDropDownShown] = useState(false);
 
-  useEffect(() => {
-    // Get the dropdown wrapper instead of the menu
-    const dropdownWrapper = document.querySelector(".chat .dropdown");
+  dropDownHanlder(setIsDropDownShown, dispatch);
 
-    if (!dropdownWrapper) return;
-
-    const handleShow = () => setIsDropDownShown(true);
-    const handleHide = () => {
-      setIsDropDownShown(false);
-      dispatch(resetContact());
-    };
-
-    dropdownWrapper.addEventListener("shown.bs.dropdown", handleShow);
-    dropdownWrapper.addEventListener("hidden.bs.dropdown", handleHide);
-
-    return () => {
-      dropdownWrapper.removeEventListener("shown.bs.dropdown", handleShow);
-      dropdownWrapper.removeEventListener("hidden.bs.dropdown", handleHide);
-    };
-  }, []);
-
-  useEffect(() => {
-    const dropdownTrigger = document.getElementById("notification-trigger");
-
-    const handleDropdownHidden = async () => {
-      await markReadAllNotification();
-    };
-
-    // hidden.bs.dropdown, is a bootstrap event that will be  fired when the
-    // dropdown has finished being hidden from the user
-    if (dropdownTrigger) {
-      dropdownTrigger.addEventListener(
-        "hidden.bs.dropdown",
-        handleDropdownHidden
-      );
-    }
-
-    return () => {
-      dropdownTrigger?.removeEventListener(
-        "hidden.bs.dropdown",
-        handleDropdownHidden
-      );
-    };
-  }, [hasNotification]);
-
-  const markReadAllNotification = useCallback(async () => {
-    if (hasNotification) {
-      await dispatch(markAllRead(allUnreadNotifId));
-    }
-  }, [dispatch, hasNotification]);
+  unreadNotificationHanlder(hasNotification, dispatch, allUnreadNotifId);
 
   return (
     <>
@@ -175,3 +128,67 @@ const NavControl = ({
 };
 
 export default NavControl;
+function dropDownHanlder(
+  setIsDropDownShown: (b: boolean) => void,
+  dispatch: AppDispatch
+) {
+  useEffect(() => {
+    // Get the dropdown wrapper instead of the menu
+    const dropdownWrapper = document.querySelector(".chat .dropdown");
+
+    if (!dropdownWrapper) return;
+
+    const handleShow = () => setIsDropDownShown(true);
+    const handleHide = () => {
+      setIsDropDownShown(false);
+      dispatch(resetContact());
+
+      // initial fetch
+      dispatch(fetchAllContact({}));
+    };
+
+    dropdownWrapper.addEventListener("shown.bs.dropdown", handleShow);
+    dropdownWrapper.addEventListener("hidden.bs.dropdown", handleHide);
+
+    return () => {
+      dropdownWrapper.removeEventListener("shown.bs.dropdown", handleShow);
+      dropdownWrapper.removeEventListener("hidden.bs.dropdown", handleHide);
+    };
+  }, []);
+}
+
+function unreadNotificationHanlder(
+  hasNotification: boolean,
+  dispatch: AppDispatch,
+  allUnreadNotifId: string[]
+) {
+  const markReadAllNotification = useCallback(async () => {
+    if (hasNotification) {
+      await dispatch(markAllRead(allUnreadNotifId));
+    }
+  }, [dispatch, hasNotification, allUnreadNotifId]);
+
+  useEffect(() => {
+    const dropdownTrigger = document.getElementById("notification-trigger");
+
+    const handleDropdownHidden = async () => {
+      await markReadAllNotification();
+    };
+
+    // hidden.bs.dropdown, is a bootstrap event that will be  fired when the
+    // dropdown has finished being hidden from the user
+    if (dropdownTrigger) {
+      dropdownTrigger.addEventListener(
+        "hidden.bs.dropdown",
+        handleDropdownHidden
+      );
+    }
+
+    return () => {
+      dropdownTrigger?.removeEventListener(
+        "hidden.bs.dropdown",
+        handleDropdownHidden
+      );
+    };
+  }, [markReadAllNotification]);
+}

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { LoginTypes } from "../../../types/AuthTypes";
 import { useDispatch } from "react-redux";
 import { AppDispatch } from "../../../store/store";
@@ -17,6 +17,8 @@ const Login = () => {
 
   const [isInputInvalid, setIsInputInvalid] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+
+  useStyleOnInputPass(data);
 
   const onChangeHandler = (e: any) => {
     const { name, value } = e.target;
@@ -60,8 +62,10 @@ const Login = () => {
           />
 
           <input
-            type="text"
+            id="password"
+            type="password"
             name="password"
+            autoComplete="off"
             onChange={onChangeHandler}
             placeholder="password"
             required
@@ -89,3 +93,19 @@ const Login = () => {
 };
 
 export default Login;
+function useStyleOnInputPass(data: LoginTypes) {
+  useEffect(() => {
+    const passElement = document.getElementById("password");
+
+    if (data.password.length > 0 && passElement) {
+      passElement.style.cssText = `
+      font-size: 2rem;
+       padding: 0.3rem 0.7rem;
+      `;
+    } else if (passElement) {
+      // Reset to original styles when password is empty
+      passElement.style.fontSize = "";
+      passElement.style.padding = "";
+    }
+  }, [data]);
+}

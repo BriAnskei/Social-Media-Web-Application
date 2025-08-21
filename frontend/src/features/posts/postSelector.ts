@@ -20,7 +20,7 @@ export const selectCurrentUserPost = createSelector(
         const userData = postById[id].user as FetchedUserType;
         return userData._id === currentUserId;
       })
-      .map((id) => postById[id]);
+      .map((id) => postById[id]);678
 
     return {
       currentUserPosts:

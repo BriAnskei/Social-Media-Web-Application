@@ -20,6 +20,7 @@ const Register = () => {
   const dispatch = useDispatch<AppDispatch>();
 
   const [errorMessage, setErrorMessage] = useState("");
+  const [showPass, setShowPass] = useState(false);
 
   const [data, setData] = useState<PropTypes>({
     username: "",
@@ -79,7 +80,7 @@ const Register = () => {
         <div className="flex-input">
           <input
             required
-            id="text-input"
+            id="first-name"
             type="text"
             placeholder="first name"
             onChange={onChangeHandler}
@@ -88,7 +89,7 @@ const Register = () => {
           />
           <input
             required
-            id="text-input"
+            id="last-name"
             type="text"
             placeholder="last name"
             onChange={onChangeHandler}
@@ -99,7 +100,7 @@ const Register = () => {
         <div className="flex-input file-upload-container">
           <input
             required
-            id="text-input"
+            id="user-name"
             placeholder="username"
             type="text"
             onChange={onChangeHandler}
@@ -130,16 +131,23 @@ const Register = () => {
               value={data.email}
             />
           </div>
-
-          <div className="password-input">
-            <label htmlFor="">Password</label>
-            <input
-              required
-              type="text"
-              name="password"
-              onChange={onChangeHandler}
-              value={data.password}
-            />
+          <div>
+            <label htmlFor="password" id="password">
+              Password
+            </label>
+            <div className="password-input">
+              <input
+                required
+                type={showPass ? "text" : "password"}
+                autoComplete="off"
+                name="password"
+                onChange={onChangeHandler}
+                value={data.password}
+              />
+              <span onClick={() => setShowPass((prev) => !prev)}>
+                {showPass ? "hide" : "show"}
+              </span>
+            </div>
           </div>
         </div>
         <div className="registration-act">

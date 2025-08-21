@@ -1,4 +1,4 @@
-import { ObjectId } from "mongoose";
+import mongoose, { ObjectId, Types } from "mongoose";
 import CommentModel, { IComment } from "../models/commentModel";
 import { errorLog } from "./errHandler";
 import { notificationQueue } from "../queues/notification/notificationQueue";
@@ -51,19 +51,30 @@ export const commentService = {
       throw error;
     }
   },
-  getUsersUniqueIds: async (payload: { postId: string; userId: string }) => {
+  getUsersUniqueIds: async (payload: {
+    postId: string;
+    userId: string;
+    postOwnerId: string;
+  }) => {
     try {
-      const { postId, userId } = payload;
+      const { postId, userId, postOwnerId } = payload;
+
       // Get unique user IDs who previously commented (except current user)
       const userIds = await CommentModel.distinct("user", {
         postId: postId,
         user: { $ne: userId },
       });
 
-      return userIds ?? [];
+      const stringIds = userIds.map((id) => id.toString());
+
+      const uniqueIds = new Set(stringIds);
+
+      //  add the postpwnerId incase if its not added(if the commenter is the the post owner)
+      if (userId !== postOwnerId) uniqueIds.add(postOwnerId);
+
+      return Array.from(uniqueIds) ?? [];
     } catch (error) {
-      errorLog("getUsersUniqueIds", error as Error);
-      return [];
+      throw new Error("getUsersUniqueIds, " + (error as Error));
     }
   },
   getComments: async (payload: {

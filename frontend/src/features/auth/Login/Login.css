@@ -22,6 +22,11 @@
   box-sizing: border-box;
 }
 
+/* .login-inputs input[type="password"] {
+  font-size: 2rem;
+  padding: 0 0.7rem;
+} */
+
 .login-invalid {
   border: 1px solid red;
   width: 100%;

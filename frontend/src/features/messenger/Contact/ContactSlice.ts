@@ -33,6 +33,7 @@ export const fetchAllContact = createAsyncThunk(
     try {
       const state = getState() as RootState;
       const token = state.auth.accessToken;
+      console.log("fetching ontacs");
 
       if (!token) {
         return rejectWithValue("no accessToken to validate this request");
@@ -108,9 +109,9 @@ const contactSlice = createSlice({
 
         state.allIds = [...state.allIds, ...allIds];
         state.byId = { ...state.byId, ...byId };
+        state.hasMore = action.payload?.hasMore ?? false;
         state.loading = false;
         state.fetchingMore = false;
-        state.hasMore = action.payload?.hasMore ?? false;
       })
       .addCase(fetchAllContact.rejected, (state, action) => {
         state.loading = false;

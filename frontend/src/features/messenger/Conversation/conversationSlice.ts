@@ -141,7 +141,6 @@ export const filterConversation = createAsyncThunk(
   "conversation/find",
   async (query: string, { rejectWithValue, getState, dispatch }) => {
     try {
-      dispatch(filterLoading(true));
       const state = getState() as RootState;
       const { accessToken } = state.auth;
 
@@ -271,7 +270,7 @@ const conversationSlice = createSlice({
       state.byId[convoId].unreadCount = 0;
     },
     resetConvoState: (state) => {
-      state = initialState;
+      return initialState;
     },
   },
   extraReducers: (builder) => {

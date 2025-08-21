@@ -9,6 +9,7 @@ import {
   LikeHandlerTypes,
 } from "../../types/PostType";
 import {
+  addNewCurUsrPost,
   addPost,
   dropPost,
   increamentComment,
@@ -163,6 +164,8 @@ export const useSocket = () => {
   // state update of convo and contacts for current user
   const handleCreateOrUpdateContact = useCallback(
     (data: RefreshContactPayload) => {
+      console.log("new contact addded: ", data);
+
       dispatch(createOrUpdateContact(data));
       dispatch(setConvoToValid(data.convoId));
     },
@@ -179,7 +182,6 @@ export const useSocket = () => {
 
   const handleAddCommentEvent = useCallback(
     (data: any) => {
-      console.log("comment added:", data);
       dispatch(increamentComment(data.postId));
       dispatch(addComment(data));
     },
@@ -189,6 +191,7 @@ export const useSocket = () => {
   const handleNewPostUpload = useCallback(
     (data: any) => {
       dispatch(addPost(data));
+      dispatch(addNewCurUsrPost(data));
     },
     [dispatch]
   );

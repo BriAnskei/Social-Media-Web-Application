@@ -176,11 +176,16 @@ const Post = ({ post }: Post) => {
       <div className="post-container">
         <div className="post-info">
           <div className="profile-name">
-            <img
-              src={userProfile(postOwnerData.profilePicture, postOwnerData._id)}
-              style={{ cursor: "pointer" }}
-              onClick={viewPostOwnerProf}
-            />
+            <div className="avatar">
+              <img
+                src={userProfile(
+                  postOwnerData.profilePicture,
+                  postOwnerData._id
+                )}
+                style={{ cursor: "pointer" }}
+                onClick={viewPostOwnerProf}
+              />
+            </div>
             <div className="name-date">
               <h3 style={{ cursor: "pointer" }} onClick={viewPostOwnerProf}>
                 {postOwnerData?.fullName}

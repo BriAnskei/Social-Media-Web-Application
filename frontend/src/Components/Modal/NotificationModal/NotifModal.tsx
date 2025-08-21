@@ -1,6 +1,6 @@
 import React from "react";
 import "./NotifModal.css";
-import NotificationList from "../../../features/notifications/NotificationList";
+import NotificationList from "../../../features/notifications/Notifications";
 import { ModalTypes } from "../../../types/modalTypes";
 import { useSelector } from "react-redux";
 import { RootState } from "../../../store/store";

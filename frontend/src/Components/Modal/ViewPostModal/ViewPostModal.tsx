@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import "./ViewPostModal.css";
 import { ModalTypes } from "../../../types/modalTypes";
 
-import { useCurrentUser } from "../../../hooks/useUsers";
+import { useCurrentUser, useUserById } from "../../../hooks/useUsers";
 import { useDispatch } from "react-redux";
 import { AppDispatch } from "../../../store/store";
 import {
@@ -23,7 +23,7 @@ import {
   addComment,
   resetCommets,
 } from "../../../features/comment/commentSlice";
-import { CommentType } from "../../../types/PostType";
+
 import { userProfile } from "../../../utils/ImageUrlHelper";
 
 interface PostModal extends Omit<ModalTypes, "onClose"> {
@@ -33,12 +33,16 @@ interface PostModal extends Omit<ModalTypes, "onClose"> {
 
 const ViewPostModal: React.FC<PostModal> = ({ showModal, onClose, postId }) => {
   const postData = usePostById(postId);
-  const postOwnerData = postData.user as FetchedUserType;
+  const postOwner = postData.user as FetchedUserType;
+  const postOwnerData = useUserById(postOwner?._id);
+
+  // early return to prevent undifined properties during app renders. unless the modal is viewed
+  if (!postData || !postOwnerData) return;
 
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
   const { emitFollow, emitComment } = useSocket();
-  const { currentUser } = useCurrentUser(); // ccurrent user data
+  const { currentUser } = useCurrentUser(); // current user data
 
   const [isOwnerFollowed, setIsOwnerFollowed] = useState(false);
   const [followToggleClass, setFollowToggleClass] = useState("follow-button");
@@ -57,15 +61,12 @@ const ViewPostModal: React.FC<PostModal> = ({ showModal, onClose, postId }) => {
   }, [postId, currentUser]);
 
   useEffect(() => {
-    if (!postOwnerData?.followers || !currentUser) return;
-    // check if thw owner is followed
-    if (postOwnerData?.followers.includes(currentUser._id)) {
+    if (!postOwnerData.followers) return;
+
+    if (postOwnerData.followers.includes(currentUser._id)) {
       setButtonDisplay();
     }
   }, [postOwnerData, currentUser, postId]);
-
-  // early return to prevent undifined properties during app renders. unless the modal is viewed
-  if (!postData || !postOwnerData) return;
 
   const setButtonDisplay = () => {
     // if classID is setted to followed, the follow is being toggled in modal, otherwise in posts
@@ -157,8 +158,6 @@ const ViewPostModal: React.FC<PostModal> = ({ showModal, onClose, postId }) => {
       createdAt: new Date(),
     };
 
-    emitComment(emitionPayload);
-
     const commentPayload = {
       postId: postId,
       user: currentUser,
@@ -168,6 +167,8 @@ const ViewPostModal: React.FC<PostModal> = ({ showModal, onClose, postId }) => {
 
     dispatch(addComment(commentPayload));
     dispatch(increamentComment(postId));
+
+    emitComment(emitionPayload);
     setCommentInput("");
   };
 
@@ -214,8 +215,8 @@ const ViewPostModal: React.FC<PostModal> = ({ showModal, onClose, postId }) => {
                       <div className="post-modal-profile-data">
                         <img
                           src={userProfile(
-                            currentUser.profilePicture,
-                            currentUser._id
+                            postOwnerData.profilePicture,
+                            postOwnerData._id
                           )}
                           alt=""
                         />

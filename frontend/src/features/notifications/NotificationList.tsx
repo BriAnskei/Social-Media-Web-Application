@@ -24,20 +24,21 @@ const NotificationList = ({
     const created = new Date(createdAt);
     const now = new Date();
 
-    const isSameDay =
-      now.getDate() === created.getDate() &&
-      now.getMonth() === created.getMonth() &&
-      now.getFullYear() === created.getFullYear();
+    const dayDiff = Math.floor(
+      (now.getTime() - created.getTime()) / (1000 * 60 * 60 * 24)
+    );
 
-    if (isSameDay) {
+    if (dayDiff === 0) {
       return showOnlyTime(created); // implement this function to format time
-    }
-
-    if (now.getDate() - createdAt.getDate() <= 4) {
-      console.log("who days ago");
+    } else if (dayDiff <= 2) {
+      return showDays(now.getDate() - created.getDate());
     } else {
       return showOnlyDate(created); // implement this function to format date
     }
+  };
+
+  const showDays = (dayDif: number): string => {
+    return `${dayDif} day${dayDif > 1 ? "'s" : ""} ago`;
   };
 
   const showOnlyTime = (createdAt: Date) => {

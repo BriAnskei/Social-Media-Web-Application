@@ -1,10 +1,11 @@
 import "./EditProfileModal.css";
 import { ModalTypes } from "../../../types/modalTypes";
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { NewDataType, FetchedUserType } from "../../../types/user";
 import { useDispatch } from "react-redux";
 import { AppDispatch } from "../../../store/store";
 import { updateCurrentUser } from "../../../features/users/userSlice";
+import { userProfile } from "../../../utils/ImageUrlHelper";
 
 interface EditProp extends ModalTypes {
   data: FetchedUserType;
@@ -12,12 +13,11 @@ interface EditProp extends ModalTypes {
 
 const EditProfileModal: React.FC<EditProp> = ({ showModal, onClose, data }) => {
   const dispatch = useDispatch<AppDispatch>();
-
+  const inputFileRef = useRef<HTMLInputElement | null>(null);
   const [updatedData, setUpdatedData] = useState<NewDataType>({
     fullName: "",
     bio: "",
   });
-
   const [profileUrl, setProfileUrl] = useState("");
 
   const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -25,9 +25,11 @@ const EditProfileModal: React.FC<EditProp> = ({ showModal, onClose, data }) => {
     if (file && file.length > 0) {
       const imageUrl = URL.createObjectURL(file[0]);
       setProfileUrl(imageUrl);
-
       setUpdatedData((prev) => {
-        return { ...prev, profilePicture: file[0] };
+        return {
+          ...prev,
+          profilePicture: file[0],
+        };
       });
     }
   };
@@ -42,7 +44,6 @@ const EditProfileModal: React.FC<EditProp> = ({ showModal, onClose, data }) => {
 
   const handleSubmit = async (e: any) => {
     e.preventDefault();
-
     const formData = new FormData();
 
     if (updatedData.fullName !== data.fullName && updatedData.fullName) {
@@ -64,11 +65,32 @@ const EditProfileModal: React.FC<EditProp> = ({ showModal, onClose, data }) => {
       }
     } catch (error) {
       console.log(error);
-      alert("Error: " + error);
     }
   };
 
-  let isNewProfileSelected = Boolean(profileUrl);
+  const handleClose = () => {
+    if (inputFileRef.current) inputFileRef.current.value = "";
+    setUpdatedData((prev) => ({
+      ...prev,
+      fullName: "",
+      bio: "",
+      profilePicture: undefined,
+    }));
+
+    if (profileUrl) {
+      URL.revokeObjectURL(profileUrl);
+    }
+    setProfileUrl("");
+    onClose();
+  };
+
+  // Fixed: Remove the callback wrapper and use a regular function
+  const getProfileImageUrl = () => {
+    if (profileUrl) {
+      return profileUrl;
+    }
+    return userProfile(data.profilePicture, data._id);
+  };
 
   return (
     <div
@@ -78,21 +100,29 @@ const EditProfileModal: React.FC<EditProp> = ({ showModal, onClose, data }) => {
       <div className="modal-dialog">
         <div className="modal-content">
           <div className="modal-body">
-            <div
-              className="upload-profile image-style"
-              style={{
-                backgroundImage: isNewProfileSelected
-                  ? `url(${profileUrl})`
-                  : `url(http://localhost:4000/uploads/profile/${data._id}/${data.profilePicture})`,
-              }}
-            >
-              <label className="custom-file-upload">
-                <input type="file" onChange={handleUpload} />
-                Upload new profile
-              </label>
-            </div>
+            {showModal && (
+              <>
+                <div
+                  className="upload-profile image-style"
+                  style={{
+                    backgroundImage: `url("${getProfileImageUrl()}")`,
+                  }}
+                >
+                  <label className="custom-file-upload">
+                    <input
+                      type="file"
+                      onChange={handleUpload}
+                      ref={inputFileRef}
+                      accept="image/*"
+                    />
+                    Upload new profile
+                  </label>
+                </div>
+              </>
+            )}
+
             <div className="update-inputs">
-              <label htmlFor="exampleFormControlInput1" className="form-label ">
+              <label htmlFor="exampleFormControlInput1" className="form-label">
                 Fullname
               </label>
               <input
@@ -103,6 +133,7 @@ const EditProfileModal: React.FC<EditProp> = ({ showModal, onClose, data }) => {
                 value={updatedData.fullName}
                 onChange={onChangeHandler}
               />
+
               <label
                 htmlFor="exampleFormControlTextarea1"
                 className="form-label"
@@ -119,16 +150,10 @@ const EditProfileModal: React.FC<EditProp> = ({ showModal, onClose, data }) => {
               />
             </div>
           </div>
+
           <div className="modal-footer edit-footer">
             <button onClick={handleSubmit}>Save</button>
-            <button
-              onClick={() => {
-                onClose();
-                setProfileUrl("");
-              }}
-            >
-              Close
-            </button>
+            <button onClick={handleClose}>Close</button>
           </div>
         </div>
       </div>

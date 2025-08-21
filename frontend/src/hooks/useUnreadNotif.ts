@@ -8,5 +8,7 @@ export const useUnreadNotif = (): {
 } => {
   const data = useSelector(selectUnreadNotif);
 
+  console.log("unread ids updte: ", data);
+
   return { hasNotification: data.length > 0, allIds: data };
 };

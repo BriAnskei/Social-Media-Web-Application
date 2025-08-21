@@ -17,8 +17,6 @@ export const getAllContacts = async (
     const userId = req.userId;
     const cursor = req.query.cursor as string;
 
-    console.log("FETCHING MORE CONTACTS: ", cursor, userId);
-
     if (!userId) {
       throw new Error(
         "Failed to fetch Contacts: No User Id to process this request"
@@ -26,8 +24,6 @@ export const getAllContacts = async (
     }
 
     const response = await contactService.getContacts({ userId, cursor });
-
-    console.log("TOtal fetched contacs: ", response.contacts.length);
 
     const formatContacts = contactFormatHelper.formatContacts(
       userId,

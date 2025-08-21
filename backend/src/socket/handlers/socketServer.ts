@@ -2,31 +2,24 @@ import { Server, Socket } from "socket.io"; // Socket.io server class, which man
 import { Server as HttpServer } from "http"; // http server module from node.js
 import { verifyToken } from "../../middleware/auth";
 
-import { NotifData, saveCommentNotif } from "../../controllers/notifController";
+import { NotifData } from "../../controllers/notifController";
 
 import mongoose from "mongoose";
 import notificationModel, {
   INotification,
 } from "../../models/notificationModel";
 
-import {
-  CommentEventPayload,
-  LikeEventPayload,
-  PostUpdateEvent,
-  PostUploadNotifEvent,
-} from "../EventsTypes/PostEvents";
+import { LikeEventPayload, PostUpdateEvent } from "../EventsTypes/PostEvents";
 import { FollowEvent } from "../EventsTypes/UserEvents";
 import { notifService } from "../../services/notification.service";
 import { MessageHanlder } from "./messageHanlder";
 import { redisEvents } from "../../events/redisEvents";
 import { userService } from "../../services/user.service";
-import { postService } from "../../services/post.service";
 import { IUser } from "../../models/userModel";
 import {
   CommentRequestPayload,
   commentService,
 } from "../../services/comment.service";
-import e from "express";
 import { IPost } from "../../models/postModel";
 
 interface ConnectedUser {
@@ -230,6 +223,7 @@ export class SocketServer {
         createAt: payLoad.createdAt,
       };
       // emit to all users
+
       socket.broadcast.emit("postComment", boadcastPayload);
 
       await commentService.addComment(payLoad);

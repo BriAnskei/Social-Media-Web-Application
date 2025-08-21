@@ -66,6 +66,8 @@ export const markAllRead = createAsyncThunk(
       const { auth } = getState() as RootState;
       const accessToken = auth.accessToken;
 
+      console.log("ALL unread ids: ", allIds);
+
       if (!accessToken) throw new Error("Access token is required");
       const res = await notificationApi.setReadNotif(accessToken, allIds);
       if (!res.success) {

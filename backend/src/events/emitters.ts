@@ -99,7 +99,7 @@ export const emitDeleteConvo = async (payload: {
 export const emitNewPost = async (cnfg: { data: IPost; userName: string }) => {
   try {
     throwErrOnFailed({
-      function: "emitDeleteConvo",
+      function: "emitNewPost",
       isSuccess: await redisEvents.emit("newPost", cnfg),
     });
   } catch (error) {

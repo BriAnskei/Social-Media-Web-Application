@@ -45,7 +45,7 @@ const commentSlice = createSlice({
     addComment: (state, action: PayloadAction<CommentType>) => {
       const postId = action.payload.postId;
 
-      if (state.byId[postId]) state.byId[postId].push(action.payload);
+      state.byId[postId] = [...(state.byId[postId] || []), action.payload];
     },
     resetCommets: (state, action) => {
       const postId = action.payload;

@@ -29,7 +29,7 @@ postRouter.post(
 );
 postRouter.post("/like-toggle", authMiddleware, likeToggled);
 postRouter.post("/getpost", findPostById);
-postRouter.get(
+postRouter.post(
   "/delete",
   authMiddleware,
   upload.post.delete.single(),

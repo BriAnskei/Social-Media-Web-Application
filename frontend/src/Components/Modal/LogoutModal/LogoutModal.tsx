@@ -23,6 +23,7 @@ const LogoutModal: React.FC<ModalTypes> = ({ showModal, onClose }) => {
 
   const handleLogout = (e: any) => {
     e.preventDefault();
+    socket?.disconnect(); // disconnect socket
     dispatch(logout());
     dispatch(resetData());
     dispatch(clearData());
@@ -30,7 +31,7 @@ const LogoutModal: React.FC<ModalTypes> = ({ showModal, onClose }) => {
     dispatch(resetMessageState());
     dispatch(resetGlobalState());
     emitCleanUp();
-    socket?.disconnect(); // disconnect socket
+
     navigate("/");
   };
 

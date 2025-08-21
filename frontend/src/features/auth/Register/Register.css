@@ -67,7 +67,31 @@ o.registration-inputs * {
 }
 
 .credintials .password-input {
+  display: flex;
+  justify-content: space-evenly;
+  border: 1px solid gray;
+  border-radius: 8px;
   margin-right: 28px;
+  width: 20vw;
+  height: 2.3rem;
+}
+
+.password-input input {
+  border: none;
+  width: 70% !important;
+  height: auto;
+  padding: 0;
+}
+
+.password-input input:focus {
+  outline-width: 0;
+}
+
+.password-input span {
+  display: flex;
+  align-items: center;
+  font-size: 0.8rem;
+  cursor: pointer;
 }
 
 .registration-act {

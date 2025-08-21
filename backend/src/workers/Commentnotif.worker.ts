@@ -7,12 +7,12 @@ import { errorLog } from "../services/errHandler";
 import { commentService, UserData } from "../services/comment.service";
 
 import { notifService } from "../services/notification.service";
-import { Types } from "mongoose";
+import mongoose, { Types } from "mongoose";
 import { emitComment } from "../events/emitters";
 
 connectDb();
 
-console.log("✅ notification worker started");
+console.log("✅ comment notification worker started");
 
 interface PostCommentPayload {
   postId: string;
@@ -35,6 +35,7 @@ new Worker(
       const userIds = await commentService.getUsersUniqueIds({
         postId: payload.post.postId,
         userId: payload.user._id,
+        postOwnerId: payload.post.postOwnerId,
       });
 
       await processNotification(userIds, payload);
@@ -45,11 +46,10 @@ new Worker(
   { connection: redisOptions }
 );
 
-async function processNotification(
-  userIds: Types.ObjectId[],
-  payload: JobPayload
-) {
+async function processNotification(userIds: string[], payload: JobPayload) {
   try {
+    console.log("Procesing notifs: ", userIds);
+
     for (const id of userIds) {
       const notifDoc = await notifService.addCommentNotif({
         ...generateNotificationPayload(id, payload),
@@ -63,7 +63,7 @@ async function processNotification(
   }
 }
 
-function generateNotificationPayload(id: Types.ObjectId, payload: JobPayload) {
+function generateNotificationPayload(id: string, payload: JobPayload) {
   return {
     receiver: id.toString(),
     sender: payload.user,
@@ -74,7 +74,7 @@ function generateNotificationPayload(id: Types.ObjectId, payload: JobPayload) {
     createdAt: payload.createdAt,
   };
 }
-function generateMessage(payload: JobPayload, id: Types.ObjectId) {
+function generateMessage(payload: JobPayload, id: string) {
   const regex = /^\w+/; // first name extraction
   return `${
     payload.post.postOwnerId === payload.user._id

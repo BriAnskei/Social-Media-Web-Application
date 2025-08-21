@@ -48,8 +48,6 @@ export const fetchUserPost = createAsyncThunk(
       if (!token)
         return rejectWithValue("accessToken is requied for this process");
 
-      console.log("fetching user posts: ", token, userId, cursor);
-
       const res = await postApi.fetchUserPost({ token, userId, cursor });
 
       return res;
@@ -260,6 +258,14 @@ const postsSlice = createSlice({
         state.byId = { ...state.byId, ...byId };
       }
     },
+    addNewCurUsrPost: (state, action) => {
+      const { allIds, byId } = normalizeResponse(action.payload);
+
+      console.log("addinng new post in profile pge: ", action.payload);
+
+      state.userPostById = { ...byId, ...state.userPostById };
+      state.userPostIds = [...allIds, ...state.userPostIds];
+    },
 
     update: (state, action: PayloadAction<FetchPostType>) => {
       const postData = action.payload;
@@ -286,6 +292,9 @@ const postsSlice = createSlice({
 
         delete state.byId[postId];
         state.allIds = state.allIds.filter((id) => id !== postId);
+
+        delete state.userPostById[postId];
+        state.userPostIds = state.userPostIds.filter((id) => id !== postId);
       } catch (error) {
         console.error("failed to delete", error);
       }
@@ -408,6 +417,7 @@ export const {
   resetData,
   resetUsersPosts,
   update,
+  addNewCurUsrPost,
   dropPost,
 } = postsSlice.actions;
 export default postsSlice.reducer;

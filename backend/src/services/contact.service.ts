@@ -32,6 +32,8 @@ export const contactService = {
         contacts.pop();
       }
 
+      console.log("FETCHED CONTACS: ", contacts.length);
+
       return { contacts, hasMore };
     } catch (error) {
       throw new Error("getContacts, " + (error as Error));

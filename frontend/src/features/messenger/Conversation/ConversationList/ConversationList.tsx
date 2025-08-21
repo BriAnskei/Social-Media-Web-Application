@@ -42,8 +42,8 @@ const ConversationList = ({
     const fetchData = async () => {
       async function initialFetch() {
         try {
-          await dispatch(fetchAllContact({}));
           await fetchConversationList();
+          await dispatch(fetchAllContact({}));
         } catch (error) {
           console.log("Faild on initial fetch");
         }

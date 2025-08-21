@@ -194,13 +194,16 @@ const ViewPost = ({ postId }: Post) => {
           <div className="post-container">
             <div className="post-info">
               <div className="profile-name">
-                <img
-                  src={userProfile(
-                    postOwnerData.profilePicture!,
-                    postOwnerData._id
-                  )}
-                  alt=""
-                />
+                <div className="avatar">
+                  <img
+                    src={userProfile(
+                      postOwnerData.profilePicture!,
+                      postOwnerData._id
+                    )}
+                    alt=""
+                  />
+                  5
+                </div>
                 <div className="name-date">
                   <h3>{postOwnerData.fullName}</h3>
                   <span>{new Date(postData.createdAt).toLocaleString()}</span>
@@ -225,7 +228,7 @@ const ViewPost = ({ postId }: Post) => {
             {postData.image && (
               <div className="image-container">
                 <img
-                  src={`http://localhost:4000/images/posts/${postData.user}/${postData.image}`}
+                  src={`http://localhost:4000/images/posts/${postOwnerData._id}/${postData.image}`}
                   alt=""
                 />
               </div>

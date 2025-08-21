@@ -64,6 +64,7 @@ export const setReadNotification = async (
 ): Promise<any> => {
   try {
     const { allIds } = req.body;
+    console.log("ALL ids recievd: ", allIds);
 
     if (!allIds || !Array.isArray(allIds) || allIds.length === 0) {
       return res.json({
